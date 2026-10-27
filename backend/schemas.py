@@ -140,6 +140,27 @@ class SessionOut(BaseModel):
     total_yawns: int
     avg_ear: float
     report_url: str | None
+    self_fatigue: int | None = None
+
+
+class FatigueFeedback(BaseModel):
+    self_fatigue: int = Field(ge=0, le=2, description="0 fresh, 1 a bit tired, 2 exhausted")
+
+
+class FatigueFeatures(BaseModel):
+    duration_min: float = Field(ge=0, le=600)
+    hour: int = Field(ge=0, le=23)
+    focus_pct: float = Field(ge=0, le=100)
+    distracted_pct: float = Field(ge=0, le=100)
+    drowsy_pct: float = Field(ge=0, le=100)
+    no_face_pct: float = Field(ge=0, le=100)
+    blinks_per_min: float = Field(ge=0, le=120)
+    yawns_per_10min: float = Field(ge=0, le=60)
+    avg_ear: float = Field(ge=0, le=1)
+
+
+class TextIn(BaseModel):
+    text: str = Field(min_length=1, max_length=5000)
 
 
 class SpeechSessionCreate(BaseModel):

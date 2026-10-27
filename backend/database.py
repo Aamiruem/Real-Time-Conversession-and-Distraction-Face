@@ -31,6 +31,9 @@ _NEW_COLUMNS = {
         "email_verified": ("BOOLEAN DEFAULT FALSE", "UPDATE users SET email_verified = TRUE"),
         "phone_verified": ("BOOLEAN DEFAULT FALSE", "UPDATE users SET phone_verified = TRUE"),
     },
+    "attention_sessions": {
+        "self_fatigue": ("INTEGER", None),
+    },
 }
 
 

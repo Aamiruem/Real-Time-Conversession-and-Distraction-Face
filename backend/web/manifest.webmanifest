@@ -1,0 +1,10 @@
+{
+  "name": "FocusLink AI",
+  "short_name": "FocusLink",
+  "description": "AI focus tracker, speech coach and fatigue prediction.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b1120",
+  "theme_color": "#0b1120",
+  "icons": [{"src": "/static/favicon.svg", "sizes": "any", "type": "image/svg+xml"}]
+}

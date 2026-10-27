@@ -4,7 +4,7 @@
   * Pace        -> words per minute while speaking
   * Fluency     -> filler words (um, uh, you know…) and hesitation pauses
   * Clarity     -> how confidently each word was recognised (a pronunciation proxy); in read-aloud
-                   mode the transcript is also aligned to the passage to find missed / misread words
+                mode the transcript is also aligned to the passage to find missed / misread words
   * Voice       -> loudness and pitch variation (monotone vs. expressive) from the raw signal
   * Assertive   -> hedging language (I think, maybe, sort of…)
   * Eye contact -> focus % from the face attention engine while speaking

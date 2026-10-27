@@ -65,6 +65,7 @@ class AttentionSession(Base):
     total_yawns: Mapped[int] = mapped_column(Integer, default=0)
     avg_ear: Mapped[float] = mapped_column(Float, default=0)
     report_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    self_fatigue: Mapped[int | None] = mapped_column(Integer, nullable=True)  # user label 0/1/2 for ML training
 
     user = relationship("User", back_populates="sessions")
 

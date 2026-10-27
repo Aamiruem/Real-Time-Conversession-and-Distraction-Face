@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from backend.auth import get_current_user
 from backend.database import get_db
 from backend.models import AttentionSession, FocusSnapshot, User
-from backend.schemas import FocusUpdate, SessionCreate, SessionOut
+from backend.schemas import FatigueFeedback, FocusUpdate, SessionCreate, SessionOut
 from backend.services import aws_service
 from backend.websocket_manager import manager
 
@@ -44,6 +44,19 @@ def list_sessions(user: User = Depends(get_current_user), db: Session = Depends(
         select(AttentionSession).where(AttentionSession.user_id == user.id).order_by(AttentionSession.started_at)
     )
     return list(rows)
+
+
+@router.patch("/sessions/{session_id}/feedback", response_model=SessionOut)
+def session_feedback(session_id: int, data: FatigueFeedback, user: User = Depends(get_current_user),
+                     db: Session = Depends(get_db)):
+    """User's own fatigue rating — becomes a training label for the ML model (python -m ml.train --with-db)."""
+    session = db.get(AttentionSession, session_id)
+    if not session or session.user_id != user.id:
+        raise HTTPException(404, "Session not found")
+    session.self_fatigue = data.self_fatigue
+    db.commit()
+    db.refresh(session)
+    return session
 
 
 @router.delete("/sessions/{session_id}")

@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{APP_NAME}} – AI Focus Tracker, Speech Coach &amp; Fatigue Detection</title>
+  <meta name="description" content="Free AI focus tracker: real-time distraction &amp; drowsiness detection from your webcam, an AI speech coach for confident speaking, fatigue prediction and focus-aware chat rooms.">
+  <meta name="keywords" content="focus tracker, attention detection, distraction detection, drowsiness detection, AI speech coach, public speaking confidence, pronunciation practice, fatigue prediction, study focus app, computer vision, NLP">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <link rel="canonical" href="{{SITE_URL}}/">
+  <meta name="theme-color" content="#0b1120">
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/static/manifest.webmanifest">
+
+  <!-- Open Graph / social sharing -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="{{APP_NAME}}">
+  <meta property="og:title" content="{{APP_NAME}} – Stay focused, speak with confidence">
+  <meta property="og:description" content="Webcam focus &amp; drowsiness detection, an AI speech coach and fatigue prediction — all in one free app.">
+  <meta property="og:url" content="{{SITE_URL}}/">
+  <meta property="og:image" content="{{SITE_URL}}/static/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="{{APP_NAME}} dashboard showing focus score and speech confidence">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{APP_NAME}} – Stay focused, speak with confidence">
+  <meta name="twitter:description" content="AI focus tracking, speech coaching and fatigue prediction from your webcam.">
+  <meta name="twitter:image" content="{{SITE_URL}}/static/og-image.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/site.css">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "SoftwareApplication",
+        "name": "{{APP_NAME}}",
+        "url": "{{SITE_URL}}/",
+        "applicationCategory": "EducationalApplication",
+        "operatingSystem": "Web browser",
+        "description": "AI focus tracker with real-time distraction and drowsiness detection, an AI speech coach, fatigue prediction and focus-aware chat rooms.",
+        "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
+        "featureList": ["Webcam attention and drowsiness detection", "AI speech and pronunciation coach",
+                        "Machine-learning fatigue prediction", "Real-time focus-aware chat rooms",
+                        "Conversation sentiment and confidence analysis"]
+      },
+      {
+        "@type": "Organization",
+        "name": "{{APP_NAME}}",
+        "url": "{{SITE_URL}}/",
+        "logo": "{{SITE_URL}}/static/favicon.svg"
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {"@type": "Question", "name": "Is my webcam video uploaded anywhere?",
+           "acceptedAnswer": {"@type": "Answer", "text": "No. Face analysis runs on the app server frame by frame and only numbers (focus %, blink rate, head pose) are stored. Video and audio are never saved."}},
+          {"@type": "Question", "name": "How does the AI speech coach measure confidence?",
+           "acceptedAnswer": {"@type": "Answer", "text": "It transcribes your speech locally with Whisper and scores pace, filler words, pauses, pronunciation clarity, pitch variety, hedging language and eye contact, then gives specific tips and a more confident rewrite of what you said."}},
+          {"@type": "Question", "name": "How is fatigue predicted?",
+           "acceptedAnswer": {"@type": "Answer", "text": "A scikit-learn model uses session length, time of day, drowsy and distracted time, blink rate, yawns and eye openness. It improves as you rate how tired you felt after each session."}},
+          {"@type": "Question", "name": "How do I sign up?",
+           "acceptedAnswer": {"@type": "Answer", "text": "Create an account with your email and mobile number and confirm both with one-time codes. After that you can sign in with a password or a one-time code."}}
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <header class="nav">
+    <a class="brand" href="/" aria-label="{{APP_NAME}} home"><img src="/static/favicon.svg" alt="" width="28" height="28"> {{APP_NAME}}</a>
+    <nav aria-label="Main">
+      <a href="#features">Features</a>
+      <a href="#how">How it works</a>
+      <a href="#tech">Technology</a>
+      <a href="#faq">FAQ</a>
+      <a class="btn btn-sm" href="{{APP_URL}}">Open app</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <p class="eyebrow">Computer vision · NLP · Speech AI · Machine learning</p>
+      <h1>Stay focused. <span class="grad">Speak with confidence.</span></h1>
+      <p class="lead">{{APP_NAME}} watches for distraction and drowsiness through your webcam, coaches your speaking
+        voice, predicts fatigue before it hits and lets you work alongside others in focus-aware rooms.</p>
+      <div class="cta">
+        <a class="btn" href="{{APP_URL}}">Start free — create account</a>
+        <a class="btn btn-ghost" href="#how">See how it works</a>
+      </div>
+      <ul class="stats" aria-label="Highlights">
+        <li><strong>468</strong><span>face landmarks per frame</span></li>
+        <li><strong>7</strong><span>speaking-confidence signals</span></li>
+        <li><strong>3</strong><span>fatigue risk levels</span></li>
+        <li><strong>0</strong><span>videos stored</span></li>
+      </ul>
+    </section>
+
+    <section id="features" class="section">
+      <h2>Everything you need to focus and communicate better</h2>
+      <div class="grid">
+        <article class="card"><div class="ic">🎥</div><h3>Focus &amp; distraction tracking</h3>
+          <p>Eye aspect ratio, blink rate, yawns, head pose and iris gaze classify you as Focused, Distracted,
+            Drowsy or away — with a live focus % and a drowsiness alarm.</p></article>
+        <article class="card"><div class="ic">🗣️</div><h3>AI speech coach</h3>
+          <p>Talk to the camera and get a confidence score, pronunciation feedback, filler-word counts, pace and
+            pitch analysis, plus a more confident version of what you said.</p></article>
+        <article class="card"><div class="ic">🧠</div><h3>Fatigue prediction</h3>
+          <p>A trained machine-learning model estimates your fatigue risk after every session, explains why, and
+            learns from your own feedback.</p></article>
+        <article class="card"><div class="ic">💬</div><h3>Focus rooms</h3>
+          <p>Real-time chat where everyone sees each other's live focus score, with sentiment, toxicity and
+            confidence analysis of the conversation.</p></article>
+        <article class="card"><div class="ic">📊</div><h3>Analytics</h3>
+          <p>Focus history, speaking progress, leaderboards and conversation insights — all your data in one
+            dashboard.</p></article>
+        <article class="card"><div class="ic">🔐</div><h3>Secure accounts</h3>
+          <p>Email and mobile verification with one-time codes, password or OTP sign-in, hashed passwords and
+            data stored in AWS (RDS PostgreSQL + S3).</p></article>
+      </div>
+    </section>
+
+    <section id="how" class="section">
+      <h2>How it works</h2>
+      <ol class="steps">
+        <li><h3>Create your account</h3><p>Sign up with email and mobile number, confirm both one-time codes.</p></li>
+        <li><h3>Turn on your camera</h3><p>Start a focus session or a speaking exercise — analysis runs live.</p></li>
+        <li><h3>Get feedback</h3><p>See focus %, fatigue risk, speaking confidence and concrete tips instantly.</p></li>
+        <li><h3>Improve over time</h3><p>Track progress in Analytics; the AI personalises as you give feedback.</p></li>
+      </ol>
+    </section>
+
+    <section id="tech" class="section">
+      <h2>Built on a complete AI/ML stack</h2>
+      <div class="grid tech">
+        <div class="card"><h3>Computer vision</h3><p>MediaPipe Face Mesh, OpenCV, solvePnP head pose</p></div>
+        <div class="card"><h3>Natural language processing</h3><p>VADER / Amazon Comprehend sentiment, keyword extraction, summaries</p></div>
+        <div class="card"><h3>Speech AI</h3><p>faster-whisper speech-to-text, pitch &amp; loudness signal analysis</p></div>
+        <div class="card"><h3>Machine learning</h3><p>scikit-learn model selection, cross-validation, model card</p></div>
+        <div class="card"><h3>Backend &amp; real time</h3><p>FastAPI, WebSockets, JWT, SQLAlchemy</p></div>
+        <div class="card"><h3>Cloud</h3><p>AWS RDS, S3, SES email, SNS SMS, Comprehend, EC2 + Docker</p></div>
+      </div>
+    </section>
+
+    <section id="faq" class="section">
+      <h2>Frequently asked questions</h2>
+      <details><summary>Is my webcam video uploaded anywhere?</summary><p>No. Face analysis runs frame by frame and only numbers (focus %, blink rate, head pose) are stored. Video and audio are never saved.</p></details>
+      <details><summary>How does the AI speech coach measure confidence?</summary><p>It transcribes your speech locally with Whisper and scores pace, filler words, pauses, pronunciation clarity, pitch variety, hedging language and eye contact, then gives specific tips and a more confident rewrite of what you said.</p></details>
+      <details><summary>How is fatigue predicted?</summary><p>A scikit-learn model uses session length, time of day, drowsy and distracted time, blink rate, yawns and eye openness. It improves as you rate how tired you felt after each session.</p></details>
+      <details><summary>How do I sign up?</summary><p>Create an account with your email and mobile number and confirm both with one-time codes. After that you can sign in with a password or a one-time code.</p></details>
+    </section>
+
+    <section class="section final">
+      <h2>Ready to focus better?</h2>
+      <a class="btn" href="{{APP_URL}}">Create your free account</a>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>© {{YEAR}} {{APP_NAME}} · <a href="/sitemap.xml">Sitemap</a> · <a href="/docs">API</a></p>
+  </footer>
+</body>
+</html>

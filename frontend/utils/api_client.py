@@ -12,7 +12,31 @@ BACKEND_WS_URL = os.getenv("BACKEND_WS_URL", BACKEND_URL.replace("http", "ws", 1
 
 
 class APIError(Exception):
-    pass
+    """`str(e)` is a readable message; `e.status` / `e.detail` keep the structured response."""
+
+    def __init__(self, message: str, status: int = 0, detail=None):
+        super().__init__(message)
+        self.status = status
+        self.detail = detail
+
+
+def _message(detail) -> str:
+    if isinstance(detail, str):
+        return detail
+    if isinstance(detail, dict):
+        return detail.get("message") or str(detail)
+    if isinstance(detail, list):  # pydantic validation errors
+        parts = []
+        for err in detail:
+            field = str(err.get("loc", ["", ""])[-1]).replace("_", " ")
+            msg = err.get("msg", "").removeprefix("Value error, ")
+            if "pattern" in msg and field == "phone":
+                msg = "enter a valid mobile number with country code"
+            elif "pattern" in msg and field == "username":
+                msg = "use only letters, numbers, dot, dash or underscore"
+            parts.append(f"{field.capitalize()}: {msg}")
+        return " · ".join(parts)
+    return str(detail)
 
 
 def _headers(token: str | None = None) -> dict:
@@ -30,17 +54,39 @@ def _request(method: str, path: str, token: str | None = None, **kwargs):
             detail = r.json().get("detail")
         except ValueError:
             detail = r.text
-        raise APIError(detail if isinstance(detail, str) else str(detail))
+        raise APIError(_message(detail), r.status_code, detail)
     return r.json()
 
 
 # ---- auth
-def register(username, email, password):
-    return _request("POST", "/auth/register", json={"username": username, "email": email, "password": password})
+def register(username, full_name, email, phone, password):
+    return _request("POST", "/auth/register", json={"username": username, "full_name": full_name, "email": email,
+                                                    "phone": phone, "password": password})
 
 
-def login(username, password):
-    return _request("POST", "/auth/login", json={"username": username, "password": password})
+def verify(user_id, channel, code):
+    return _request("POST", "/auth/verify", json={"user_id": user_id, "channel": channel, "code": code})
+
+
+def resend(user_id, channel):
+    return _request("POST", "/auth/resend", json={"user_id": user_id, "channel": channel})
+
+
+def login(identifier, password):
+    return _request("POST", "/auth/login", json={"identifier": identifier, "password": password})
+
+
+def request_otp(identifier, purpose="login"):
+    return _request("POST", "/auth/otp/request", json={"identifier": identifier, "purpose": purpose})
+
+
+def otp_login(identifier, code):
+    return _request("POST", "/auth/otp/login", json={"identifier": identifier, "code": code})
+
+
+def reset_password(identifier, code, new_password):
+    return _request("POST", "/auth/password/reset",
+                    json={"identifier": identifier, "code": code, "new_password": new_password})
 
 
 def me(token):
@@ -54,6 +100,10 @@ def push_focus(metrics: dict, token: str | None = None):
 
 def save_session(payload: dict):
     return _request("POST", "/attention/sessions", json=payload)
+
+
+def session_feedback(session_id, self_fatigue: int):
+    return _request("PATCH", f"/attention/sessions/{session_id}/feedback", json={"self_fatigue": self_fatigue})
 
 
 def delete_session(session_id):
@@ -117,3 +167,20 @@ def latest_speech():
 
 def delete_speech(session_id):
     return _request("DELETE", f"/speech/sessions/{session_id}")
+
+
+# ---- AI: machine learning + NLP
+def model_card():
+    return _request("GET", "/ml/model")
+
+
+def predict_fatigue(features: dict):
+    return _request("POST", "/ml/predict", json=features)
+
+
+def my_fatigue():
+    return _request("GET", "/ml/fatigue/me")
+
+
+def analyze_text(text: str):
+    return _request("POST", "/nlp/analyze", json={"text": text})
