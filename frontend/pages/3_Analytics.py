@@ -4,12 +4,13 @@ import plotly.express as px
 import streamlit as st
 
 from utils import api_client as api
-from utils.ui import STATE_COLORS, metric_card, require_login, setup
+from utils.ui import STATE_COLORS, metric_card, page_header, require_login, setup
 
 setup("Analytics", "📊")
 require_login()
 
-st.title("📊 Analytics")
+page_header("📊 Analytics", "Your focus history, speaking progress, leaderboard and conversation insights.",
+            eyebrow="Insights", highlight="Analytics")
 
 try:
     summary = api.my_summary()

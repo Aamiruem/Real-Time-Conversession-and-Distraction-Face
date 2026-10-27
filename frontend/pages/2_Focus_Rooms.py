@@ -7,7 +7,7 @@ from streamlit_autorefresh import st_autorefresh
 from streamlit_webrtc import WebRtcMode, webrtc_streamer
 
 from utils import api_client as api
-from utils.ui import STATE_COLORS, STATE_EMOJI, focus_gauge, require_login, setup
+from utils.ui import STATE_COLORS, STATE_EMOJI, focus_gauge, page_header, require_login, setup
 from utils.video import MEDIA_CONSTRAINTS, RTC_CONFIGURATION, AttentionProcessor, metrics_to_payload
 from utils.ws_client import RoomSocket
 
@@ -51,9 +51,8 @@ if sock is None or sock.room_id != room["id"]:
 
 st_autorefresh(interval=1500, key="room-refresh")
 
-st.title(f"💬 {room['name']}")
-if room["description"]:
-    st.caption(room["description"])
+page_header(f"💬 {html.escape(room['name'])}", html.escape(room["description"] or "Focus-aware conversation"),
+            eyebrow="Focus room · real time", highlight=html.escape(room["name"]))
 
 messages, participants, alerts = sock.snapshot()
 video_col, chat_col, people_col = st.columns([2, 3, 1.4])

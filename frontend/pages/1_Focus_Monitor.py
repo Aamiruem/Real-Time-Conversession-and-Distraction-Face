@@ -6,14 +6,15 @@ import streamlit as st
 from streamlit_webrtc import WebRtcMode, webrtc_streamer
 
 from utils import api_client as api
-from utils.ui import fmt_duration, focus_gauge, metric_card, require_login, setup, state_badge, state_donut
+from utils.ui import (fmt_duration, focus_gauge, metric_card, page_header, require_login, setup, state_badge,
+                      state_donut)
 from utils.video import MEDIA_CONSTRAINTS, RTC_CONFIGURATION, AttentionProcessor, alarm_wav, metrics_to_payload
 
 setup("Focus Monitor", "🎥")
 require_login()
 
-st.title("🎥 Focus Monitor")
-st.caption("Look at the camera. Your focus %, distraction % and drowsiness are computed live on every frame.")
+page_header("🎥 Focus Monitor", "Look at the camera — focus %, distraction % and drowsiness are computed live on "
+            "every frame.", eyebrow="Computer vision", highlight="Focus Monitor")
 
 enable_alarm = st.sidebar.toggle("🔊 Drowsiness alarm sound", value=True)
 push_every = st.sidebar.slider("Sync to backend every (s)", 2, 15, 3)
@@ -123,6 +124,34 @@ if m and not ctx.state.playing:
         st.success(f"✅ Saved automatically as session #{saved['id']} — see it in **Analytics**.")
         if saved.get("report_url"):
             st.markdown(f"[Download S3 report]({saved['report_url']})")
+
+        # ---- machine learning: fatigue risk for this session + the user's own label for retraining
+        st.subheader("🧠 Fatigue risk (ML prediction)")
+        try:
+            pred = api.my_fatigue()
+        except api.APIError:
+            pred = None
+        if pred and pred.get("session_id") == saved["id"]:
+            colors = {"low": "#22c55e", "medium": "#eab308", "high": "#ef4444"}
+            f1, f2 = st.columns([1, 2])
+            f1.plotly_chart(focus_gauge(pred["risk_score"], f"Risk: {pred['risk'].upper()}"), use_container_width=True)
+            with f2:
+                st.markdown(f"<span class='fl-pill' style='color:{colors[pred['risk']]}'>"
+                            f"{pred['risk'].upper()} risk</span>", unsafe_allow_html=True)
+                st.markdown(f"**{pred['advice']}**")
+                for f in pred["factors"]:
+                    arrow = "⬆️ raises" if f["effect"] > 0 else "⬇️ lowers"
+                    st.markdown(f"- {f['label']}: `{f['value']}` (typical `{f['typical']}`) — {arrow} risk")
+        rated = saved.get("self_fatigue")
+        choice = st.radio("How tired do you actually feel? (trains the model for you)", [0, 1, 2],
+                          index=rated if rated is not None else None, horizontal=True,
+                          format_func=lambda v: ["😀 Fresh", "😐 A bit tired", "😫 Exhausted"][v])
+        if choice is not None and choice != rated:
+            try:
+                st.session_state["monitor_saved"] = api.session_feedback(saved["id"], choice)
+                st.toast("Thanks — your rating will be used the next time the model is retrained.")
+            except api.APIError as e:
+                st.error(str(e))
 
     b1, b2 = st.columns(2)
     if b1.button("▶️ New session", type="primary", use_container_width=True):

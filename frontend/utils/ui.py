@@ -1,9 +1,10 @@
-"""Shared page setup, theme, auth guard and chart widgets."""
+"""Shared design system: page setup, theme CSS, headers, auth guard and chart widgets."""
 import plotly.graph_objects as go
 import streamlit as st
 
 from utils import api_client as api
 
+APP_NAME = "FocusLink AI"
 STATE_COLORS = {
     "Focused": "#22c55e",
     "Distracted": "#f97316",
@@ -16,16 +17,57 @@ STATE_EMOJI = {"Focused": "🎯", "Distracted": "👀", "Drowsy": "😴", "Yawni
 
 CSS = """
 <style>
-.block-container {padding-top: 1.6rem;}
-.metric-card {background:#0f172a; border:1px solid #1e293b; border-radius:14px; padding:14px 16px; text-align:center;}
-.metric-card .v {font-size:1.6rem; font-weight:700; color:#38bdf8;}
-.metric-card .l {font-size:.75rem; color:#94a3b8; text-transform:uppercase; letter-spacing:.05em;}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+:root {--fl-bg:#0b1120; --fl-surface:#111a2e; --fl-line:#1e2a44; --fl-text:#e2e8f0; --fl-muted:#94a3b8;
+       --fl-accent:#38bdf8; --fl-accent2:#a78bfa;}
+html, body, [class*="css"], .stMarkdown, .stButton button, input, textarea, select {font-family: Inter, system-ui, sans-serif !important;}
+.stApp {background: radial-gradient(1000px 500px at 85% -10%, #1e1b4b55 0%, transparent 60%),
+        radial-gradient(800px 420px at -10% 0%, #0c4a6e55 0%, transparent 55%), var(--fl-bg);}
+.block-container {padding-top: 1.4rem; max-width: 1280px;}
+[data-testid="stToolbar"] [data-testid="stToolbarActions"], .stDeployButton, [data-testid="stAppDeployButton"] {display:none !important;}
+[data-testid="stSidebar"] {background: #0d1526; border-right: 1px solid var(--fl-line);}
+.stButton button[kind="primary"], .stFormSubmitButton button[kind="primaryFormSubmit"] {
+    background: linear-gradient(135deg, var(--fl-accent), var(--fl-accent2)); color: #04121f; border: 0; font-weight: 700;}
+.stButton button, .stFormSubmitButton button {border-radius: 10px;}
+.stTextInput input, .stSelectbox div[data-baseweb="select"] > div {border-radius: 10px;}
+[data-testid="stForm"] {background: var(--fl-surface); border: 1px solid var(--fl-line); border-radius: 18px; padding: 18px 20px;}
+.stTabs [data-baseweb="tab-list"] {gap: 6px;}
+.stTabs [data-baseweb="tab"] {border-radius: 10px 10px 0 0; padding: 8px 14px;}
+
+.fl-brand {display:flex; align-items:center; gap:10px; font-weight:800; font-size:1.15rem; color:var(--fl-text); margin:4px 0 6px;}
+.fl-brand .dot {width:26px; height:26px; border-radius:50%; border:4px solid var(--fl-accent);
+                box-shadow: inset 0 0 0 5px #0d1526, inset 0 0 0 20px var(--fl-accent2);}
+.fl-user {background:var(--fl-surface); border:1px solid var(--fl-line); border-radius:12px; padding:10px 12px; margin:6px 0 10px;}
+.fl-user .n {font-weight:700; color:var(--fl-text);} .fl-user .e {font-size:.78rem; color:var(--fl-muted);}
+.fl-header {margin: 0 0 18px;}
+.fl-header .eyebrow {color:var(--fl-accent); font-weight:600; font-size:.75rem; letter-spacing:.08em; text-transform:uppercase;}
+.fl-header h1 {font-size:2.2rem; font-weight:800; letter-spacing:-.02em; margin:2px 0 4px; padding:0; color:var(--fl-text);}
+.fl-header h1 span {background:linear-gradient(135deg,var(--fl-accent),var(--fl-accent2)); -webkit-background-clip:text;
+                    background-clip:text; color:transparent;}
+.fl-header p {color:var(--fl-muted); margin:0; font-size:1rem;}
+.fl-card {background:var(--fl-surface); border:1px solid var(--fl-line); border-radius:18px; padding:18px 20px; height:100%;
+          color:var(--fl-text);}
+.fl-card h3 {margin:6px 0 6px; font-size:1.05rem;} .fl-card p {color:var(--fl-muted); font-size:.92rem; margin:0;}
+.fl-card .ic {font-size:1.6rem;}
+.fl-hero h1 {font-size:2.8rem; line-height:1.08; font-weight:800; letter-spacing:-.02em; color:var(--fl-text); padding:0; margin:8px 0 12px;}
+.fl-hero h1 span {background:linear-gradient(135deg,var(--fl-accent),var(--fl-accent2)); -webkit-background-clip:text;
+                  background-clip:text; color:transparent;}
+.fl-hero p.lead {color:var(--fl-muted); font-size:1.08rem;}
+.fl-hero ul {list-style:none; padding:0; margin:18px 0 0;}
+.fl-hero li {color:var(--fl-text); margin:9px 0; font-size:.98rem;}
+.fl-pill {display:inline-block; background:#0c4a6e55; color:#7dd3fc; border:1px solid #0c4a6e; border-radius:999px;
+          padding:3px 10px; font-size:.75rem; font-weight:600;}
+.fl-otp-dev {background:#422006; border:1px solid #854d0e; color:#fde68a; border-radius:12px; padding:10px 14px; font-size:.88rem;}
+
+.metric-card {background:var(--fl-surface); border:1px solid var(--fl-line); border-radius:14px; padding:14px 16px; text-align:center;}
+.metric-card .v {font-size:1.6rem; font-weight:700; color:var(--fl-accent);}
+.metric-card .l {font-size:.72rem; color:var(--fl-muted); text-transform:uppercase; letter-spacing:.05em;}
 .state-badge {border-radius:14px; padding:14px 18px; font-size:1.3rem; font-weight:700; color:white;}
-.chat-msg {background:#111827; border-radius:12px; padding:8px 12px; margin:6px 0; border-left:4px solid #38bdf8;}
+.chat-msg {background:#111827; border-radius:12px; padding:8px 12px; margin:6px 0; border-left:4px solid #38bdf8; color:var(--fl-text);}
 .chat-msg.me {border-left-color:#22c55e; background:#0b2a1a;}
 .chat-msg .meta {font-size:.72rem; color:#94a3b8;}
 .chat-msg .toxic {color:#f87171; font-size:.72rem;}
-.participant {display:flex; justify-content:space-between; padding:6px 10px; border-radius:10px; background:#0f172a; margin:4px 0;}
+.participant {display:flex; justify-content:space-between; padding:6px 10px; border-radius:10px; background:#0f172a; margin:4px 0; color:var(--fl-text);}
 .alarm {background:#7f1d1d; color:#fecaca; padding:10px 14px; border-radius:10px; font-weight:600;}
 .prompt-card {background:#0f172a; border:1px solid #1e293b; border-left:4px solid #38bdf8; border-radius:12px;
               padding:12px 16px; margin:4px 0 14px; font-size:1.1rem; color:#e2e8f0;}
@@ -35,12 +77,26 @@ CSS = """
 .transcript .w-unclear {text-decoration:underline wavy #ef4444; text-underline-offset:4px;}
 </style>
 """
+HIDE_SIDEBAR = """<style>[data-testid="stSidebar"], [data-testid="stSidebarCollapsedControl"] {display:none;}</style>"""
 
 
 def setup(title: str, icon: str = "🎯"):
-    st.set_page_config(page_title=f"{title} · FocusLink AI", page_icon=icon, layout="wide")
+    st.set_page_config(page_title=f"{title} · {APP_NAME}", page_icon=icon, layout="wide",
+                       menu_items={"About": f"{APP_NAME} — focus tracking, speech coaching and fatigue prediction."})
     st.markdown(CSS, unsafe_allow_html=True)
     _sync_login()
+
+
+def page_header(title: str, subtitle: str = "", eyebrow: str = "", highlight: str = ""):
+    """Gradient page title; `highlight` is the part of the title drawn in the brand gradient."""
+    shown = title.replace(highlight, f"<span>{highlight}</span>") if highlight else title
+    st.markdown(f"<div class='fl-header'><div class='eyebrow'>{eyebrow}</div><h1>{shown}</h1><p>{subtitle}</p></div>",
+                unsafe_allow_html=True)
+
+
+def card(col, icon: str, title: str, text: str):
+    col.markdown(f"<div class='fl-card'><div class='ic'>{icon}</div><h3>{title}</h3><p>{text}</p></div>",
+                 unsafe_allow_html=True)
 
 
 def _sync_login():
@@ -72,15 +128,23 @@ def logout():
     st.rerun()
 
 
+def sidebar_user():
+    user = st.session_state["user"]
+    with st.sidebar:
+        st.markdown(f"<div class='fl-brand'><div class='dot'></div>{APP_NAME}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='fl-user'><div class='n'>{user.get('full_name') or user['username']}</div>"
+                    f"<div class='e'>@{user['username']} · {user['email']}</div></div>", unsafe_allow_html=True)
+        if st.button("Log out", use_container_width=True, key="logout"):
+            logout()
+
+
 def require_login():
     if not st.session_state.get("token"):
-        st.warning("Please log in from the **Home** page first.")
-        st.page_link("app.py", label="Go to login", icon="🔐")
+        st.markdown(HIDE_SIDEBAR, unsafe_allow_html=True)
+        st.warning("Please sign in first.")
+        st.page_link("Home.py", label="Go to sign in", icon="🔐")
         st.stop()
-    with st.sidebar:
-        st.markdown(f"**Signed in as** `{st.session_state['user']['username']}`")
-        if st.button("Log out", use_container_width=True):
-            logout()
+    sidebar_user()
 
 
 def metric_card(col, value, label):
