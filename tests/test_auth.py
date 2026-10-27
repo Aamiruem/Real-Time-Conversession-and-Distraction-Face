@@ -63,3 +63,18 @@ def test_otp_login_and_password_reset(client, verified_user):
                     json={"identifier": creds["email"], "code": code, "new_password": "newpass99"})
     assert r.status_code == 200
     assert client.post("/auth/login", json={"identifier": creds["username"], "password": "newpass99"}).status_code == 200
+
+
+def test_easy_signup_without_verification(client, monkeypatch):
+    from backend.config import settings
+
+    monkeypatch.setattr(settings, "REQUIRE_VERIFICATION", False)
+    assert client.get("/auth/config").json() == {"require_verification": False}
+    r = client.post("/auth/register", json={"username": "easy1", "email": "easy1@example.com", "password": "easy1234"})
+    assert r.status_code == 200 and r.json()["token"]["access_token"] and not r.json()["verification_required"]
+    assert client.post("/auth/login", json={"identifier": "easy1@example.com", "password": "easy1234"}).status_code == 200
+
+
+def test_phone_required_when_verifying(client):
+    r = client.post("/auth/register", json={"username": "nophone", "email": "np@example.com", "password": "abc12345"})
+    assert r.status_code == 422

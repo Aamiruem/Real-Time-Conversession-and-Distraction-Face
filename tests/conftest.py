@@ -8,7 +8,8 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 _db = Path(tempfile.mkdtemp()) / "test.db"
 os.environ.update(DATABASE_URL=f"sqlite:///{_db.as_posix()}", AWS_ENABLED="false", OTP_DEV_MODE="true",
-                  OTP_RESEND_SECONDS="0", SECRET_KEY="test-secret")
+                  OTP_RESEND_SECONDS="0", SECRET_KEY="test-secret",
+                  REQUIRE_VERIFICATION="true")
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
