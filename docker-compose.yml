@@ -1,3 +1,5 @@
+# Local:  docker compose up --build            -> http://localhost  (landing)  and  http://localhost/app/
+# AWS:    set DATABASE_URL to RDS in .env and run: docker compose up -d --build backend frontend nginx
 services:
   db:
     image: postgres:16
@@ -7,8 +9,10 @@ services:
       POSTGRES_DB: focuslink
     volumes:
       - pgdata:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U focuslink"]
+      interval: 5s
+      retries: 10
 
   backend:
     build:
@@ -16,11 +20,13 @@ services:
       dockerfile: Dockerfile.backend
     env_file: .env
     environment:
-      DATABASE_URL: postgresql+psycopg2://focuslink:focuslink@db:5432/focuslink
+      DATABASE_URL: ${DATABASE_URL_OVERRIDE:-postgresql+psycopg2://focuslink:focuslink@db:5432/focuslink}
+      SITE_URL: ${SITE_URL:-http://localhost}
+      APP_URL: ${APP_URL:-http://localhost/app/}
     depends_on:
-      - db
-    ports:
-      - "8000:8000"
+      db:
+        condition: service_healthy
+    restart: unless-stopped
 
   frontend:
     build:
@@ -30,10 +36,21 @@ services:
     environment:
       BACKEND_URL: http://backend:8000
       BACKEND_WS_URL: ws://backend:8000
+      STREAMLIT_SERVER_BASE_URL_PATH: app
     depends_on:
       - backend
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:1.27-alpine
+    volumes:
+      - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     ports:
-      - "8501:8501"
+      - "80:80"
+    depends_on:
+      - backend
+      - frontend
+    restart: unless-stopped
 
 volumes:
   pgdata:

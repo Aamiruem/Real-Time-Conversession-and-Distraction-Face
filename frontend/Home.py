@@ -173,7 +173,7 @@ with panel:
             st.rerun()
         st.stop()
 
-    t_in, t_up, t_otp, t_reset = st.tabs(["🔐 Sign in", "✨ Create account", "📲 Sign in with OTP", "🔑 Forgot password"])
+    t_in, t_up, t_otp, t_reset = st.tabs(["🔐 Sign in", "✨ Sign up", "📲 OTP login", "🔑 Reset password"])
 
     # ---------------------------------------------------------------- password sign-in
     with t_in:

@@ -10,3 +10,9 @@ python-dotenv==1.0.1
 psycopg2-binary==2.9.9
 boto3==1.35.30
 vaderSentiment==3.3.2
+
+# ML model + NLP engine used by the API
+numpy==1.26.4
+pandas==2.2.3
+scikit-learn==1.5.2
+joblib==1.4.2
