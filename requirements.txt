@@ -1,0 +1,31 @@
+# ---------- Backend (FastAPI + DB + Auth) ----------
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+sqlalchemy==2.0.35
+pydantic==2.9.2
+email-validator==2.2.0
+PyJWT==2.9.0
+bcrypt==4.2.0
+python-dotenv==1.0.1
+psycopg2-binary==2.9.9        # PostgreSQL / AWS RDS driver
+
+# ---------- AWS ----------
+boto3==1.35.30
+
+# ---------- NLP ----------
+vaderSentiment==3.3.2
+
+# ---------- Computer Vision ----------
+opencv-python-headless==4.10.0.84
+mediapipe==0.10.14
+numpy==1.26.4
+
+# ---------- Frontend (Streamlit) ----------
+streamlit==1.38.0
+streamlit-webrtc==0.47.9
+streamlit-autorefresh==1.0.1
+av==12.3.0
+websocket-client==1.8.0
+requests==2.32.3
+pandas==2.2.3
+plotly==5.24.1
