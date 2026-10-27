@@ -63,7 +63,8 @@ with tab_speech:
                                 title="Speaking confidence over time"), use_container_width=True)
         first, last = sp.iloc[0], sp.iloc[-1]
         a, b, cc = st.columns(3)
-        a.metric("Latest confidence", f"{last['confidence']:.0f}%", f"{last['confidence'] - first['confidence']:+.0f} since first")
+        a.metric("Latest confidence", f"{last['confidence']:.0f}%",
+                 f"{last['confidence'] - first['confidence']:+.0f} since first")
         b.metric("Latest pace", f"{last['wpm']:.0f} wpm")
         cc.metric("Fillers (latest)", int(last["fillers"]), f"{int(last['fillers'] - first['fillers']):+d} since first",
                   delta_color="inverse")

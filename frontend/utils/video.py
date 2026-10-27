@@ -56,14 +56,22 @@ class AudioCollector(AudioProcessorBase):
                     self._chunks.append(pcm)
                     self._samples += len(pcm)
 
+    @staticmethod
+    def _silent(frame: av.AudioFrame) -> av.AudioFrame:
+        # The track must be sent back or streamlit-webrtc never pulls (processes) it — send silence, no echo.
+        out = av.AudioFrame.from_ndarray(np.zeros_like(frame.to_ndarray()), format=frame.format.name,
+                                         layout=frame.layout.name)
+        out.sample_rate, out.pts, out.time_base = frame.sample_rate, frame.pts, frame.time_base
+        return out
+
     def recv(self, frame: av.AudioFrame) -> av.AudioFrame:
         self._collect(frame)
-        return frame
+        return self._silent(frame)
 
     async def recv_queued(self, frames: list[av.AudioFrame]) -> list[av.AudioFrame]:
         for f in frames:  # keep every frame: the default implementation drops all but the last
             self._collect(f)
-        return frames
+        return [self._silent(f) for f in frames]
 
     @property
     def seconds(self) -> float:

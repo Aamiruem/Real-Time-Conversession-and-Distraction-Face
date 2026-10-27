@@ -140,7 +140,6 @@ with left:
         media_stream_constraints=MEDIA_CONSTRAINTS_WITH_MIC,
         video_processor_factory=AttentionProcessor,
         audio_processor_factory=AudioCollector,
-        sendback_audio=False,
         async_processing=True,
     )
 with right:

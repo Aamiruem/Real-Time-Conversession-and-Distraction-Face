@@ -115,7 +115,7 @@ def voice_features(audio: np.ndarray) -> dict:
 # ------------------------------------------------------------ read-aloud check
 def compare_to_passage(words: list[dict], passage: str) -> dict:
     said = [_norm(w["word"]) for w in words if _norm(w["word"]) and not _is_filler(w["word"])]
-    target = [w for w in (_norm(t) for t in passage.split()) if w]
+    target = [w for w in (_norm(t) for t in passage.split()) if w and not _is_filler(w)]
     sm = difflib.SequenceMatcher(a=target, b=said, autojunk=False)
     missed, misread = [], []
     matched = sum(b.size for b in sm.get_matching_blocks())
