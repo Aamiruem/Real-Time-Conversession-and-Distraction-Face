@@ -1,27 +1,14 @@
 """Speech-coach result widgets and audio decoding, shared by the Speech Coach page and the AI Lab."""
 import html
-import io
 
-import av
-import numpy as np
 import plotly.graph_objects as go
 import streamlit as st
 
 from utils.ui import focus_gauge, metric_card
 from utils.video import ROOT  # noqa: F401  (puts the repo root on sys.path)
 
-from speech.analyzer import LABELS, SAMPLE_RATE  # noqa: E402
-
-
-def decode_audio(data: bytes) -> np.ndarray:
-    """Any audio/video file (wav, mp3, m4a, ogg, webm…) -> float32 mono 16 kHz."""
-    resampler = av.AudioResampler(format="s16", layout="mono", rate=SAMPLE_RATE)
-    chunks = []
-    with av.open(io.BytesIO(data)) as container:
-        for frame in container.decode(audio=0):
-            chunks += [f.to_ndarray().reshape(-1) for f in resampler.resample(frame)]
-    chunks += [f.to_ndarray().reshape(-1) for f in resampler.resample(None)]
-    return (np.concatenate(chunks).astype(np.float32) / 32768.0) if chunks else np.zeros(0, np.float32)
+from speech.analyzer import LABELS  # noqa: E402
+from speech.audio import decode_audio  # noqa: E402,F401  (re-exported for the AI Lab)
 
 
 def score_bars(scores: dict):

@@ -16,3 +16,8 @@ numpy==1.26.4
 pandas==2.2.3
 scikit-learn==1.5.2
 joblib==1.4.2
+
+# Speech coach analysis runs in the API for the React frontend
+faster-whisper==1.1.1
+av==12.3.0
+python-multipart==0.0.12

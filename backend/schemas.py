@@ -20,7 +20,8 @@ class UserCreate(BaseModel):
     username: str = Field(min_length=3, max_length=50, pattern=r"^[A-Za-z0-9_.-]+$")
     full_name: str = Field(default="", max_length=100)
     email: EmailStr
-    phone: str = Field(pattern=PHONE_RE, description="Mobile number in international format, e.g. +919876543210")
+    phone: str | None = Field(default=None, pattern=PHONE_RE,
+                              description="Mobile number in international format, e.g. +919876543210")
     password: str = Field(min_length=8, max_length=128)
 
     @field_validator("password")
@@ -50,9 +51,11 @@ class UserOut(BaseModel):
 class RegisterOut(BaseModel):
     user_id: int
     email: str
-    phone: str
+    phone: str | None
     message: str
+    verification_required: bool = True
     dev_codes: dict[str, str] | None = None  # only when OTP_DEV_MODE is on and delivery is not configured
+    token: "Token | None" = None             # issued straight away when verification is switched off
 
 
 class VerifyIn(BaseModel):
@@ -101,6 +104,7 @@ class Token(BaseModel):
 
 
 VerifyOut.model_rebuild()
+RegisterOut.model_rebuild()
 
 
 class FocusUpdate(BaseModel):

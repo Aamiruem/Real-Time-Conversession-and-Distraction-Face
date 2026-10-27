@@ -8,7 +8,7 @@ from backend.database import Base
 
 
 def utcnow():
-    return datetime.now(timezone.utc)
+    return datetime.now(timezone.utc)  # noqa: UP017
 
 
 class User(Base):

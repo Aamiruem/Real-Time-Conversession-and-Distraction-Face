@@ -1,6 +1,6 @@
 import json
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -10,6 +10,7 @@ from backend.models import SpeechSession, User
 from backend.schemas import SpeechSessionCreate, SpeechSessionOut
 
 router = APIRouter(prefix="/speech", tags=["speech"])
+MAX_UPLOAD_MB = 25
 
 SCORE_FIELDS = ("fluency", "pace", "clarity", "voice", "assertiveness", "eye_contact")
 
@@ -19,8 +20,46 @@ def to_out(s: SpeechSession, with_report: bool = False) -> SpeechSessionOut:
     return SpeechSessionOut(**fields, report=json.loads(s.report) if with_report else None)
 
 
+@router.post("/analyze")
+def analyze_upload(
+    audio: UploadFile = File(..., description="Recording: webm/ogg/wav/mp3/m4a"),
+    mode: str = Form("free"),
+    prompt: str = Form(""),
+    eye_contact: float | None = Form(None, ge=0, le=100),
+    whisper_model: str = Form("base.en"),
+    save: bool = Form(True),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Transcribe + score a recording with the speech coach engine; saved as a speech session by default."""
+    from speech.analyzer import analyze
+    from speech.audio import decode_audio
+
+    data = audio.file.read(MAX_UPLOAD_MB * 1024 * 1024 + 1)
+    if len(data) > MAX_UPLOAD_MB * 1024 * 1024:
+        raise HTTPException(413, f"Recording is larger than {MAX_UPLOAD_MB} MB")
+    try:
+        samples = decode_audio(data)
+    except Exception as exc:  # unreadable / unsupported container
+        raise HTTPException(400, f"Could not read the audio file: {exc}") from exc
+    if len(samples) < 3 * 16000:
+        raise HTTPException(400, "Recording too short — speak for at least a few seconds")
+    report = analyze(samples, eye_contact=eye_contact, model_size=whisper_model if whisper_model in ("base.en", "small.en")
+                     else "base.en", passage=prompt if mode == "read" else None)
+    if report.get("error"):
+        raise HTTPException(422, report["error"])
+    session_id = None
+    if save:
+        session_id = save_report(SpeechSessionCreate(report=report, mode=mode, prompt=prompt), user, db).id
+    return {"session_id": session_id, "report": report}
+
+
 @router.post("/sessions", response_model=SpeechSessionOut)
 def save(data: SpeechSessionCreate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return save_report(data, user, db)
+
+
+def save_report(data: SpeechSessionCreate, user: User, db: Session) -> SpeechSessionOut:
     r = data.report
     if "confidence" not in r or "scores" not in r:
         raise HTTPException(422, "report must be a Speech Coach analysis")

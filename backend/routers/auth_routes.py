@@ -6,6 +6,7 @@ from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from backend.auth import create_access_token, get_current_user, hash_password, verify_password
+from backend.config import settings
 from backend.database import get_db
 from backend.models import User
 from backend.schemas import (OtpLoginIn, OtpRequestIn, OtpSentOut, PasswordResetIn, RegisterOut, ResendIn, Token,
@@ -41,18 +42,25 @@ def unverified_error(user: User) -> HTTPException:
 
 @router.post("/register", response_model=RegisterOut)
 def register(data: UserCreate, db: Session = Depends(get_db)):
-    email, phone = data.email.lower(), normalize_phone(data.phone)
-    clash = db.scalar(select(User).where(or_(User.username == data.username, User.email == email,
-                                             User.phone == phone)))
+    email, phone = data.email.lower(), normalize_phone(data.phone) if data.phone else None
+    if settings.REQUIRE_VERIFICATION and not phone:
+        raise HTTPException(422, "Mobile number is required")
+    taken = [User.username == data.username, User.email == email] + ([User.phone == phone] if phone else [])
+    clash = db.scalar(select(User).where(or_(*taken)))
     if clash:
         field = ("Username" if clash.username == data.username else "Email" if clash.email == email
                  else "Mobile number")
         raise HTTPException(400, f"{field} is already registered")
     user = User(username=data.username, full_name=data.full_name.strip(), email=email, phone=phone,
                 password_hash=hash_password(data.password))
+    if not settings.REQUIRE_VERIFICATION:  # easy mode: usable immediately
+        user.email_verified = user.phone_verified = True
     db.add(user)
     db.commit()
     db.refresh(user)
+    if not settings.REQUIRE_VERIFICATION:
+        return RegisterOut(user_id=user.id, email=email, phone=phone, verification_required=False,
+                           token=token_for(user), message="Account created — you're signed in")
 
     dev = {}
     for channel in ("email", "sms"):
@@ -138,6 +146,12 @@ def reset_password(data: PasswordResetIn, db: Session = Depends(get_db)):
         user.phone_verified = True
     db.commit()
     return {"ok": True, "message": "Password updated — you can sign in now"}
+
+
+@router.get("/config")
+def auth_config():
+    """Tells the frontend whether sign-up needs email + mobile codes."""
+    return {"require_verification": settings.REQUIRE_VERIFICATION}
 
 
 @router.get("/me", response_model=UserOut)

@@ -33,9 +33,9 @@ class Settings:
     # Defaults to on only while AWS is disabled — never enable it in production.
     OTP_DEV_MODE: bool = _bool("OTP_DEV_MODE", "false" if _bool("AWS_ENABLED") else "true")
 
-    # Public site (SEO landing page)
-    SITE_URL: str = os.getenv("SITE_URL", "http://localhost:8000").rstrip("/")
-    APP_URL: str = os.getenv("APP_URL", "http://localhost:8501").rstrip("/")
+    # Easy sign-up: when false, accounts work immediately (no email/SMS codes, mobile optional).
+    # Defaults to on only when AWS can actually deliver codes.
+    REQUIRE_VERIFICATION: bool = _bool("REQUIRE_VERIFICATION", "true" if _bool("AWS_ENABLED") else "false")
 
 
 settings = Settings()
