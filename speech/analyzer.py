@@ -60,7 +60,8 @@ def transcribe(audio: np.ndarray, model_size: str = "base.en") -> list[dict]:
         initial_prompt=FILLER_PROMPT, condition_on_previous_text=False,
     )
     return [
-        {"word": w.word.strip(), "start": round(w.start, 2), "end": round(w.end, 2), "prob": round(w.probability, 3)}
+        {"word": w.word.strip(), "start": round(float(w.start), 2), "end": round(float(w.end), 2),
+         "prob": round(float(w.probability), 3)}  # plain floats so the report is JSON-serialisable
         for seg in segments for w in seg.words if w.word.strip()
     ]
 

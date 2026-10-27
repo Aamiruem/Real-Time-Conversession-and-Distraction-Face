@@ -39,7 +39,9 @@ with right:
     donut_slot = st.empty()
 
 if ctx.state.playing:
-    st.session_state.setdefault("monitor_started_at", datetime.now(timezone.utc).isoformat())
+    new_take = st.session_state.pop("monitor_saved", None) is not None  # previous take already saved
+    if new_take or "monitor_started_at" not in st.session_state:
+        st.session_state["monitor_started_at"] = datetime.now(timezone.utc).isoformat()
     last_push, was_drowsy = 0.0, False
     while ctx.state.playing:
         proc = ctx.video_processor
@@ -98,8 +100,9 @@ if m and not ctx.state.playing:
     g2.plotly_chart(state_donut(m.focus_pct, m.distracted_pct, m.drowsy_pct, m.no_face_pct),
                     use_container_width=True)
 
-    b1, b2 = st.columns(2)
-    if b1.button("💾 Save session (DB + AWS S3 report)", type="primary", use_container_width=True):
+    # saved automatically as soon as the stream stops, so a page refresh never loses the session
+    saved = st.session_state.get("monitor_saved")
+    if saved is None:
         payload = {
             "started_at": st.session_state.get("monitor_started_at", datetime.now(timezone.utc).isoformat()),
             "duration_sec": m.elapsed_sec,
@@ -113,17 +116,35 @@ if m and not ctx.state.playing:
             "timeline": m.timeline,
         }
         try:
-            saved = api.save_session(payload)
-            st.success(f"Session #{saved['id']} saved.")
-            if saved.get("report_url"):
-                st.markdown(f"[Download S3 report]({saved['report_url']})")
-            st.session_state.pop("monitor_last", None)
-            st.session_state.pop("monitor_started_at", None)
+            saved = st.session_state["monitor_saved"] = api.save_session(payload)
+        except api.APIError as e:
+            st.error(f"Could not save the session: {e}")
+    if saved:
+        st.success(f"✅ Saved automatically as session #{saved['id']} — see it in **Analytics**.")
+        if saved.get("report_url"):
+            st.markdown(f"[Download S3 report]({saved['report_url']})")
+
+    b1, b2 = st.columns(2)
+    if b1.button("▶️ New session", type="primary", use_container_width=True):
+        for k in ("monitor_last", "monitor_started_at", "monitor_saved"):
+            st.session_state.pop(k, None)
+        st.rerun()
+    if saved and b2.button("🗑️ Delete this session", use_container_width=True):
+        try:
+            api.delete_session(saved["id"])
         except api.APIError as e:
             st.error(str(e))
-    if b2.button("🗑️ Discard", use_container_width=True):
-        st.session_state.pop("monitor_last", None)
-        st.session_state.pop("monitor_started_at", None)
+        for k in ("monitor_last", "monitor_started_at", "monitor_saved"):
+            st.session_state.pop(k, None)
         st.rerun()
 elif not ctx.state.playing:
     st.info("Press **START** to begin a focus session. Allow camera access in your browser.")
+    try:
+        history = api.sessions()
+    except api.APIError:
+        history = []
+    if history:
+        last = history[-1]
+        st.caption(f"Last session · {last['started_at'][:16].replace('T', ' ')} UTC · "
+                   f"{last['duration_sec'] / 60:.1f} min · 🎯 {last['focus_pct']:.0f}% focused · "
+                   f"👀 {last['distracted_pct']:.0f}% distracted · 😴 {last['drowsy_pct']:.0f}% drowsy")

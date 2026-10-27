@@ -5,6 +5,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends libgl1 libglib2
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY cv ./cv
+COPY speech ./speech
 COPY frontend ./frontend
 EXPOSE 8501
 CMD ["streamlit", "run", "frontend/app.py", "--server.address=0.0.0.0", "--server.port=8501"]

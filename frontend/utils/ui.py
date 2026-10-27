@@ -27,6 +27,12 @@ CSS = """
 .chat-msg .toxic {color:#f87171; font-size:.72rem;}
 .participant {display:flex; justify-content:space-between; padding:6px 10px; border-radius:10px; background:#0f172a; margin:4px 0;}
 .alarm {background:#7f1d1d; color:#fecaca; padding:10px 14px; border-radius:10px; font-weight:600;}
+.prompt-card {background:#0f172a; border:1px solid #1e293b; border-left:4px solid #38bdf8; border-radius:12px;
+              padding:12px 16px; margin:4px 0 14px; font-size:1.1rem; color:#e2e8f0;}
+.prompt-card .l {font-size:.72rem; color:#94a3b8; text-transform:uppercase; letter-spacing:.05em;}
+.transcript {line-height:1.9; background:#0f172a; color:#e2e8f0; border-radius:12px; padding:12px 14px;}
+.transcript .w-filler {background:#9a3412; color:#ffedd5; border-radius:4px; padding:0 3px;}
+.transcript .w-unclear {text-decoration:underline wavy #ef4444; text-underline-offset:4px;}
 </style>
 """
 

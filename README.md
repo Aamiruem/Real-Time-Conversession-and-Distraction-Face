@@ -13,6 +13,7 @@ with NLP.
 | AI state engine | Time-based rules → Focused / Distracted / Drowsy / Yawning / No Face, live **Focus %** & **Distraction %**, drowsiness alarm | Python |
 | Real-time conversations | WebSocket chat rooms, presence, typing, live focus of every participant, drowsy alerts to the room | FastAPI WebSockets |
 | NLP | Sentiment (VADER or **Amazon Comprehend**), toxicity flag, keyword extraction, extractive conversation summary | vaderSentiment, boto3 |
+| Speech Coach | Camera + mic: transcript, pace (WPM), filler words, hesitation pauses, pronunciation clarity, read-aloud accuracy, pitch variety, assertive wording, eye contact → **confidence score** + coaching tips + a "say it like this" rewrite | faster-whisper, NumPy, streamlit-webrtc |
 | Backend | REST API, JWT auth, bcrypt passwords | FastAPI, PyJWT |
 | Database | Users, sessions, live snapshots, rooms, messages | SQLAlchemy · SQLite (dev) / PostgreSQL / **AWS RDS** |
 | Cloud | Session reports to **S3** (pre-signed links), RDS, Comprehend, EC2 deploy | boto3, AWS CLI, Docker |
@@ -34,18 +35,22 @@ Real Time Conversession/
 │   │   ├── auth_routes.py      # /auth/register, /auth/login, /auth/me
 │   │   ├── attention_routes.py # /attention/update, /attention/sessions, /attention/snapshots
 │   │   ├── chat_routes.py      # /rooms, messages, insights, WS /ws/rooms/{id}
-│   │   └── analytics_routes.py # /analytics/me, /analytics/leaderboard
+│   │   ├── analytics_routes.py # /analytics/me, /analytics/leaderboard
+│   │   └── speech_routes.py    # /speech/sessions (saved Speech Coach reports)
 │   └── services/
 │       ├── nlp_service.py      # sentiment, toxicity, keywords, summary
 │       └── aws_service.py      # S3 reports, Comprehend
 ├── cv/
 │   └── attention_detector.py   # the computer-vision attention engine
+├── speech/
+│   └── analyzer.py             # speech coach: transcript, fluency, clarity, voice, confidence, tips
 ├── frontend/
 │   ├── app.py                  # Streamlit home: login / register
 │   ├── pages/
 │   │   ├── 1_Focus_Monitor.py  # live webcam dashboard + alarm + save session
 │   │   ├── 2_Focus_Rooms.py    # real-time chat + shared live focus
-│   │   └── 3_Analytics.py      # history, leaderboard, NLP insights
+│   │   ├── 3_Analytics.py      # history, leaderboard, NLP insights, speech progress
+│   │   └── 4_Speech_Coach.py   # talk to the camera → confidence + pronunciation coaching
 │   └── utils/
 │       ├── api_client.py       # REST client
 │       ├── ws_client.py        # background WebSocket client
@@ -70,11 +75,16 @@ pip install -r requirements.txt
 copy .env.example .env
 
 # Terminal 1 — backend (API docs at http://localhost:8000/docs)
-uvicorn backend.main:app --reload --port 8000
+.venv\Scripts\python.exe -m uvicorn backend.main:app --reload --port 8000
 
 # Terminal 2 — frontend (http://localhost:8501)
-streamlit run frontend/app.py
+.venv\Scripts\python.exe -m streamlit run frontend/app.py
 ```
+
+Always run with the project's `.venv` Python. With system Python 3.14 the imports fail (`No module named
+'jwt'` / `mediapipe`), and a mismatched `pyarrow` shows "To use Custom Components in Streamlit, you need to
+install PyArrow". The first Speech Coach analysis downloads the speech model (~150 MB). Your login is kept
+in the URL (`?session=…`), so refreshing the page keeps you signed in.
 
 To test conversations, open a second browser (or an incognito window), register a second user, and
 join the same room.
