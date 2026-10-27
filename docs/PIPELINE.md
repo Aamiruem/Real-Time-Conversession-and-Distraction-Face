@@ -4,12 +4,14 @@ This guide walks through the whole project in the order you would build and ship
 says what you do, which code is involved, and how to check that it works.
 
 ```
- Browser ──WebRTC──▶ Streamlit (frontend/)                 ┌──▶ AWS RDS PostgreSQL (users, sessions, chat, OTPs)
-   camera + mic        ├─ cv/      face attention engine   │
-                       ├─ speech/  speech coach engine     ├──▶ AWS S3 (session reports)
-                       └─ REST/WS ──▶ FastAPI (backend/) ──┼──▶ AWS SES (OTP email) · AWS SNS (OTP SMS)
-                                        ├─ nlp/  text AI   └──▶ Amazon Comprehend (optional sentiment)
- Google ──▶ SEO landing page (backend/web) └─ ml/   fatigue model (scikit-learn)
+ Google ──▶ Next.js (web/) — static SEO pages: /, /features/*, sitemap.xml, robots.txt
+ Browser ─▶ Next.js React app (/app/*)
+   camera ─▶ MediaPipe face landmarker in the browser (web/lib/attention.ts) — video never uploaded
+   mic    ─▶ MediaRecorder ──upload──┐
+   /api/* ──────────────────────────┴─▶ FastAPI (backend/)  ┌──▶ AWS RDS PostgreSQL (users, sessions, chat, OTPs)
+   /ws/*  ── WebSocket chat rooms ─────▶   ├─ speech/       ├──▶ AWS S3 (session reports)
+                                           ├─ nlp/          ├──▶ AWS SES (OTP email) · AWS SNS (OTP SMS)
+                                           └─ ml/           └──▶ Amazon Comprehend (optional sentiment)
 ```
 
 ---
@@ -20,12 +22,12 @@ MediaPipe needs Python 3.9–3.12, so use the project's Python 3.11 virtual envi
 
 ```powershell
 py -3.11 -m venv .venv            # or: uv venv --python 3.11
-.venv\Scripts\activate
-pip install -r requirements.txt
+.venv\Scripts\python.exe -m pip install -r requirements-backend.txt
 copy .env.example .env
+cd web; npm install; cd ..        # Node.js >= 20; also downloads the face model into web/public/mediapipe
 ```
 
-**Check:** `python -c "import mediapipe, faster_whisper, sklearn; print('ok')"`
+**Check:** `.venv\Scripts\python.exe -c "import faster_whisper, sklearn, fastapi; print('ok')"`
 
 ## 2. Database & data model
 
@@ -45,6 +47,9 @@ to delete your data.
 ## 3. Authentication (email + mobile OTP)
 
 `backend/routers/auth_routes.py` + `backend/services/otp_service.py` + `notify_service.py`
+
+**Easy mode** (`REQUIRE_VERIFICATION=false`, the default while `AWS_ENABLED=false`): `POST /auth/register`
+returns a JWT straight away, and the mobile number is optional. **Verified mode** works like this:
 
 1. `POST /auth/register` creates an unverified user and sends **two** 6-digit codes: email (SES) and SMS (SNS).
 2. `POST /auth/verify` confirms each code. Once both are confirmed, the response contains a JWT.
@@ -98,14 +103,14 @@ feedback labels, and the SEO pages. Each run uses a throw-away SQLite database.
 ## 7. Run locally
 
 ```powershell
-# Terminal 1 — API + SEO landing page   → http://localhost:8000  (docs: /docs)
-.venv\Scripts\python.exe -m uvicorn backend.main:app --reload --port 8000
-# Terminal 2 — app                       → http://localhost:8501
-.venv\Scripts\python.exe -m streamlit run frontend/Home.py
+# Terminal 1 — API → http://localhost:8010 (docs: /docs). Port 8010 avoids clashing with other local apps on 8000.
+.venv\Scripts\python.exe -m uvicorn backend.main:app --reload --port 8010
+# Terminal 2 — website + app → http://localhost:3000 (Next.js proxies /api/* to the API)
+cd web; npm run dev
 ```
 
 Or run everything in Docker, with Postgres and Nginx in front: `docker compose up --build` gives you
-http://localhost (landing page) and http://localhost/app/ (app).
+http://localhost.
 
 ## 8. AWS resources
 
@@ -123,14 +128,14 @@ Before real users can sign up:
   entity and an OTP template.
 
 Put the printed values in `.env`: `AWS_ENABLED=true`, `DATABASE_URL_OVERRIDE=…rds…`, `S3_BUCKET`,
-`SES_SENDER`, `SITE_URL=https://yourdomain.com`, `APP_URL=https://yourdomain.com/app/`.
+`SES_SENDER`, `SITE_URL=https://yourdomain.com` (baked into canonical links and the sitemap at build time).
 `OTP_DEV_MODE` is off automatically once AWS is enabled.
 
 ## 9. Go live on EC2 with HTTPS
 
 1. Launch Ubuntu EC2 (t3.large recommended for Whisper + MediaPipe). Attach an IAM role with
    `FocusLinkAIPolicy`. In the security group, open ports 22, 80 and 443.
-2. `git clone …` then run `bash aws/deploy_ec2.sh`. This builds the images and starts backend, frontend and nginx.
+2. `git clone …` then run `bash aws/deploy_ec2.sh`. This builds the images and starts backend, web and nginx.
 3. Point your domain's A record at the instance, then add HTTPS (browsers only allow camera and mic on HTTPS):
    ```bash
    sudo apt install -y certbot
@@ -141,18 +146,24 @@ Put the printed values in `.env`: `AWS_ENABLED=true`, `DATABASE_URL_OVERRIDE=…
    `ssl_certificate /etc/letsencrypt/live/yourdomain.com/fullchain.pem;` and the matching key. Mount
    `/etc/letsencrypt` into the nginx container, redirect port 80 to 443, then `docker compose up -d nginx`.
    (Alternative: an Application Load Balancer with a free ACM certificate.)
-4. **Check:** `https://yourdomain.com/` shows the landing page, `/app/` lets you sign up, and the OTP email
-   and SMS arrive.
+4. **Check:** `https://yourdomain.com/` shows the landing page, `/signup` creates an account, and the OTP
+   email and SMS arrive (verified mode).
 
 ## 10. SEO checklist after launch
 
-* The landing page (`backend/web/index.html`) already has a title, meta description, canonical link,
-  Open Graph and Twitter tags, schema.org `SoftwareApplication` + `Organization` + `FAQPage`, one H1,
-  semantic sections, a mobile-first layout, and a page that loads without JavaScript.
-* `robots.txt` and `sitemap.xml` are generated from `SITE_URL`.
+* The public pages are **prerendered to static HTML** by Next.js: the landing page and three keyword-targeted
+  feature pages (`/features/focus-tracker`, `/features/speech-coach`, `/features/fatigue-prediction`).
+  Each has a unique title and description, a canonical link, Open Graph/Twitter tags, one H1 and
+  schema.org JSON-LD (SoftwareApplication, Organization, WebSite, FAQPage, BreadcrumbList).
+* The Inter font is self-hosted through `next/font`, so there's no layout shift. The OG image and
+  icons are file-based metadata.
+* `robots.txt`, `sitemap.xml` and `manifest.webmanifest` are generated from `NEXT_PUBLIC_SITE_URL`.
+  `/app/*` and `/login` are `noindex`.
+* To rank for more keywords, add entries to `FEATURES` in `web/lib/site.ts`. Each one becomes a new
+  static page and is added to the sitemap automatically.
 * Submit `https://yourdomain.com/sitemap.xml` in Google Search Console and Bing Webmaster Tools.
 * Check the page with PageSpeed Insights and the Rich Results Test (the FAQ rich result should show up).
-* Keep the app itself under `/app/`. It sits behind a login and doesn't need to be indexed.
+* The app under `/app/` sits behind a login and is deliberately kept out of the index.
 
 ## 11. Operating it
 

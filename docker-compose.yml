@@ -1,5 +1,5 @@
-# Local:  docker compose up --build            -> http://localhost  (landing)  and  http://localhost/app/
-# AWS:    set DATABASE_URL to RDS in .env and run: docker compose up -d --build backend frontend nginx
+# Local:  docker compose up --build            -> http://localhost  (website + app)
+# AWS:    set DATABASE_URL_OVERRIDE to RDS in .env and run: docker compose up -d --build backend web nginx
 services:
   db:
     image: postgres:16
@@ -21,22 +21,19 @@ services:
     env_file: .env
     environment:
       DATABASE_URL: ${DATABASE_URL_OVERRIDE:-postgresql+psycopg2://focuslink:focuslink@db:5432/focuslink}
-      SITE_URL: ${SITE_URL:-http://localhost}
-      APP_URL: ${APP_URL:-http://localhost/app/}
     depends_on:
       db:
         condition: service_healthy
     restart: unless-stopped
 
-  frontend:
+  web:
     build:
       context: .
-      dockerfile: Dockerfile.frontend
-    env_file: .env
+      dockerfile: Dockerfile.web
+      args:
+        NEXT_PUBLIC_SITE_URL: ${SITE_URL:-http://localhost}
     environment:
       BACKEND_URL: http://backend:8000
-      BACKEND_WS_URL: ws://backend:8000
-      STREAMLIT_SERVER_BASE_URL_PATH: app
     depends_on:
       - backend
     restart: unless-stopped
@@ -49,7 +46,7 @@ services:
       - "80:80"
     depends_on:
       - backend
-      - frontend
+      - web
     restart: unless-stopped
 
 volumes:

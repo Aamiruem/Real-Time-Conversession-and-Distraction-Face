@@ -14,12 +14,12 @@ read -r
 
 # Using RDS (DATABASE_URL_OVERRIDE in .env)? start without the local db container.
 if grep -q "^DATABASE_URL_OVERRIDE=" .env; then
-  sudo docker compose up -d --build --no-deps backend frontend nginx
+  sudo docker compose up -d --build --no-deps backend web nginx
 else
   sudo docker compose up -d --build
 fi
 
 IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
-echo "Landing page: http://$IP/        App: http://$IP/app/"
+echo "Website + app: http://$IP/"
 echo "NOTE: browsers only allow the webcam/mic on HTTPS. Point your domain at $IP and follow"
 echo "      docs/PIPELINE.md step 9 (Let's Encrypt) — or use an ALB with an ACM certificate."
