@@ -2,6 +2,8 @@
 import plotly.graph_objects as go
 import streamlit as st
 
+from utils import api_client as api
+
 STATE_COLORS = {
     "Focused": "#22c55e",
     "Distracted": "#f97316",
@@ -32,6 +34,36 @@ CSS = """
 def setup(title: str, icon: str = "🎯"):
     st.set_page_config(page_title=f"{title} · FocusLink AI", page_icon=icon, layout="wide")
     st.markdown(CSS, unsafe_allow_html=True)
+    _sync_login()
+
+
+def _sync_login():
+    """Keep the JWT in the URL (?session=…) so a browser refresh does not log the user out.
+
+    Streamlit wipes session_state on refresh, but the URL survives; on the next run the token
+    is validated against the backend and the login is restored.
+    """
+    token = st.session_state.get("token")
+    if token:
+        if st.query_params.get("session") != token:
+            st.query_params["session"] = token
+        return
+    saved = st.query_params.get("session")
+    if saved:
+        try:
+            st.session_state["user"] = api.me(saved)
+            st.session_state["token"] = saved
+        except api.APIError:
+            del st.query_params["session"]  # expired / invalid -> show login
+
+
+def logout():
+    sock = st.session_state.get("room_socket")
+    if sock:
+        sock.close()
+    st.session_state.clear()
+    st.query_params.clear()
+    st.rerun()
 
 
 def require_login():
@@ -42,11 +74,7 @@ def require_login():
     with st.sidebar:
         st.markdown(f"**Signed in as** `{st.session_state['user']['username']}`")
         if st.button("Log out", use_container_width=True):
-            sock = st.session_state.get("room_socket")
-            if sock:
-                sock.close()
-            st.session_state.clear()
-            st.rerun()
+            logout()
 
 
 def metric_card(col, value, label):

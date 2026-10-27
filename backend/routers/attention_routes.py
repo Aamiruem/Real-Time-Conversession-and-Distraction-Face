@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -44,6 +44,16 @@ def list_sessions(user: User = Depends(get_current_user), db: Session = Depends(
         select(AttentionSession).where(AttentionSession.user_id == user.id).order_by(AttentionSession.started_at)
     )
     return list(rows)
+
+
+@router.delete("/sessions/{session_id}")
+def delete_session(session_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    session = db.get(AttentionSession, session_id)
+    if not session or session.user_id != user.id:
+        raise HTTPException(404, "Session not found")
+    db.delete(session)
+    db.commit()
+    return {"ok": True}
 
 
 @router.get("/snapshots")

@@ -5,7 +5,7 @@ Run: streamlit run frontend/app.py
 import streamlit as st
 
 from utils import api_client as api
-from utils.ui import setup
+from utils.ui import logout, setup
 
 setup("Home", "🎯")
 
@@ -15,7 +15,7 @@ st.caption("Real-time attention, distraction & drowsiness detection with focus-a
 if st.session_state.get("token"):
     user = st.session_state["user"]
     st.success(f"Welcome back, **{user['username']}**!")
-    c1, c2, c3 = st.columns(3)
+    c1, c2, c3, c4 = st.columns(4)
     with c1:
         st.markdown("### 🎥 Focus Monitor")
         st.write("Track your focus %, distraction %, blinks, yawns, gaze and head pose live from your webcam.")
@@ -28,9 +28,12 @@ if st.session_state.get("token"):
         st.markdown("### 📊 Analytics")
         st.write("Session history, trends, leaderboard and NLP insights from your conversations.")
         st.page_link("pages/3_Analytics.py", label="Open Analytics", icon="📊")
+    with c4:
+        st.markdown("### 🗣️ Speech Coach")
+        st.write("Talk to the camera: get pronunciation, pace, filler-word and confidence feedback with tips.")
+        st.page_link("pages/4_Speech_Coach.py", label="Open Speech Coach", icon="🗣️")
     if st.button("Log out"):
-        st.session_state.clear()
-        st.rerun()
+        logout()
     st.stop()
 
 login_tab, register_tab = st.tabs(["🔐 Login", "📝 Register"])
@@ -71,6 +74,7 @@ st.markdown(
 - **AI state engine**: classifies *Focused / Distracted / Drowsy / Yawning / No Face* and computes live percentages
 - **Real-time conversations** (FastAPI WebSockets): chat rooms that share every participant's live focus score
 - **NLP**: sentiment, toxicity flagging, keyword extraction and conversation summaries
+- **Speech Coach** (faster-whisper + signal analysis): pronunciation clarity, pace, fillers, pitch variety and an overall confidence score with coaching tips
 - **Database** (SQLite / AWS RDS PostgreSQL) + **AWS S3** session reports + optional **Amazon Comprehend**
 """
 )

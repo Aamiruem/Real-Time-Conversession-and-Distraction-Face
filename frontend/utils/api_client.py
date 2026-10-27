@@ -43,6 +43,10 @@ def login(username, password):
     return _request("POST", "/auth/login", json={"username": username, "password": password})
 
 
+def me(token):
+    return _request("GET", "/auth/me", token=token)
+
+
 # ---- attention
 def push_focus(metrics: dict, token: str | None = None):
     return _request("POST", "/attention/update", token=token, json=metrics)
@@ -50,6 +54,10 @@ def push_focus(metrics: dict, token: str | None = None):
 
 def save_session(payload: dict):
     return _request("POST", "/attention/sessions", json=payload)
+
+
+def delete_session(session_id):
+    return _request("DELETE", f"/attention/sessions/{session_id}")
 
 
 def sessions():
@@ -92,3 +100,20 @@ def my_summary():
 
 def leaderboard():
     return _request("GET", "/analytics/leaderboard")
+
+
+# ---- speech coach
+def save_speech(report: dict, mode: str, prompt: str):
+    return _request("POST", "/speech/sessions", json={"report": report, "mode": mode, "prompt": prompt})
+
+
+def speech_sessions():
+    return _request("GET", "/speech/sessions")
+
+
+def latest_speech():
+    return _request("GET", "/speech/sessions/latest")
+
+
+def delete_speech(session_id):
+    return _request("DELETE", f"/speech/sessions/{session_id}")

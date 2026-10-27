@@ -27,6 +27,23 @@ TOXIC_WORDS = {
 }
 
 
+HEDGES = [
+    "i think", "i guess", "i feel like", "maybe", "probably", "perhaps", "sort of", "kind of", "not sure",
+    "hopefully", "i suppose", "just", "sorry", "um", "uh",
+]
+ASSERTIVE = ["i will", "i'll", "i recommend", "we should", "definitely", "certainly", "i'm confident", "clearly",
+             "let's", "i decided", "i know"]
+
+
+def text_confidence(texts: list[str]) -> float:
+    """0-100: how assertive the wording is (hedges pull it down, decisive phrases push it up)."""
+    text = " " + " ".join(texts).lower() + " "
+    words = max(len(text.split()), 1)
+    hedges = sum(len(re.findall(rf"\b{re.escape(h)}\b", text)) for h in HEDGES)
+    strong = sum(len(re.findall(rf"\b{re.escape(a)}(?!\w)", text)) for a in ASSERTIVE)
+    return round(max(0.0, min(100.0, 75 - 600 * hedges / words + 300 * strong / words)), 1)
+
+
 def analyze_sentiment(text: str) -> tuple[str, float]:
     if settings.USE_COMPREHEND:
         result = aws_service.comprehend_sentiment(text)
@@ -92,4 +109,6 @@ def conversation_insights(rows: list[dict]) -> dict:
         "summary": summarize_conversation(texts),
         "avg_focus_while_chatting": {u: round(sum(v) / len(v), 1) for u, v in focus_by_user.items()},
         "messages_per_user": dict(Counter(r["username"] for r in rows)),
+        "confidence_by_user": {u: text_confidence([r["content"] for r in rows if r["username"] == u])
+                               for u in {r["username"] for r in rows}},
     }

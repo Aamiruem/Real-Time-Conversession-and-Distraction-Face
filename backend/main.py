@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.config import settings
 from backend.database import init_db
-from backend.routers import analytics_routes, attention_routes, auth_routes, chat_routes
+from backend.routers import analytics_routes, attention_routes, auth_routes, chat_routes, speech_routes
 
 
 @asynccontextmanager
@@ -26,6 +26,7 @@ app.include_router(auth_routes.router)
 app.include_router(attention_routes.router)
 app.include_router(chat_routes.router)
 app.include_router(analytics_routes.router)
+app.include_router(speech_routes.router)
 
 
 @app.get("/health")

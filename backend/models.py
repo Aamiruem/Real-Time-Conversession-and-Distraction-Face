@@ -62,6 +62,30 @@ class FocusSnapshot(Base):
     gaze: Mapped[str] = mapped_column(String(10), default="center")
 
 
+class SpeechSession(Base):
+    """One analysed speaking exercise from the Speech Coach (full report kept as JSON)."""
+
+    __tablename__ = "speech_sessions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+    mode: Mapped[str] = mapped_column(String(20), default="free")
+    prompt: Mapped[str] = mapped_column(Text, default="")
+    duration_sec: Mapped[float] = mapped_column(Float, default=0)
+    confidence: Mapped[float] = mapped_column(Float, default=0)
+    fluency: Mapped[float] = mapped_column(Float, default=0)
+    pace: Mapped[float] = mapped_column(Float, default=0)
+    clarity: Mapped[float] = mapped_column(Float, default=0)
+    voice: Mapped[float] = mapped_column(Float, default=0)
+    assertiveness: Mapped[float] = mapped_column(Float, default=0)
+    eye_contact: Mapped[float | None] = mapped_column(Float, nullable=True)
+    wpm: Mapped[float] = mapped_column(Float, default=0)
+    fillers: Mapped[int] = mapped_column(Integer, default=0)
+    transcript: Mapped[str] = mapped_column(Text, default="")
+    report: Mapped[str] = mapped_column(Text, default="{}")
+
+
 class Room(Base):
     __tablename__ = "rooms"
 

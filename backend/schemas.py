@@ -67,6 +67,32 @@ class SessionOut(BaseModel):
     report_url: str | None
 
 
+class SpeechSessionCreate(BaseModel):
+    mode: str = "free"
+    prompt: str = ""
+    report: dict  # output of speech.analyzer.analyze()
+
+
+class SpeechSessionOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    created_at: datetime
+    mode: str
+    prompt: str
+    duration_sec: float
+    confidence: float
+    fluency: float
+    pace: float
+    clarity: float
+    voice: float
+    assertiveness: float
+    eye_contact: float | None
+    wpm: float
+    fillers: int
+    transcript: str
+    report: dict | None = None
+
+
 class RoomCreate(BaseModel):
     name: str = Field(min_length=2, max_length=80)
     description: str = ""
