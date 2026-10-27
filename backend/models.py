@@ -16,11 +16,35 @@ class User(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     username: Mapped[str] = mapped_column(String(50), unique=True, index=True)
+    full_name: Mapped[str] = mapped_column(String(100), default="")
     email: Mapped[str] = mapped_column(String(120), unique=True, index=True)
+    phone: Mapped[str | None] = mapped_column(String(20), unique=True, index=True, nullable=True)  # E.164
     password_hash: Mapped[str] = mapped_column(String(200))
+    email_verified: Mapped[bool] = mapped_column(Boolean, default=False)
+    phone_verified: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
+    @property
+    def is_verified(self) -> bool:
+        return self.email_verified and (self.phone_verified or not self.phone)
+
     sessions = relationship("AttentionSession", back_populates="user", cascade="all, delete-orphan")
+
+
+class OtpCode(Base):
+    """One-time code sent by email (SES) or SMS (SNS). Only a keyed hash of the code is stored."""
+
+    __tablename__ = "otp_codes"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    channel: Mapped[str] = mapped_column(String(10))   # email | sms
+    purpose: Mapped[str] = mapped_column(String(10))   # verify | login | reset
+    code_hash: Mapped[str] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    used: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
 class AttentionSession(Base):

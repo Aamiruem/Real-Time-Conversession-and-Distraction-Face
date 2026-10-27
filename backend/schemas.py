@@ -1,17 +1,38 @@
 """Pydantic request/response models."""
+import re
 from datetime import datetime
+from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+
+PHONE_RE = r"^\+[1-9]\d{7,14}$"  # E.164, e.g. +919876543210
+
+
+def password_problem(v: str) -> str | None:
+    if len(v) < 8:
+        return "Password must be at least 8 characters"
+    if not (re.search(r"[A-Za-z]", v) and re.search(r"\d", v)):
+        return "Password must contain letters and numbers"
+    return None
 
 
 class UserCreate(BaseModel):
-    username: str = Field(min_length=3, max_length=50)
+    username: str = Field(min_length=3, max_length=50, pattern=r"^[A-Za-z0-9_.-]+$")
+    full_name: str = Field(default="", max_length=100)
     email: EmailStr
-    password: str = Field(min_length=6)
+    phone: str = Field(pattern=PHONE_RE, description="Mobile number in international format, e.g. +919876543210")
+    password: str = Field(min_length=8, max_length=128)
+
+    @field_validator("password")
+    @classmethod
+    def strong_password(cls, v: str) -> str:
+        if problem := password_problem(v):
+            raise ValueError(problem)
+        return v
 
 
 class UserLogin(BaseModel):
-    username: str
+    identifier: str = Field(min_length=3, description="Username, email or mobile number")
     password: str
 
 
@@ -19,13 +40,67 @@ class UserOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
     username: str
+    full_name: str = ""
     email: str
+    phone: str | None = None
+    email_verified: bool = False
+    phone_verified: bool = False
+
+
+class RegisterOut(BaseModel):
+    user_id: int
+    email: str
+    phone: str
+    message: str
+    dev_codes: dict[str, str] | None = None  # only when OTP_DEV_MODE is on and delivery is not configured
+
+
+class VerifyIn(BaseModel):
+    user_id: int
+    channel: Literal["email", "sms"]
+    code: str = Field(min_length=4, max_length=8)
+
+
+class VerifyOut(BaseModel):
+    email_verified: bool
+    phone_verified: bool
+    token: "Token | None" = None
+
+
+class ResendIn(BaseModel):
+    user_id: int
+    channel: Literal["email", "sms"]
+
+
+class OtpRequestIn(BaseModel):
+    identifier: str = Field(min_length=3, description="Email or mobile number")
+    purpose: Literal["login", "reset"] = "login"
+
+
+class OtpLoginIn(BaseModel):
+    identifier: str
+    code: str = Field(min_length=4, max_length=8)
+
+
+class PasswordResetIn(BaseModel):
+    identifier: str
+    code: str = Field(min_length=4, max_length=8)
+    new_password: str = Field(min_length=8, max_length=128)
+
+
+class OtpSentOut(BaseModel):
+    message: str
+    channel: str | None = None
+    dev_code: str | None = None
 
 
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserOut
+
+
+VerifyOut.model_rebuild()
 
 
 class FocusUpdate(BaseModel):
