@@ -18,6 +18,7 @@ import json
 import os
 from datetime import datetime, timezone
 
+import backend.native_preload  # noqa: F401,I001  (must come before anything that loads scikit-learn)
 import anyio
 from mcp.server.fastmcp import FastMCP
 from mcp.server.transport_security import TransportSecuritySettings

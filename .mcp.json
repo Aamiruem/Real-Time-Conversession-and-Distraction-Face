@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "focuslink": {
+      "command": ".venv/Scripts/python.exe",
+      "args": ["-m", "backend.mcp_server"],
+      "env": { "PYTHONPATH": "." }
+    }
+  }
+}

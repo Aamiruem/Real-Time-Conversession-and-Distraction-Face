@@ -6,13 +6,7 @@ MCP:  python -m backend.mcp_server (stdio), or POST /mcp with  Authorization: Be
 """
 from contextlib import asynccontextmanager
 
-try:
-    # Load CTranslate2 (Whisper) before scikit-learn: on Windows their native OpenMP runtimes crash the
-    # process if scikit-learn is loaded first.
-    import ctranslate2  # noqa: F401
-except ImportError:  # speech dependencies not installed — speech endpoints will report it
-    pass
-
+import backend.native_preload  # noqa: F401,I001  (must come before anything that loads scikit-learn)
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 

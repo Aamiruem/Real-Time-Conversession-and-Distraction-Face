@@ -6,7 +6,7 @@ says what you do, which code is involved, and how to check that it works.
 ```
  Google ──▶ Next.js (web/) — static SEO pages: /, /features/*, sitemap.xml, robots.txt
  Browser ─▶ Next.js React app (/app/*)
-   camera ─▶ MediaPipe face landmarker in the browser (web/lib/attention.ts) — video never uploaded
+   camera ─▶ MediaPipe face landmarker in the browser (web/lib/attention.js) — video never uploaded
    mic    ─▶ MediaRecorder ──upload──┐
    /api/* ──────────────────────────┴─▶ FastAPI (backend/)  ┌──▶ AWS RDS PostgreSQL (users, sessions, chat, OTPs)
    /ws/*  ── WebSocket chat rooms ─────▶   ├─ speech/       ├──▶ AWS S3 (session reports)
@@ -90,13 +90,27 @@ python -m ml.train --with-db   # + real sessions users rated ("How tired do you 
 * **Retraining in production**: run a weekly cron on the server:
   `docker compose exec backend python -m ml.train --with-db && docker compose restart backend`.
 
+## 5b. MCP server (AI assistants as clients)
+
+`backend/mcp_server.py` wraps the same engines as Model Context Protocol tools, so Claude (Desktop or Code)
+and other MCP clients can analyse text, coach speech files, predict fatigue and read users, sessions and rooms.
+
+```powershell
+.venv\Scripts\python.exe -m backend.mcp_server      # stdio — what .mcp.json / Claude Desktop launch
+```
+
+For a remote client, set `MCP_API_KEY` and use `https://yourdomain.com/mcp` with `Authorization: Bearer <key>`
+(Nginx forwards `/mcp` to the API). `backend/native_preload.py` loads NumPy, CTranslate2 and scikit-learn on the
+main thread at startup. On Windows, loading them later from worker threads can deadlock or crash the server.
+
 ## 6. Tests
 
 ```powershell
 python -m pytest -q tests
 ```
 
-The tests cover sign-up, OTP verification (both channels), wrong-code and attempt limits, OTP login,
+The tests cover the MCP server (tools, prompts and resources over a real MCP client session; API-key
+protection of `/mcp`), sign-up, OTP verification (both channels), wrong-code and attempt limits, OTP login,
 password reset, the NLP engine, the speech rewrite and read-aloud alignment, ML features and predictions,
 feedback labels, and the SEO pages. Each run uses a throw-away SQLite database.
 
@@ -159,7 +173,7 @@ Put the printed values in `.env`: `AWS_ENABLED=true`, `DATABASE_URL_OVERRIDE=…
   icons are file-based metadata.
 * `robots.txt`, `sitemap.xml` and `manifest.webmanifest` are generated from `NEXT_PUBLIC_SITE_URL`.
   `/app/*` and `/login` are `noindex`.
-* To rank for more keywords, add entries to `FEATURES` in `web/lib/site.ts`. Each one becomes a new
+* To rank for more keywords, add entries to `FEATURES` in `web/lib/site.js`. Each one becomes a new
   static page and is added to the sitemap automatically.
 * Submit `https://yourdomain.com/sitemap.xml` in Google Search Console and Bing Webmaster Tools.
 * Check the page with PageSpeed Insights and the Rich Results Test (the FAQ rich result should show up).

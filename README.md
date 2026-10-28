@@ -5,8 +5,9 @@ Drowsy, Yawning or away**. It also shows your **focus % and distraction %**. A *
 speaking confidence and pronunciation, a **machine-learning model** predicts fatigue risk, and in **Focus
 Rooms** people chat in real time while seeing each other's live focus.
 
-The frontend is a **Next.js (React) app** with server-rendered, SEO-optimised public pages. The backend is
-**FastAPI**, with data in **SQL (SQLite / AWS RDS PostgreSQL) + S3**.
+The frontend is a **Next.js (React, JavaScript/JSX) app** with server-rendered, SEO-optimised public pages. The
+backend is **FastAPI**, with data in **SQL (SQLite / AWS RDS PostgreSQL) + S3**. An **MCP server** lets AI
+assistants such as Claude use FocusLink's AI engines and data as tools.
 
 📘 **Step-by-step guide from setup to a live AWS deployment: [docs/PIPELINE.md](docs/PIPELINE.md)**
 
@@ -14,29 +15,31 @@ The frontend is a **Next.js (React) app** with server-rendered, SEO-optimised pu
 
 | Area | What it does | Tech |
 |---|---|---|
-| Computer Vision | 478-point face landmarks (with iris), Eye Aspect Ratio, blink rate, yawns (MAR), head pose, gaze — **runs in the browser**, so video never leaves the device | MediaPipe Tasks (WebAssembly), TypeScript |
-| AI state engine | Time-based rules → Focused / Distracted / Drowsy / Yawning / No Face, live **Focus %**, drowsiness alarm | `web/lib/attention.ts` (port of `cv/`) |
+| Computer Vision | 478-point face landmarks (with iris), Eye Aspect Ratio, blink rate, yawns (MAR), head pose, gaze — **runs in the browser**, so video never leaves the device | MediaPipe Tasks (WebAssembly), JavaScript |
+| AI state engine | Time-based rules → Focused / Distracted / Drowsy / Yawning / No Face, live **Focus %**, drowsiness alarm | `web/lib/attention.js` (port of `cv/`) |
 | Speech Coach | Transcript, pace (WPM), filler words, pauses, pronunciation clarity, read-aloud accuracy, pitch variety, assertive wording, eye contact → **confidence score** + tips + a "say it like this" rewrite | faster-whisper, NumPy |
 | Machine learning | Fatigue-risk classifier: CV model selection, model card, per-prediction explanations, retraining from users' own ratings | scikit-learn |
 | NLP | Sentiment (VADER or **Amazon Comprehend**), toxicity, keywords, wording confidence, conversation summaries | vaderSentiment |
 | Real-time rooms | WebSocket chat, presence, typing, everyone's live focus, drowsy alerts | FastAPI WebSockets |
 | Auth | Sign up and log in with username / email / mobile + password, OTP login, password reset. **Easy mode** (default locally): accounts work instantly. **Verified mode**: email + mobile OTP via **AWS SES / SNS** | JWT, bcrypt |
 | SEO | Static HTML landing + keyword-targeted feature pages, metadata API, Open Graph/Twitter, JSON-LD (SoftwareApplication, Organization, FAQPage, BreadcrumbList), sitemap.xml, robots.txt, manifest; the private app is `noindex` | Next.js 16 |
+| MCP server | 13 tools (NLP, speech coaching, fatigue ML, model card, users, sessions, rooms, insights, leaderboard), 2 prompts, 1 resource — over stdio or HTTP `/mcp` | Model Context Protocol (`mcp` SDK) |
 | Cloud | RDS, S3, SES, SNS, Comprehend, EC2 + Docker + Nginx | boto3, Docker |
 
 ## 📁 Project structure
 
 ```
 ├── web/                        # Next.js (React) frontend
-│   ├── app/page.tsx            # SEO landing page (static)
-│   ├── app/features/[slug]/    # SEO feature pages (static)
+│   ├── app/page.jsx            # SEO landing page (static)
+│   ├── app/features/[slug]/    # SEO feature pages + per-page social images (static)
 │   ├── app/login · signup      # auth (password, OTP login, reset, verification)
 │   ├── app/app/…               # private app: dashboard, focus, speech, rooms, analytics, lab
-│   ├── app/sitemap.ts · robots.ts · manifest.ts
-│   ├── lib/attention.ts        # in-browser attention engine
-│   ├── lib/useFaceTracker.ts   # camera + MediaPipe face landmarker
-│   └── lib/api.ts · auth.tsx   # API client (proxied via /api) + login state
+│   ├── app/sitemap.js · robots.js · manifest.js
+│   ├── lib/attention.js        # in-browser attention engine
+│   ├── lib/useFaceTracker.js   # camera + MediaPipe face landmarker
+│   └── lib/api.js · auth.jsx   # API client (proxied via /api) + login state
 ├── backend/                    # FastAPI: auth/OTP, attention, speech, rooms + WS, analytics, ML/NLP API
+│   └── mcp_server.py           # MCP server: AI tools for Claude & other assistants
 ├── cv/                         # Python attention engine (reference + legacy Streamlit app)
 ├── nlp/                        # text analysis engine
 ├── speech/                     # speech coach engine + audio decoding
@@ -66,7 +69,7 @@ cd web; npm run dev
 
 # Tests
 .venv\Scripts\python.exe -m pytest -q tests
-cd web; npm run typecheck; npm run build
+cd web; npm run build
 ```
 
 **Why port 8010?** Another project on this machine already uses port 8000. If the frontend talks to the wrong
@@ -75,6 +78,34 @@ backend you'll see errors that aren't from FocusLink, such as "Enter your owner 
 **Login:** with `AWS_ENABLED=false` (the default), anyone can create an account and is signed in immediately,
 and the mobile number is optional. Set `REQUIRE_VERIFICATION=true` to require email + mobile OTP codes. Until
 AWS SES/SNS is configured, those codes are shown on screen and in the API log.
+
+## 🤖 MCP server (use FocusLink from Claude and other AI assistants)
+
+`backend/mcp_server.py` exposes FocusLink over the [Model Context Protocol](https://modelcontextprotocol.io):
+
+| Kind | Name | What it does |
+|---|---|---|
+| tool | `analyze_text`, `analyze_conversation` | Sentiment, toxicity, keywords, hedging, wording confidence, summaries |
+| tool | `coach_speech_file`, `confident_rewrite` | Full speech-coach report for a recording; rewrite without fillers and hedges |
+| tool | `predict_fatigue`, `fatigue_model_card` | ML fatigue risk with explanation; model metrics |
+| tool | `platform_stats`, `user_overview`, `list_focus_sessions`, `leaderboard` | Read-only user and focus data |
+| tool | `list_rooms`, `room_messages`, `room_insights` | Read-only chat data + NLP insights |
+| prompt | `weekly_focus_review`, `improve_my_message` | Ready-made coaching prompts |
+| resource | `focuslink://model-card` | Model card JSON |
+
+**Claude Code:** `.mcp.json` in this repo registers it automatically. Open the project and run `/mcp`.
+**Claude Desktop:** add this to `claude_desktop_config.json`:
+
+```json
+{ "mcpServers": { "focuslink": {
+    "command": "C:\\path\\to\\project\\.venv\\Scripts\\python.exe",
+    "args": ["-m", "backend.mcp_server"],
+    "env": { "PYTHONPATH": "C:\\path\\to\\project" } } } }
+```
+
+**Remote (HTTP):** set `MCP_API_KEY` and the API serves `POST /mcp` (Streamable HTTP). Clients send
+`Authorization: Bearer <MCP_API_KEY>`. Without the key the endpoint stays off. Set `MCP_ALLOW_FILES=false` on
+a public server so `coach_speech_file` can't read server files.
 
 ## 🐳 Docker (PostgreSQL + Nginx included)
 
@@ -103,7 +134,7 @@ docker compose up --build      # http://localhost
 * If the user looks away for 1.5 s or more, the state is **Distracted**.
 * **Focus %** = time spent Focused ÷ total session time.
 
-Thresholds: `web/lib/attention.ts → THRESHOLDS` (browser) and `cv/attention_detector.py → Thresholds`.
+Thresholds: `web/lib/attention.js → THRESHOLDS` (browser) and `cv/attention_detector.py → Thresholds`.
 
 ## 🔌 Main API
 
@@ -118,4 +149,5 @@ Thresholds: `web/lib/attention.ts → THRESHOLDS` (browser) and `cv/attention_de
 | POST | `/attention/update`, `/attention/sessions` | Live metrics / save a session (S3 report) |
 | PATCH | `/attention/sessions/{id}/feedback` | Your fatigue rating (training label) |
 | GET/POST | `/rooms`, `/rooms/{id}/messages`, `/rooms/{id}/insights` | Rooms, history, NLP insights |
+| POST | `/mcp` (when `MCP_API_KEY` is set) | Model Context Protocol endpoint for AI assistants |
 | WS | `/ws/rooms/{id}?token=JWT` | Real-time events: `chat`, `presence`, `focus_update`, `alert`, `typing` |
