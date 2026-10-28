@@ -19,8 +19,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 
+from app import mongo
 from app.config import settings
-from app.database import init_db
+from app.database import describe, engine, init_db, ping
 from app.mcp_server import http_app as mcp_http_app
 from app.mcp_server import mcp
 from app.routers import (ai_routes, analytics_routes, attention_routes, auth_routes, chat_routes, coach_routes,
@@ -33,11 +34,14 @@ mcp_app = mcp_http_app()  # None unless MCP_API_KEY is set
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     init_db()
+    if mongo.enabled():
+        mongo.sync_in_background(engine)  # bring the MongoDB mirror up to date with SQL
     if mcp_app is None:
         yield
     else:
         async with mcp.session_manager.run():  # MCP streamable-HTTP sessions
             yield
+    mongo.flush()  # finish mirror writes before exiting
 
 
 app = FastAPI(title=settings.APP_NAME, version="1.0.0", lifespan=lifespan)
@@ -67,8 +71,14 @@ FEATURES = ["dashboard", "conversation", "interview", "body-language", "crud", "
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "app": settings.APP_NAME, "api_version": API_VERSION, "features": FEATURES,
-            "aws": settings.AWS_ENABLED, "mcp": mcp_app is not None}
+    ms, mongo_ms = ping(), mongo.ping()
+    db = describe()
+    return {"status": "ok" if ms is not None else "degraded", "app": settings.APP_NAME, "api_version": API_VERSION,
+            "features": FEATURES, "aws": settings.AWS_ENABLED, "mcp": mcp_app is not None,
+            # where data is stored (no host or credentials: this endpoint is public)
+            "database": {"engine": db["engine"], "location": db["location"], "connected": ms is not None,
+                         "latency_ms": ms},
+            "mongodb": {"enabled": mongo.enabled(), "connected": mongo_ms is not None, "latency_ms": mongo_ms}}
 
 
 if mcp_app is not None:

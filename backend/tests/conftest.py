@@ -23,7 +23,7 @@ def _cleanup():
 _db = Path(_tmp) / "test.db"
 os.environ.update(DATABASE_URL=f"sqlite:///{_db.as_posix()}", AWS_ENABLED="false", OTP_DEV_MODE="true",
                   OTP_RESEND_SECONDS="0", SECRET_KEY="test-secret-key-that-is-at-least-32-bytes",
-                  REQUIRE_VERIFICATION="true")
+                  REQUIRE_VERIFICATION="true", MONGODB_URI="")  # the MongoDB test opts in with its own db
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402

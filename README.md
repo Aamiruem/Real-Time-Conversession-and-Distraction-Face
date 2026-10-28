@@ -108,7 +108,33 @@ cd backend; ..\.venv\Scripts\python.exe -m pytest -q tests
 cd frontend; npm run build
 ```
 
-The local SQLite database is `backend/focuslink.db`, and the trained fatigue model is in `backend/ml/artifacts/`.
+The trained fatigue model is in `backend/ml/artifacts/`.
+
+### 🗄️ Database: local or online (AWS RDS)
+
+All data (accounts, focus sessions, recordings' results, rooms, messages) is stored in SQL through SQLAlchemy.
+`DATABASE` in `backend/.env` picks where:
+
+| `DATABASE=` | Storage | Setup |
+|---|---|---|
+| `local` (default) | SQLite file `backend/focuslink.db` | none |
+| `aws` | PostgreSQL on Amazon RDS (SSL on, encrypted storage, daily backups) | `DB_HOST`, `DB_USER`, `DB_PASSWORD` (+ `DB_NAME`, `DB_PORT`) |
+
+Going online, step by step:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File deploy\aws\setup_rds.ps1   # creates RDS, opens it to your IP, fills DB_* in .env
+cd backend
+python -m app.db_cli status --db aws    # can we reach it?
+python -m app.db_cli copy --to aws      # copy every row (ids kept), verified by row counts; --replace to overwrite
+# then set DATABASE=aws in backend/.env and restart the backend
+```
+
+Without the AWS CLI: create a PostgreSQL instance in the RDS console (Free tier template, public access *Yes*, a
+security group allowing port 5432 from your IP), then put its endpoint and login into `DB_*` in `backend/.env`.
+
+`python -m app.db_cli status` shows which database the backend uses and its row counts; `/health` reports it too
+(`database.connected`), and the web app shows a notice if the backend can't reach its database.
 
 **Why port 8010?** Another project on this machine already uses port 8000. If the frontend talks to the wrong
 backend you'll see errors that aren't from Presence AI, such as "Enter your owner email address".

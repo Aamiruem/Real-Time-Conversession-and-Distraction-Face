@@ -13,13 +13,31 @@ def _bool(name: str, default: str = "false") -> bool:
     return os.getenv(name, default).strip().lower() in {"1", "true", "yes", "on"}
 
 
+LOCAL_DATABASE_URL = f"sqlite:///{(BACKEND_DIR / 'focuslink.db').as_posix()}"
+
+
+def aws_database_url() -> str:
+    """PostgreSQL URL for the online database, built from DB_HOST / DB_USER / DB_PASSWORD / DB_NAME / DB_PORT.
+
+    Built with URL.create, so passwords containing @ : / # % etc. need no escaping in .env.
+    """
+    from sqlalchemy.engine import URL
+
+    host = os.getenv("DB_HOST", "").strip()
+    if not host:
+        raise RuntimeError("DATABASE=aws needs DB_HOST (your RDS endpoint) plus DB_USER and DB_PASSWORD in backend/.env")
+    return URL.create("postgresql+psycopg2", username=os.getenv("DB_USER", "focuslink"),
+                      password=os.getenv("DB_PASSWORD", ""), host=host, port=int(os.getenv("DB_PORT", "5432")),
+                      database=os.getenv("DB_NAME", "focuslink")).render_as_string(hide_password=False)
+
+
 def database_url() -> str:
-    """DATABASE_URL, with a relative SQLite path (sqlite:///./x.db) anchored to backend/ instead of the cwd."""
-    url = os.getenv("DATABASE_URL", "sqlite:///./focuslink.db")
-    prefix = "sqlite:///./"
-    if url.startswith(prefix):
-        url = f"sqlite:///{(BACKEND_DIR / url[len(prefix):]).as_posix()}"
-    return url
+    """Where data is stored. DATABASE_URL (docker compose, custom setups) wins; otherwise DATABASE=local|aws."""
+    url = os.getenv("DATABASE_URL", "").strip()
+    if url:
+        prefix = "sqlite:///./"  # relative SQLite paths are anchored to backend/, not the cwd
+        return f"sqlite:///{(BACKEND_DIR / url[len(prefix):]).as_posix()}" if url.startswith(prefix) else url
+    return aws_database_url() if os.getenv("DATABASE", "local").strip().lower() == "aws" else LOCAL_DATABASE_URL
 
 
 class Settings:
@@ -29,6 +47,14 @@ class Settings:
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "720"))
 
     DATABASE_URL: str = database_url()
+    # SSL to PostgreSQL: "require" (encrypted) by default for AWS RDS; "verify-full" + DB_SSLROOTCERT also checks
+    # the server certificate (download global-bundle.pem from AWS). Empty = driver default.
+    DB_SSLMODE: str = os.getenv("DB_SSLMODE", "require" if ".rds.amazonaws.com" in DATABASE_URL else "")
+    DB_SSLROOTCERT: str = os.getenv("DB_SSLROOTCERT", "")
+
+    # MongoDB mirror: every saved record is also kept in MongoDB (one collection per table). Empty = off.
+    MONGODB_URI: str = os.getenv("MONGODB_URI", "").strip()
+    MONGODB_DB: str = os.getenv("MONGODB_DB", "presence_ai").strip()
 
     AWS_ENABLED: bool = _bool("AWS_ENABLED")
     AWS_REGION: str = os.getenv("AWS_REGION", "ap-south-1")

@@ -1,4 +1,5 @@
-// Shared backend status for the whole app: "checking" | "ok" | "outdated" | "offline".
+// Shared backend status for the whole app: "checking" | "ok" | "outdated" | "offline" | "database"
+// ("database" = the API answers but can't reach its database, e.g. the AWS RDS instance is stopped).
 // One poller for every component (useSyncExternalStore); while the backend is down or out of date it re-checks
 // every 5 s, so the app recovers by itself the moment the backend is (re)started.
 import { useSyncExternalStore } from "react";
@@ -22,7 +23,8 @@ export function checkBackend() {
       if (!res.ok) return emit({ status: "offline", version: null });
       const h = await res.json().catch(() => ({}));
       const version = h.api_version ?? 1; // backends from before versioning report none
-      emit({ status: version >= REQUIRED_API_VERSION ? "ok" : "outdated", version });
+      if (version < REQUIRED_API_VERSION) return emit({ status: "outdated", version });
+      emit({ status: h.database?.connected === false ? "database" : "ok", version });
     })
     .catch(() => emit({ status: "offline", version: null }))
     .finally(() => {

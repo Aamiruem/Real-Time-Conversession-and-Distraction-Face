@@ -19,7 +19,7 @@ aws s3api put-public-access-block --bucket "$BUCKET" \
 echo ">> Creating RDS PostgreSQL instance $DB_ID (takes ~5-10 min)"
 aws rds create-db-instance --region "$REGION" \
   --db-instance-identifier "$DB_ID" --db-instance-class db.t3.micro \
-  --engine postgres --allocated-storage 20 --db-name focuslink \
+  --engine postgres --allocated-storage 20 --storage-encrypted --db-name focuslink \
   --master-username "$DB_USER" --master-user-password "$DB_PASS" \
   --backup-retention-period 1 --no-multi-az
 

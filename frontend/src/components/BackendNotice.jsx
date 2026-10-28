@@ -22,6 +22,16 @@ const COPY = {
     text: () => "The FastAPI server isn't answering on port 8010. Start it from the project folder:",
     note: "Pages that need data will fill in automatically as soon as it is running.",
   },
+  database: {
+    icon: "🗄️",
+    tone: "bad",
+    title: "The backend can't reach its database",
+    text: () =>
+      "The API is running, but its database isn't answering. If you use the AWS database, check that the RDS " +
+      "instance is running and reachable, then see what the backend sees with (in the backend folder):",
+    command: "python -m app.db_cli status",
+    note: "This clears by itself as soon as the database answers again.",
+  },
 };
 
 /** Friendly, actionable panel shown when the backend is offline or out of date (auto-rechecks every 5 s). */
@@ -31,6 +41,7 @@ export function BackendNotice() {
   const [copied, setCopied] = useState(false);
   const c = COPY[status];
   if (!c) return null;
+  const command = c.command ?? COMMAND;
 
   const retry = async () => {
     setBusy(true);
@@ -39,7 +50,7 @@ export function BackendNotice() {
   };
   const copy = async () => {
     try {
-      await navigator.clipboard.writeText(COMMAND);
+      await navigator.clipboard.writeText(command);
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
     } catch {
@@ -56,14 +67,19 @@ export function BackendNotice() {
         <h2>{c.title}</h2>
         <p>{c.text(version)}</p>
         <div className="notice-cmd">
-          <code>{COMMAND}</code>
+          <code>{command}</code>
           <button className="btn ghost sm" onClick={copy}>
             {copied ? "✓ Copied" : "Copy"}
           </button>
         </div>
         <p className="small muted">
-          Paste it into any PowerShell window — it stops the old backend for you. Or run <code>.\start.ps1</code> in
-          the project folder to start everything. {c.note}
+          {!c.command && (
+            <>
+              Paste it into any PowerShell window — it stops the old backend for you. Or run <code>.\start.ps1</code>{" "}
+              in the project folder to start everything.{" "}
+            </>
+          )}
+          {c.note}
         </p>
       </div>
       <div className="notice-side">
