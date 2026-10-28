@@ -75,6 +75,18 @@ html, body, [class*="css"], .stMarkdown, .stButton button, input, textarea, sele
 .transcript {line-height:1.9; background:#0f172a; color:#e2e8f0; border-radius:12px; padding:12px 14px;}
 .transcript .w-filler {background:#9a3412; color:#ffedd5; border-radius:4px; padding:0 3px;}
 .transcript .w-unclear {text-decoration:underline wavy #ef4444; text-underline-offset:4px;}
+.fl-area {background:var(--fl-surface); border:1px solid var(--fl-line); border-top:4px solid var(--a); border-radius:16px;
+          padding:16px 18px; margin-bottom:14px; color:var(--fl-text);}
+.fl-area .hd {display:flex; justify-content:space-between; align-items:center; font-weight:700;}
+.fl-area .chip {font-size:.72rem; padding:2px 10px; border-radius:99px; color:var(--a); border:1px solid var(--a);}
+.fl-area .sc {font-size:2.4rem; font-weight:800; color:var(--a); line-height:1.1; margin:6px 0;}
+.fl-area .bar {height:10px; border-radius:99px; overflow:hidden;
+               background:repeating-linear-gradient(45deg,#eab30833 0 6px,#eab30814 6px 12px);}
+.fl-area .bar div {height:100%; background:var(--a); border-radius:99px;}
+.fl-area .lg {display:flex; justify-content:space-between; font-size:.75rem; color:var(--fl-muted); margin:6px 0 8px;}
+.fl-area ul {font-size:.82rem; color:var(--fl-muted); padding-left:18px; margin:0 0 8px;}
+.fl-area ol {font-size:.88rem; padding-left:20px; margin:4px 0 8px;}
+.fl-area .drill {background:#0a1222; border:1px dashed var(--fl-line); border-radius:10px; padding:8px 12px; font-size:.82rem;}
 </style>
 """
 HIDE_SIDEBAR = """<style>[data-testid="stSidebar"], [data-testid="stSidebarCollapsedControl"] {display:none;}</style>"""
@@ -142,7 +154,7 @@ def require_login():
     if not st.session_state.get("token"):
         st.markdown(HIDE_SIDEBAR, unsafe_allow_html=True)
         st.warning("Please sign in first.")
-        st.page_link("Home.py", label="Go to sign in", icon="🔐")
+        st.page_link("app.py", label="Go to sign in", icon="🔐")
         st.stop()
     sidebar_user()
 

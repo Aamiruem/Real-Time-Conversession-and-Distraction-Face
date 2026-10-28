@@ -88,6 +88,7 @@ export class AttentionEngine {
       elapsedSec: 0,
       avgEar: 0,
       alarm: false,
+      faceX: 0.5,
       timeline: [],
     };
   }
@@ -128,6 +129,14 @@ export class AttentionEngine {
     } else {
       const pts = landmarks.map((p) => ({ x: p.x * w, y: p.y * h }));
       state = this.analyze(pts, matrix, now);
+      // where the face sits on screen (the video is mirrored), so overlays can stay out of its way
+      let x0 = 1,
+        x1 = 0;
+      for (const p of landmarks) {
+        x0 = Math.min(x0, p.x);
+        x1 = Math.max(x1, p.x);
+      }
+      this.m.faceX = 1 - (x0 + x1) / 2;
     }
     m.state = state;
     this.stateTime[state] += dt;

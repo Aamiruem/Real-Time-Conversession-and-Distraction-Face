@@ -51,6 +51,44 @@ export function Gauge({ value, label, size = 180 }) {
   );
 }
 
+/** Ring chart: `segments` are [label, percent, color]; the first segment's percent is shown in the middle. */
+export function Donut({ segments, size = 150, label }) {
+  const r = 52,
+    c = 2 * Math.PI * r;
+  let offset = 0;
+  return (
+    <svg width={size} height={size} viewBox="0 0 140 140" role="img" aria-label={label}>
+      <circle cx="70" cy="70" r={r} fill="none" stroke="#1e2a44" strokeWidth="16" />
+      {segments.map(([k, v, color]) => {
+        const len = (Math.max(0, v) / 100) * c;
+        const el = (
+          <circle
+            key={k}
+            cx="70"
+            cy="70"
+            r={r}
+            fill="none"
+            stroke={color}
+            strokeWidth="16"
+            strokeDasharray={`${len} ${c - len}`}
+            strokeDashoffset={-offset}
+            transform="rotate(-90 70 70)"
+            style={{ transition: "stroke-dasharray .4s, stroke-dashoffset .4s" }}
+          />
+        );
+        offset += len;
+        return el;
+      })}
+      <text x="70" y="72" textAnchor="middle" fill="#e2e8f0" fontSize="24" fontWeight="800">
+        {(segments[0]?.[1] ?? 0).toFixed(1)}%
+      </text>
+      <text x="70" y="92" textAnchor="middle" fill="#94a3b8" fontSize="10" letterSpacing="1.5">
+        {segments[0]?.[0].toUpperCase()}
+      </text>
+    </svg>
+  );
+}
+
 export function StateBadge({ state, focus }) {
   return (
     <div className="badge" style={{ background: STATE_COLORS[state] ?? "#334155" }}>

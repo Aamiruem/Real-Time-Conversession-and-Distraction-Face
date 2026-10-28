@@ -18,6 +18,8 @@ assistants such as Claude use FocusLink's AI engines and data as tools.
 | Computer Vision | 478-point face landmarks (with iris), Eye Aspect Ratio, blink rate, yawns (MAR), head pose, gaze — **runs in the browser**, so video never leaves the device | MediaPipe Tasks (WebAssembly), JavaScript |
 | AI state engine | Time-based rules → Focused / Distracted / Drowsy / Yawning / No Face, live **Focus %**, drowsiness alarm | `frontend/lib/attention.js` (port of `backend/cv/`) |
 | Speech Coach | Transcript, pace (WPM), filler words, pauses, pronunciation clarity, read-aloud accuracy, pitch variety, assertive wording, eye contact → **confidence score** + tips + a "say it like this" rewrite | faster-whisper, NumPy |
+| Conversation Coach | Record a conversation (10 types: interview, presentation, meeting, sales, casual, debate, support, teaching, storytelling, phone) → **fluency, word confidence, focus, interaction and voice modulation** scores, "needs improvement" %, evidence and type-specific suggestions + practice drills | `backend/speech/conversation.py`, `/app/conversation`, Streamlit page 6 |
+| Interview Prep | Mock interviews for 15 job fields (question bank with frameworks, outlines and pitfalls) → **readiness score** from content (TF-IDF relevance, STAR/PREP structure, vocabulary, opening, length), delivery and on-camera presence (eye contact, smile via face blendshapes, expression, framing, posture, lighting, camera sharpness); full guide from getting the interview to follow-up, dress codes, word swaps | `backend/interview/`, `/app/interview`, Streamlit page 7 |
 | Machine learning | Fatigue-risk classifier: CV model selection, model card, per-prediction explanations, retraining from users' own ratings | scikit-learn |
 | NLP | Sentiment (VADER or **Amazon Comprehend**), toxicity, keywords, wording confidence, conversation summaries | vaderSentiment |
 | Real-time rooms | WebSocket chat, presence, typing, everyone's live focus, drowsy alerts | FastAPI WebSockets |
@@ -69,6 +71,15 @@ assistants such as Claude use FocusLink's AI engines and data as tools.
 
 > Backend needs Python 3.11 (MediaPipe/Whisper wheels); frontend needs Node.js ≥ 20.
 
+**Quick start** — two scripts at the repo root do everything below:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\setup.ps1   # once: venv, all requirements, .env files, npm install
+powershell -ExecutionPolicy Bypass -File .\start.ps1   # API :8010 + React :3000 + Streamlit :8501 (add -NoStreamlit to skip it)
+```
+
+Or step by step:
+
 ```powershell
 # one-time setup (one Python venv at the repo root)
 py -3.11 -m venv .venv
@@ -83,7 +94,7 @@ cd backend; ..\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 
 cd frontend; npm run dev
 
 # Optional: legacy Streamlit UI on http://localhost:8501
-cd frontend\streamlit; ..\..\.venv\Scripts\python.exe -m streamlit run Home.py
+cd frontend\streamlit; ..\..\.venv\Scripts\python.exe -m streamlit run app.py
 
 # Tests / production build
 cd backend; ..\.venv\Scripts\python.exe -m pytest -q tests

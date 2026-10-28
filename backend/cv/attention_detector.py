@@ -117,6 +117,13 @@ class AttentionDetector:
             self.timeline: list = []
             self.last_timeline_ts = 0.0
             self._m = Metrics()
+            # presence (interview prep): smile, framing, posture and picture quality
+            self.smile_ratios: deque = deque(maxlen=3000)
+            self.frames = 0
+            self.face_frames = 0
+            self.face_size_sum = self.center_off_sum = self.roll_sum = 0.0
+            self.quality = {"n": 0, "brightness": 0.0, "contrast": 0.0, "sharpness": 0.0}
+            self.resolution = (0, 0)
 
     def metrics(self) -> Metrics:
         with self._lock:
@@ -150,8 +157,13 @@ class AttentionDetector:
                 x0, y0 = pts.min(axis=0).astype(int)
                 x1, y1 = pts.max(axis=0).astype(int)
                 box = (x0, y0, x1, y1)
+                self._track_face(pts, box, w, h, m)
                 self._draw_eyes(frame_bgr, pts)
 
+            self.frames += 1
+            self.resolution = (w, h)
+            if self.frames % 5 == 1:  # picture quality on a small grayscale copy every 5th frame
+                self._track_quality(frame_bgr)
             m.state = state
             self.state_time[state] += dt
             self._update_percentages(m, now)
@@ -248,6 +260,50 @@ class AttentionDetector:
                 {"t": m.elapsed_sec, "state": m.state, "focus_pct": m.focus_pct, "ear": m.ear}
             )
 
+    # --------------------------------------------------------------- presence
+    def _track_face(self, pts, box, w, h, m: Metrics):
+        x0, y0, x1, y1 = box
+        self.face_frames += 1
+        self.face_size_sum += (x1 - x0) / w
+        self.center_off_sum += abs((x0 + x1) / 2 / w - 0.5) + abs((y0 + y1) / 2 / h - 0.45)
+        self.roll_sum += abs(m.roll)
+        # mouth width relative to the outer eye corners grows when you smile
+        self.smile_ratios.append(_dist(pts[61], pts[291]) / (_dist(pts[33], pts[263]) + 1e-6))
+
+    def _track_quality(self, frame_bgr):
+        h, w = frame_bgr.shape[:2]
+        small = cv2.cvtColor(cv2.resize(frame_bgr, (160, max(1, int(160 * h / w)))), cv2.COLOR_BGR2GRAY)
+        q = self.quality
+        q["n"] += 1
+        q["brightness"] += float(small.mean())
+        q["contrast"] += float(small.std())
+        q["sharpness"] += float(cv2.Laplacian(small, cv2.CV_64F).var())
+
+    def presence(self) -> dict:
+        """Averages for the interview coach (same keys as the browser's lib/presence.js)."""
+        with self._lock:
+            n, q = max(self.face_frames, 1), self.quality
+            ratios = np.array(self.smile_ratios)
+            smile_pct = None
+            if len(ratios) > 20:  # smiling = mouth clearly wider than your own neutral face
+                neutral = float(np.percentile(ratios, 25))
+                smile_pct = round(100 * float((ratios > neutral * 1.12).mean()), 1)
+            qn = max(q["n"], 1)
+            return {
+                "smile_pct": smile_pct,
+                "expressiveness": round(float(np.std(ratios) / (np.mean(ratios) + 1e-6) * 100), 1) if len(ratios) > 20 else None,
+                "face_visible_pct": round(100 * self.face_frames / max(self.frames, 1), 1),
+                "face_size": round(self.face_size_sum / n, 3),
+                "center_offset": round(self.center_off_sum / n, 3),
+                "head_tilt": round(self.roll_sum / n, 1),
+                "brightness": round(q["brightness"] / qn, 1),
+                "contrast": round(q["contrast"] / qn, 1),
+                "sharpness": round(q["sharpness"] / qn, 1),
+                "width": self.resolution[0],
+                "height": self.resolution[1],
+                "eye_contact": self._m.focus_pct,
+            }
+
     # ---------------------------------------------------------------- drawing
     @staticmethod
     def _draw_eyes(frame, pts):
@@ -257,28 +313,47 @@ class AttentionDetector:
             cv2.circle(frame, tuple(pts[idx].astype(int)), 3, (255, 255, 0), -1)
 
     @staticmethod
-    def _draw_overlay(frame, m: Metrics, box):
+    def _panel(frame, x, y, pw, ph):
+        """Darken one rectangle in place (only that region is blended, so the face stays untouched)."""
+        roi = frame[y:y + ph, x:x + pw]
+        roi[:] = (roi * 0.45 + np.array([18, 14, 10]) * 0.55).astype(np.uint8)
+
+    @classmethod
+    def _draw_overlay(cls, frame, m: Metrics, box):
+        h, w = frame.shape[:2]
+        s = w / 640  # scale text with the video size (640 → 1280 px)
         color = STATE_COLORS[m.state]
+        thick = max(1, round(s))
         if box:
             x0, y0, x1, y1 = box
-            cv2.rectangle(frame, (x0 - 10, y0 - 10), (x1 + 10, y1 + 10), color, 2)
-            cv2.putText(frame, f"{m.state}", (x0 - 10, y0 - 18), cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 2)
+            cv2.rectangle(frame, (x0 - 10, y0 - 10), (x1 + 10, y1 + 10), color, 2 * thick)
+            cv2.putText(frame, f"{m.state}", (x0 - 10, max(int(22 * s), y0 - 18)), cv2.FONT_HERSHEY_SIMPLEX,
+                        0.7 * s, color, 2 * thick)
 
-        panel = frame.copy()
-        cv2.rectangle(panel, (8, 8), (215, 190), (20, 20, 20), -1)
-        cv2.addWeighted(panel, 0.55, frame, 0.45, 0, frame)
         lines = [
-            f"FPS: {m.fps:.1f}",
-            f"EAR: {m.ear:.3f}  MAR: {m.mar:.2f}",
-            f"Blinks: {m.blinks_per_min}/min",
-            f"Gaze: {m.gaze}",
-            f"Yaw: {m.yaw:.1f}  Pitch: {m.pitch:.1f}",
-            f"Focus: {m.focus_pct:.1f}%",
-            f"Distracted: {m.distracted_pct:.1f}%",
+            f"FPS {m.fps:.0f}  EAR {m.ear:.2f}",
+            f"Blinks {m.blinks_per_min}/min",
+            f"Gaze {m.gaze}",
+            f"Yaw {m.yaw:.0f}  Pitch {m.pitch:.0f}",
+            f"Focus {m.focus_pct:.0f}%",
         ]
-        for i, text in enumerate(lines):
-            cv2.putText(frame, text, (16, 32 + i * 23), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (240, 240, 240), 1)
+        fs, lh, pad = 0.42 * s, int(18 * s), int(8 * s)
+        pw = int(150 * s)
+        ph = pad * 2 + lh * len(lines)
+        # put the panel on the side away from the face; if the face fills the frame use a strip at the bottom
+        panel_left = box is None or (box[0] + box[2]) / 2 > w / 2
+        px = pad if panel_left else w - pw - pad
+        if box is None or px + pw < box[0] - 10 or px > box[2] + 10:
+            cls._panel(frame, px, pad, pw, ph)
+            for i, text in enumerate(lines):
+                cv2.putText(frame, text, (px + pad, pad * 2 + int(lh * (i + 0.6))), cv2.FONT_HERSHEY_SIMPLEX, fs,
+                            (235, 235, 235), thick, cv2.LINE_AA)
+        else:
+            sh = int(26 * s)
+            cls._panel(frame, 0, h - sh, w, sh)
+            cv2.putText(frame, "   ".join(lines), (pad, h - int(8 * s)), cv2.FONT_HERSHEY_SIMPLEX, fs,
+                        (235, 235, 235), thick, cv2.LINE_AA)
         if m.alarm:
-            h, w = frame.shape[:2]
             cv2.rectangle(frame, (0, 0), (w - 1, h - 1), (0, 0, 255), 8)
-            cv2.putText(frame, "WAKE UP!", (w // 2 - 90, h - 30), cv2.FONT_HERSHEY_DUPLEX, 1.2, (0, 0, 255), 3)
+            cv2.putText(frame, "WAKE UP!", (w // 2 - int(90 * s), h - int(50 * s)), cv2.FONT_HERSHEY_DUPLEX,
+                        1.2 * s, (0, 0, 255), 3)

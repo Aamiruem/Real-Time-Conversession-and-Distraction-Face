@@ -14,7 +14,8 @@ from app.config import settings
 from app.database import init_db
 from app.mcp_server import http_app as mcp_http_app
 from app.mcp_server import mcp
-from app.routers import ai_routes, analytics_routes, attention_routes, auth_routes, chat_routes, speech_routes
+from app.routers import (ai_routes, analytics_routes, attention_routes, auth_routes, chat_routes, interview_routes,
+                         speech_routes)
 
 
 mcp_app = mcp_http_app()  # None unless MCP_API_KEY is set
@@ -39,6 +40,7 @@ app.include_router(chat_routes.router)
 app.include_router(analytics_routes.router)
 app.include_router(speech_routes.router)
 app.include_router(ai_routes.router)
+app.include_router(interview_routes.router)
 
 
 @app.get("/", include_in_schema=False)

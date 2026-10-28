@@ -18,7 +18,9 @@ from cv.attention_detector import AttentionDetector  # noqa: E402
 from speech.analyzer import SAMPLE_RATE  # noqa: E402
 
 RTC_CONFIGURATION = {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
-MEDIA_CONSTRAINTS = {"video": {"width": 640, "height": 480, "frameRate": 20}, "audio": False}
+# HD widescreen when the camera supports it (wider view, sharper picture); the browser falls back gracefully
+MEDIA_CONSTRAINTS = {"video": {"width": {"ideal": 1280}, "height": {"ideal": 720}, "frameRate": {"ideal": 24}},
+                     "audio": False}
 MEDIA_CONSTRAINTS_WITH_MIC = {
     "video": MEDIA_CONSTRAINTS["video"],
     "audio": {"echoCancellation": True, "noiseSuppression": True, "autoGainControl": False},

@@ -1,6 +1,6 @@
 """FocusLink AI — Streamlit entry point: sign in / sign up with email + mobile OTP, then the home dashboard.
 
-Run (from frontend/streamlit/): streamlit run Home.py
+Run (from frontend/streamlit/): streamlit run app.py
 """
 import re
 
@@ -16,6 +16,10 @@ COUNTRY_CODES = {
     "🇦🇪 UAE (+971)": "+971", "🇸🇦 Saudi Arabia (+966)": "+966", "🇸🇬 Singapore (+65)": "+65",
     "🇦🇺 Australia (+61)": "+61", "🇩🇪 Germany (+49)": "+49", "🇵🇰 Pakistan (+92)": "+92",
     "🇧🇩 Bangladesh (+880)": "+880", "🇳🇵 Nepal (+977)": "+977", "🇱🇰 Sri Lanka (+94)": "+94",
+    "🇧🇹 Bhutan (+975)": "+975", "🇲🇾 Malaysia (+60)": "+60", "🇮🇩 Indonesia (+62)": "+62",
+    "🇹🇭 Thailand (+66)": "+66", "🇻🇳 Vietnam (+84)": "+84",
+    "🇯🇵 Japan (+81)": "+81", "🇰🇷 South Korea (+82)": "+82", "🇨🇳 China (+86)":  "+86",
+    
 }
 
 

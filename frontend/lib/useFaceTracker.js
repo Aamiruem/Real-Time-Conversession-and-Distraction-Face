@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { AttentionEngine, LEFT_EYE, LEFT_IRIS, RIGHT_EYE, RIGHT_IRIS, STATE_COLORS } from "./attention";
+import { PresenceTracker } from "./presence";
 
 let landmarkerPromise = null;
 
@@ -17,6 +18,7 @@ export function loadFaceLandmarker() {
         runningMode: "VIDEO",
         numFaces: 1,
         outputFacialTransformationMatrixes: true,
+        outputFaceBlendshapes: true, // expression scores (smile…) for the interview coach
       });
     try {
       return await make("GPU");
@@ -31,13 +33,16 @@ export function loadFaceLandmarker() {
 /**
  * Camera + face tracking. Attach `videoRef` / `canvasRef`, call start() / stop().
  * `metrics` refreshes ~5×/s for the UI; `engine` holds the full per-frame state.
+ * With `presence: true` it also tracks smile, framing and picture quality (`presence` = PresenceTracker).
  */
-export function useFaceTracker({ audio = false } = {}) {
+export function useFaceTracker({ audio = false, presence: withPresence = false } = {}) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const engine = useRef(new AttentionEngine());
   const stream = useRef(null);
   const raf = useRef(0);
+  const presence = useRef(null);
+  if (withPresence && !presence.current) presence.current = new PresenceTracker();
   const [metrics, setMetrics] = useState(AttentionEngine.empty());
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");
@@ -53,6 +58,7 @@ export function useFaceTracker({ audio = false } = {}) {
         const lm = res.faceLandmarks?.[0];
         engine.current.update(lm, res.facialTransformationMatrixes?.[0]?.data, video.videoWidth, video.videoHeight);
         draw(canvasRef.current, video, lm, engine.current.metrics().state);
+        presence.current?.update(lm, res.faceBlendshapes?.[0]?.categories, video, engine.current.m);
         const now = performance.now();
         if (now - lastUi > 200) {
           lastUi = now;
@@ -71,7 +77,14 @@ export function useFaceTracker({ audio = false } = {}) {
       const [landmarker, media] = await Promise.all([
         loadFaceLandmarker(),
         navigator.mediaDevices.getUserMedia({
-          video: { width: 640, height: 480, facingMode: "user" },
+          // HD widescreen when the camera supports it (wider field of view, sharper picture); falls back gracefully
+          video: {
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            aspectRatio: { ideal: 16 / 9 },
+            frameRate: { ideal: 30 },
+            facingMode: "user",
+          },
           audio: audio ? { echoCancellation: true, noiseSuppression: true, autoGainControl: false } : false,
         }),
       ]);
@@ -80,6 +93,7 @@ export function useFaceTracker({ audio = false } = {}) {
       video.srcObject = media;
       await video.play();
       engine.current.reset();
+      presence.current?.reset();
       setStatus("running");
       loop(landmarker);
       return media;
@@ -113,7 +127,7 @@ export function useFaceTracker({ audio = false } = {}) {
     [],
   );
 
-  return { videoRef, canvasRef, engine, metrics, status, error, start, stop, stream };
+  return { videoRef, canvasRef, engine, presence, metrics, status, error, start, stop, stream };
 }
 
 function draw(canvas, video, lm, state) {
@@ -134,9 +148,43 @@ function draw(canvas, video, lm, state) {
     x1 = Math.max(x1, p.x);
     y1 = Math.max(y1, p.y);
   }
+  const bx = x0 * w - 10,
+    by = y0 * h - 10,
+    bw = (x1 - x0) * w + 20,
+    bh = (y1 - y0) * h + 20;
   ctx.strokeStyle = color;
-  ctx.lineWidth = 3;
-  ctx.strokeRect(x0 * w - 10, y0 * h - 10, (x1 - x0) * w + 20, (y1 - y0) * h + 20);
+  ctx.lineWidth = 1;
+  ctx.globalAlpha = 0.45;
+  ctx.strokeRect(bx, by, bw, bh);
+  ctx.globalAlpha = 1;
+  // corner brackets
+  const c = Math.min(bw, bh) * 0.18;
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  for (const [x, y, dx, dy] of [
+    [bx, by, 1, 1],
+    [bx + bw, by, -1, 1],
+    [bx, by + bh, 1, -1],
+    [bx + bw, by + bh, -1, -1],
+  ]) {
+    ctx.moveTo(x + dx * c, y);
+    ctx.lineTo(x, y);
+    ctx.lineTo(x, y + dy * c);
+  }
+  ctx.stroke();
+  // state label above the box; the canvas is mirrored with CSS, so flip back to keep the text readable
+  ctx.save();
+  ctx.translate(w, 0);
+  ctx.scale(-1, 1);
+  ctx.font = "700 18px system-ui, sans-serif";
+  const lx = w - (bx + bw),
+    tw = ctx.measureText(state).width + 20,
+    ly = Math.max(0, by - 32);
+  ctx.fillStyle = color;
+  ctx.fillRect(lx, ly, tw, 28);
+  ctx.fillStyle = "#04121f";
+  ctx.fillText(state, lx + 10, ly + 20);
+  ctx.restore();
   ctx.fillStyle = "#4ade80";
   for (const i of [...LEFT_EYE, ...RIGHT_EYE]) {
     ctx.beginPath();

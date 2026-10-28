@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Gauge, Metric, PageHead, RiskCard, StateBadge } from "@/components/ui";
+import { Donut, Gauge, Metric, PageHead, RiskCard } from "@/components/ui";
 import { api, toDate } from "@/lib/api";
-import { livePayload, sessionPayload, STATE_COLORS } from "@/lib/attention";
+import { livePayload, sessionPayload, STATE_COLORS, STATE_EMOJI, THRESHOLDS } from "@/lib/attention";
 import { useFaceTracker } from "@/lib/useFaceTracker";
 
 function beep() {
@@ -80,6 +80,7 @@ export default function FocusMonitor() {
 
   const running = status === "running";
   const shown = running ? m : (final ?? m);
+  const state = running ? m.state : "No Face";
   return (
     <>
       <PageHead
@@ -88,22 +89,54 @@ export default function FocusMonitor() {
         highlight="Focus Monitor"
         sub="Look at the camera — focus %, distraction % and drowsiness are computed live on every frame. Video never leaves your device."
       />
+      {running && m.alarm && (
+        <div className="alarm-banner" role="alert">
+          <span>🚨 Drowsiness alarm — look at the camera to stop it</span>
+          <button className="btn ghost sm" style={{ color: "inherit" }} onClick={() => setAlarmOn((a) => !a)}>
+            {alarmOn ? "🔇 Mute" : "🔔 Unmute"}
+          </button>
+        </div>
+      )}
       <div className="grid split-3-2">
         <div>
-          <div className="video-wrap">
-            <video ref={videoRef} playsInline muted />
-            <canvas ref={canvasRef} />
-            {!running && (
-              <div className="placeholder">
-                {status === "loading" ? (
-                  <span>
-                    <span className="spinner" style={{ display: "inline-block" }} /> Loading face model…
-                  </span>
-                ) : (
-                  "Press Start and allow camera access"
-                )}
-              </div>
-            )}
+          <div className="card feed">
+            <div className="feed-head">
+              <span className={`chip ${running ? "live" : ""}`}>
+                <span className="dot" /> {running ? "Live feed" : "Camera off"}
+              </span>
+              <span className="chip">{running ? `${shown.fps.toFixed(1)} fps` : "— fps"}</span>
+            </div>
+            <div className="video-wrap">
+              <video ref={videoRef} playsInline muted />
+              <canvas ref={canvasRef} />
+              {running && (
+                <div className={`hud ${m.faceX < 0.5 ? "right" : ""}`} aria-hidden="true">
+                  <span>EAR</span>
+                  <b>{m.ear.toFixed(3)}</b>
+                  <span>Blinks</span>
+                  <b>{m.blinksPerMin}/min</b>
+                  <span>Gaze</span>
+                  <b>{m.gaze}</b>
+                  <span>Yaw</span>
+                  <b>{m.yaw}°</b>
+                  <span>Pitch</span>
+                  <b>{m.pitch}°</b>
+                  <span>Roll</span>
+                  <b>{m.roll}°</b>
+                </div>
+              )}
+              {!running && (
+                <div className="placeholder">
+                  {status === "loading" ? (
+                    <span>
+                      <span className="spinner" style={{ display: "inline-block" }} /> Loading face model…
+                    </span>
+                  ) : (
+                    "Press Start and allow camera access"
+                  )}
+                </div>
+              )}
+            </div>
           </div>
           <div className="row" style={{ marginTop: 12, alignItems: "center" }}>
             {running ? (
@@ -120,43 +153,75 @@ export default function FocusMonitor() {
               alarm
             </label>
           </div>
-          {running && m.alarm && (
-            <div className="alarm" style={{ marginTop: 12 }}>
-              🚨 You look drowsy — look at the camera or take a break!
-            </div>
-          )}
           {error && <div className="alert error">{error}</div>}
           {err && <div className="alert error">{err}</div>}
         </div>
         <div style={{ display: "grid", gap: 12, alignContent: "start" }}>
-          <StateBadge state={running ? m.state : "No Face"} focus={shown.focusPct} />
-          <div className="grid g4">
+          <div className="card state-card" style={{ "--state": STATE_COLORS[state] }}>
+            <span className="emoji">{STATE_EMOJI[state]}</span>
+            <div style={{ flex: 1 }}>
+              <div className="name">{state}</div>
+              <div className="small muted">Focus score {shown.focusPct.toFixed(0)}%</div>
+              <div className="bar" style={{ marginTop: 6, height: 6 }}>
+                <div style={{ width: `${shown.focusPct}%`, background: STATE_COLORS[state] }} />
+              </div>
+            </div>
+          </div>
+          <div className="tiles">
             <Metric v={shown.ear.toFixed(3)} l="Eye ratio" />
             <Metric v={shown.blinksPerMin} l="Blinks / min" />
             <Metric v={shown.gaze} l="Gaze" />
             <Metric v={shown.yawnsTotal} l="Yawns" />
           </div>
-          <div className="card small">
-            Head pose — yaw <b>{shown.yaw}°</b> · pitch <b>{shown.pitch}°</b> · roll <b>{shown.roll}°</b> · session{" "}
-            <b>{fmt(shown.elapsedSec)}</b> · {shown.fps.toFixed(0)} fps
-          </div>
           <div className="card">
+            <div className="card-title">Head pose</div>
             {[
-              ["Focused", shown.focusPct],
-              ["Distracted", shown.distractedPct],
-              ["Drowsy", shown.drowsyPct],
-              ["No Face", shown.noFacePct],
-            ].map(([k, v]) => (
-              <div key={k} style={{ marginBottom: 8 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: ".85rem" }}>
-                  <span>{k}</span>
-                  <b>{v.toFixed(1)}%</b>
+              ["Yaw", shown.yaw, THRESHOLDS.yawLimit],
+              ["Pitch", shown.pitch, THRESHOLDS.pitchLimit],
+              ["Roll", shown.roll, THRESHOLDS.yawLimit],
+            ].map(([k, v, limit]) => (
+              <div key={k} className="pose">
+                <span className="muted">{k}</span>
+                <div className="track">
+                  <div
+                    className={`knob ${Math.abs(v) > limit ? "off" : ""}`}
+                    style={{ left: `${50 + Math.max(-45, Math.min(45, v)) * (50 / 45)}%` }}
+                  />
                 </div>
-                <div className="bar">
-                  <div style={{ width: `${v}%`, background: STATE_COLORS[k] }} />
-                </div>
+                <b>{v.toFixed(1)}°</b>
               </div>
             ))}
+          </div>
+          <div className="card">
+            <div className="card-title">Session summary</div>
+            <div className="summary">
+              <Donut
+                label={`Focused ${shown.focusPct.toFixed(1)}%`}
+                segments={[
+                  ["Focused", shown.focusPct, STATE_COLORS.Focused],
+                  ["Distracted", shown.distractedPct, STATE_COLORS.Distracted],
+                  ["Drowsy", shown.drowsyPct, STATE_COLORS.Drowsy],
+                  ["No Face", shown.noFacePct, STATE_COLORS["No Face"]],
+                ]}
+              />
+              <div>
+                <div className="timer">{fmt(shown.elapsedSec)}</div>
+                <div className="legend">
+                  {[
+                    ["Focused", shown.focusPct],
+                    ["Distracted", shown.distractedPct],
+                    ["Drowsy", shown.drowsyPct],
+                    ["No Face", shown.noFacePct],
+                  ].map(([k, v]) => (
+                    <div key={k}>
+                      <i style={{ background: STATE_COLORS[k] }} />
+                      {k}
+                      <b>{v.toFixed(1)}%</b>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

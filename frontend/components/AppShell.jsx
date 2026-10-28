@@ -10,6 +10,8 @@ const NAV = [
   ["/app", "🏠", "Dashboard"],
   ["/app/focus", "🎥", "Focus Monitor"],
   ["/app/speech", "🗣️", "Speech Coach"],
+  ["/app/conversation", "🗨️", "Conversation Coach"],
+  ["/app/interview", "💼", "Interview Prep"],
   ["/app/rooms", "💬", "Focus Rooms"],
   ["/app/analytics", "📊", "Analytics"],
   ["/app/lab", "🧪", "AI Lab"],

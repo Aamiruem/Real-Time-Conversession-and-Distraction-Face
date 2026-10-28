@@ -27,6 +27,7 @@ def analyze_upload(
     prompt: str = Form(""),
     eye_contact: float | None = Form(None, ge=0, le=100),
     whisper_model: str = Form("base.en"),
+    conversation_type: str = Form("", description="Adds five-area conversation feedback, e.g. interview, sales"),
     save: bool = Form(True),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -34,6 +35,10 @@ def analyze_upload(
     """Transcribe + score a recording with the speech coach engine; saved as a speech session by default."""
     from speech.analyzer import analyze
     from speech.audio import decode_audio
+    from speech.conversation import CONVERSATION_TYPES, conversation_feedback
+
+    if conversation_type and conversation_type not in CONVERSATION_TYPES:
+        raise HTTPException(422, f"Unknown conversation_type — use one of: {', '.join(CONVERSATION_TYPES)}")
 
     data = audio.file.read(MAX_UPLOAD_MB * 1024 * 1024 + 1)
     if len(data) > MAX_UPLOAD_MB * 1024 * 1024:
@@ -48,10 +53,20 @@ def analyze_upload(
                      else "base.en", passage=prompt if mode == "read" else None)
     if report.get("error"):
         raise HTTPException(422, report["error"])
+    if conversation_type:
+        report["conversation"] = conversation_feedback(report, conversation_type)
     session_id = None
     if save:
         session_id = save_report(SpeechSessionCreate(report=report, mode=mode, prompt=prompt), user, db).id
     return {"session_id": session_id, "report": report}
+
+
+@router.get("/conversation-types")
+def list_conversation_types():
+    """Conversation types the coach can tailor feedback to, with practice prompts."""
+    from speech.conversation import conversation_types
+
+    return conversation_types()
 
 
 @router.post("/sessions", response_model=SpeechSessionOut)

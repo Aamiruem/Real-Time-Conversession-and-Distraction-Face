@@ -74,3 +74,139 @@ def render(rep: dict, wav: bytes | None = None):
         st.table([{"Expected": p["expected"], "We heard": p["heard"]} for p in reading["misread"]])
     if wav:
         st.audio(wav, format="audio/wav")
+
+
+AREA_ICONS = {"fluency": "🌊", "word_confidence": "💬", "focus": "👀", "interaction": "🤝", "voice_modulation": "🎚️"}
+STATUS_COLORS = {"Excellent": "#22c55e", "Good": "#38bdf8", "Needs improvement": "#eab308", "Weak": "#ef4444"}
+
+
+def area_radar(areas: list[dict]):
+    labels = [a["label"] for a in areas]
+    vals = [a["score"] for a in areas]
+    fig = go.Figure(go.Scatterpolar(r=vals + vals[:1], theta=labels + labels[:1], fill="toself",
+                                    line_color="#38bdf8", fillcolor="rgba(56,189,248,.3)"))
+    fig.update_layout(height=280, margin=dict(l=50, r=50, t=20, b=20), paper_bgcolor="rgba(0,0,0,0)",
+                      font_color="#94a3b8", showlegend=False,
+                      polar=dict(bgcolor="rgba(0,0,0,0)", radialaxis=dict(range=[0, 100], visible=False),
+                                 angularaxis=dict(gridcolor="#1e2a44")))
+    return fig
+
+
+def area_card(a: dict, type_label: str) -> str:
+    color = STATUS_COLORS.get(a["status"], "#38bdf8")
+    esc = html.escape
+    evidence = "".join(f"<li>{esc(e)}</li>" for e in a["evidence"])
+    tips = "".join(f"<li>{esc(s)}</li>" for s in a["suggestions"])
+    drill = f"<div class='drill'>🏋️ {esc(a['drill'])}</div>" if a.get("drill") else ""
+    return (f"<div class='fl-area' style='--a:{color}'><div class='hd'><span>{AREA_ICONS.get(a['key'], '')} "
+            f"{esc(a['label'])}</span><span class='chip'>{esc(a['status'])}</span></div>"
+            f"<div class='sc'>{a['score']:.0f}<small>%</small></div>"
+            f"<div class='bar'><div style='width:{a['score']}%'></div></div>"
+            f"<div class='lg'><span>✓ {a['score']:.0f}% strong</span>"
+            f"<span>⚠ {a['needs_improvement']:.0f}% needs improvement</span></div>"
+            f"<ul>{evidence}</ul><b>How to improve</b><ol>{tips}</ol>{drill}"
+            f"<div style='font-size:.75rem;color:#94a3b8;margin-top:6px'>Counts {a['weight']}% of your score for "
+            f"{esc(type_label.lower())}</div></div>")
+
+
+def render_conversation(rep: dict, wav: bytes | None = None, full_report: bool = True):
+    """Five-area conversation feedback; falls back to the plain speech report for older results.
+
+    `full_report=False` leaves out the speech-report expander (for use inside another expander).
+    """
+    c = rep.get("conversation")
+    if not c:
+        return render(rep, wav)
+    g, mid, r = st.columns([1, 1.3, 1.3])
+    g.plotly_chart(focus_gauge(c["overall"], f"{c['type_label']} score"), use_container_width=True)
+    g.markdown(f"<div style='text-align:center'><b>{c['status']}</b></div>", unsafe_allow_html=True)
+    with mid:
+        st.markdown(f"#### {c['summary']}")
+        by = {a["key"]: a for a in c["areas"]}
+        best, worst = by[c["best_area"]], by[c["focus_area"]]
+        a, b = st.columns(2)
+        metric_card(a, f"{AREA_ICONS[best['key']]} {best['score']:.0f}%", f"Strongest · {best['label']}")
+        metric_card(b, f"{AREA_ICONS[worst['key']]} {worst['needs_improvement']:.0f}%", f"To improve · {worst['label']}")
+        if wav:
+            st.audio(wav, format="audio/wav")
+    r.plotly_chart(area_radar(c["areas"]), use_container_width=True)
+
+    st.subheader("🧭 Your areas — weakest first")
+    cols = st.columns(3)
+    for i, a in enumerate(sorted(c["areas"], key=lambda x: x["score"])):
+        cols[i % 3].markdown(area_card(a, c["type_label"]), unsafe_allow_html=True)
+
+    left, right = st.columns(2)
+    with left:
+        st.subheader("📝 What you said")
+        st.markdown(highlighted_transcript(rep["words"]), unsafe_allow_html=True)
+    with right:
+        st.subheader("✨ Say it like this")
+        st.info(rep["improved"] or "—")
+    if full_report:
+        with st.expander("Full speech report (pace, pronunciation, tips)"):
+            render(rep)
+
+
+def _score_color(v: float) -> str:
+    return "#22c55e" if v >= 85 else "#38bdf8" if v >= 70 else "#eab308" if v >= 50 else "#ef4444"
+
+
+def section_card(s: dict) -> str:
+    esc = html.escape
+    rows = "".join(
+        f"<div style='margin:10px 0;--a:{_score_color(i['score'])}'><div class='hd' style='font-size:.9rem'>"
+        f"<span>{esc(i['label'])}</span><span style='color:var(--a)'>{i['score']:.0f}%</span></div>"
+        f"<div class='bar' style='height:7px'><div style='width:{i['score']}%'></div></div>"
+        f"<div style='font-size:.78rem;color:#94a3b8;margin-top:3px'>{esc(i['detail'])}</div>"
+        f"<div style='font-size:.85rem'>→ {esc(i['tip'])}</div></div>"
+        for i in s["items"])
+    icon = {"content": "🧠", "delivery": "🎙️", "presence": "🎥"}.get(s["key"], "")
+    return (f"<div class='fl-area' style='--a:{_score_color(s['score'])}'><div class='hd'><span>{icon} "
+            f"{esc(s['label'])}</span><span class='sc' style='font-size:1.6rem;margin:0'>{s['score']:.0f}%</span>"
+            f"</div>{rows}</div>")
+
+
+def render_interview(rep: dict, wav: bytes | None = None):
+    """Mock-interview feedback: readiness, content / delivery / presence, structure, vocabulary, delivery detail."""
+    iv = rep.get("interview")
+    if not iv:
+        return render_conversation(rep, wav)
+    g, info = st.columns([1, 2])
+    g.plotly_chart(focus_gauge(iv["readiness"], "Interview readiness"), use_container_width=True)
+    g.markdown(f"<div style='text-align:center'><b>{iv['level']}</b></div>", unsafe_allow_html=True)
+    with info:
+        st.caption(f"{iv['field_label']} · {iv['question']['category']}")
+        st.markdown(f"#### “{iv['question']['q']}”")
+        st.markdown("**Do this next**")
+        for i, t in enumerate(iv["top_tips"], 1):
+            st.markdown(f"{i}. **{t['label']}:** {t['tip']}")
+        if wav:
+            st.audio(wav, format="audio/wav")
+
+    cols = st.columns(len(iv["sections"]))
+    for col, s in zip(cols, iv["sections"]):
+        col.markdown(section_card(s), unsafe_allow_html=True)
+
+    a, b, c = st.columns(3)
+    with a:
+        st.subheader(f"🧩 {iv['framework']['label']}")
+        for p in iv["structure"]:
+            st.markdown(f"{'✅' if p['done'] else '⬜'} {p['part']}")
+        st.markdown("**A strong answer covers**")
+        for o in iv["question"]["outline"]:
+            st.markdown(f"- {o}")
+    with b:
+        st.subheader("📖 Vocabulary")
+        if iv["swaps"]:
+            st.table([{"Weak": f"{s['weak']} ×{s['count']}", "Say instead": s["strong"]} for s in iv["swaps"]])
+        else:
+            st.success("No weak phrases found.")
+        st.caption("Power verbs used: " + (", ".join(iv["power_verbs"]) or "none yet"))
+    with c:
+        st.subheader("⚠️ Avoid")
+        for p in iv["question"]["pitfalls"]:
+            st.markdown(f"- {p}")
+        st.markdown(f"**👔 Dress:** {iv['dress']}")
+    with st.expander("Delivery in detail — fluency, word confidence, interaction, voice modulation, transcript"):
+        render_conversation(rep, full_report=False)

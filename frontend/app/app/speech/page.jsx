@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { PageHead, SpeechResult, StateBadge } from "@/components/ui";
 import { api, toDate } from "@/lib/api";
 import { useFaceTracker } from "@/lib/useFaceTracker";
+import { levelPct, useVoiceRecorder } from "@/lib/useVoiceRecorder";
 
 const TOPICS = [
   "Introduce yourself as if you were starting a job interview.",
@@ -20,10 +21,6 @@ const PASSAGES = [
   "Particularly, the specific statistics show a significant improvement in the thoroughness of our research.",
 ];
 
-const pickMime = () =>
-  ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg"].find((t) => MediaRecorder.isTypeSupported(t)) ??
-  "";
-
 export default function SpeechCoach() {
   const { videoRef, canvasRef, metrics: m, status, error, start, stop } = useFaceTracker({ audio: true });
   const [mode, setMode] = useState("free");
@@ -31,15 +28,10 @@ export default function SpeechCoach() {
   const [custom, setCustom] = useState("");
   const [passage, setPassage] = useState(PASSAGES[0]);
   const [whisper, setWhisper] = useState("base.en");
-  const [level, setLevel] = useState(0);
-  const [seconds, setSeconds] = useState(0);
+  const { level, seconds, error: recError, begin, finish } = useVoiceRecorder();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [result, setResult] = useState(null);
-  const recorder = useRef(null);
-  const chunks = useRef([]);
-  const meter = useRef(null);
-  const t0 = useRef(0);
 
   const prompt = mode === "free" ? custom.trim() || topic : passage;
 
@@ -52,48 +44,16 @@ export default function SpeechCoach() {
   async function onStart() {
     setErr("");
     const media = await start();
-    if (!media) return;
-    const audio = new MediaStream(media.getAudioTracks());
-    chunks.current = [];
-    const rec = new MediaRecorder(audio, { mimeType: pickMime() || undefined });
-    rec.ondataavailable = (e) => e.data.size && chunks.current.push(e.data);
-    rec.start(1000);
-    recorder.current = rec;
-    // live microphone level
-    const ctx = new AudioContext();
-    const analyser = ctx.createAnalyser();
-    analyser.fftSize = 1024;
-    ctx.createMediaStreamSource(audio).connect(analyser);
-    const buf = new Float32Array(analyser.fftSize);
-    t0.current = Date.now();
-    const timer = window.setInterval(() => {
-      analyser.getFloatTimeDomainData(buf);
-      const rms = Math.sqrt(buf.reduce((a, b) => a + b * b, 0) / buf.length);
-      setLevel(20 * Math.log10(rms + 1e-9));
-      setSeconds((Date.now() - t0.current) / 1000);
-    }, 150);
-    meter.current = { ctx, timer };
+    if (media && !(await begin(media))) stop();
   }
 
   async function onStop() {
-    const rec = recorder.current;
-    if (!rec) return;
-    const done = new Promise((res) => (rec.onstop = () => res()));
-    rec.stop();
-    await done;
-    if (meter.current) {
-      clearInterval(meter.current.timer);
-      meter.current.ctx.close();
-    }
+    const take = await finish();
     const final = stop();
-    const blob = new Blob(chunks.current, { type: rec.mimeType || "audio/webm" });
-    if ((Date.now() - t0.current) / 1000 < 4) return setErr("Recording too short — speak for at least 4 seconds.");
+    if (!take) return;
+    if (take.seconds < 4) return setErr("Recording too short — speak for at least 4 seconds.");
     const form = new FormData();
-    form.append(
-      "audio",
-      blob,
-      `speech.${blob.type.includes("mp4") ? "m4a" : blob.type.includes("ogg") ? "ogg" : "webm"}`,
-    );
+    form.append("audio", take.blob, take.filename);
     form.append("mode", mode);
     form.append("prompt", prompt);
     form.append("eye_contact", String(final.focusPct));
@@ -101,7 +61,7 @@ export default function SpeechCoach() {
     setBusy(true);
     try {
       const r = await api("/speech/analyze", { method: "POST", body: form });
-      setResult({ report: r.report, audioUrl: URL.createObjectURL(blob), id: r.session_id });
+      setResult({ report: r.report, audioUrl: take.url, id: r.session_id });
     } catch (e) {
       setErr(e.message);
     } finally {
@@ -145,6 +105,7 @@ export default function SpeechCoach() {
             )}
           </div>
           {error && <div className="alert error">{error}</div>}
+          {recError && <div className="alert error">{recError}</div>}
           {err && <div className="alert error">{err}</div>}
           {busy && (
             <div className="alert info">
@@ -211,7 +172,7 @@ export default function SpeechCoach() {
                 <div className="bar" style={{ marginTop: 8 }}>
                   <div
                     style={{
-                      width: `${Math.max(0, Math.min(100, ((level + 60) / 50) * 100))}%`,
+                      width: `${levelPct(level)}%`,
                       background: "var(--grad)",
                     }}
                   />

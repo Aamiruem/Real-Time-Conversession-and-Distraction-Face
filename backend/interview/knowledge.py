@@ -1,0 +1,556 @@
+"""Interview knowledge base: job fields, question bank, preparation guide and vocabulary.
+
+Every question has a framework (how to structure the answer), what the interviewer is looking for, an answer
+outline, common pitfalls and `points` — the ideas a strong answer mentions, used to score relevance.
+"""
+
+# --------------------------------------------------------------------------- answer frameworks
+FRAMEWORKS = {
+    "STAR": {"label": "STAR", "steps": ["Situation — where and when", "Task — what you had to achieve",
+                                        "Action — what *you* did (say “I”)", "Result — the outcome, with a number"]},
+    "PPF": {"label": "Present → Past → Future", "steps": ["Present — who you are and what you do now",
+                                                          "Past — the experience that got you here",
+                                                          "Future — why this role is your next step"]},
+    "PREP": {"label": "PREP", "steps": ["Point — your answer in one sentence", "Reason — why",
+                                        "Example — a short proof", "Point — restate it"]},
+    "CAR": {"label": "CAR", "steps": ["Challenge — the problem", "Action — what you did", "Result — what changed"]},
+}
+
+# --------------------------------------------------------------------------- general question bank
+GENERAL_QUESTIONS = [
+    {"id": "g-about", "category": "Opening", "framework": "PPF",
+     "q": "Tell me about yourself.",
+     "looks_for": "A confident 60–90 second pitch that connects your background to this role.",
+     "outline": ["Your current role or studies and one strength", "One or two achievements with numbers",
+                 "Why you're excited about this role and company"],
+     "pitfalls": ["Reciting your whole CV or life story", "Personal details (age, family, hobbies) up front",
+                  "Ending without linking to the job"],
+     "points": ["currently", "experience", "skills", "achieved", "project", "role", "team", "passionate",
+                "looking", "opportunity", "background", "strength"]},
+    {"id": "g-why-role", "category": "Motivation", "framework": "PREP",
+     "q": "Why do you want this job?",
+     "looks_for": "Genuine interest, research about the company and a fit between your skills and the role.",
+     "outline": ["What attracts you about the role (be specific)", "What you know about the company",
+                 "How your skills match what they need"],
+     "pitfalls": ["“I need a job” or salary as the main reason", "Generic praise that fits any company"],
+     "points": ["company", "mission", "product", "growth", "skills", "contribute", "learn", "values", "team",
+                "impact", "role", "customers"]},
+    {"id": "g-why-hire", "category": "Motivation", "framework": "PREP",
+     "q": "Why should we hire you?",
+     "looks_for": "Three clear reasons backed by evidence, tied to the job description.",
+     "outline": ["Your top three strengths for this role", "One proof point for each",
+                 "How you'll add value in the first months"],
+     "pitfalls": ["Comparing yourself to other candidates", "Claims without evidence (“I'm a hard worker”)"],
+     "points": ["experience", "skills", "results", "proven", "delivered", "value", "team", "quickly", "learn",
+                "fit", "strengths"]},
+    {"id": "g-strengths", "category": "Self-awareness", "framework": "PREP",
+     "q": "What are your greatest strengths?",
+     "looks_for": "Strengths relevant to the job, each proven with a real example.",
+     "outline": ["Name two strengths that matter for this role", "A short example for each", "The result"],
+     "pitfalls": ["Listing many adjectives without proof", "Strengths that don't matter for the job"],
+     "points": ["strength", "example", "result", "team", "problem", "solved", "communication", "leadership",
+                "organised", "analytical"]},
+    {"id": "g-weakness", "category": "Self-awareness", "framework": "CAR",
+     "q": "What is your biggest weakness?",
+     "looks_for": "Honesty, self-awareness and proof that you are actively improving.",
+     "outline": ["A real but non-critical weakness", "What you are doing about it",
+                 "Evidence that it is getting better"],
+     "pitfalls": ["Fake weaknesses (“I'm a perfectionist”)", "A weakness that is core to the job",
+                  "No improvement plan"],
+     "points": ["weakness", "improve", "working on", "learned", "feedback", "now", "course", "practice",
+                "progress", "better"]},
+    {"id": "g-challenge", "category": "Behavioural", "framework": "STAR",
+     "q": "Describe a challenge you faced at work or college and how you handled it.",
+     "looks_for": "Problem-solving, ownership and a measurable result.",
+     "outline": ["The situation and why it was hard", "What you were responsible for",
+                 "The specific steps you took", "The result and what you learned"],
+     "pitfalls": ["Blaming others", "Saying “we” for everything — they want *your* actions",
+                  "No result at the end"],
+     "points": ["challenge", "problem", "deadline", "responsible", "decided", "solution", "result",
+                "learned", "team", "improved", "resolved"]},
+    {"id": "g-conflict", "category": "Behavioural", "framework": "STAR",
+     "q": "Tell me about a time you disagreed with a colleague or manager.",
+     "looks_for": "Maturity, respectful communication and focus on the shared goal.",
+     "outline": ["The disagreement (keep it professional)", "How you listened and explained your view",
+                 "How you reached a decision", "The outcome and relationship afterwards"],
+     "pitfalls": ["Making the other person the villain", "A story where you simply gave in or 'won'"],
+     "points": ["disagreed", "listened", "understand", "perspective", "data", "agreed", "compromise",
+                "outcome", "relationship", "goal"]},
+    {"id": "g-failure", "category": "Behavioural", "framework": "STAR",
+     "q": "Tell me about a time you failed.",
+     "looks_for": "Accountability and learning — not perfection.",
+     "outline": ["What went wrong (own it)", "What you did to fix or limit it", "The lesson and how you applied it later"],
+     "pitfalls": ["Choosing a non-failure", "Blaming circumstances", "No lesson learned"],
+     "points": ["mistake", "failed", "responsibility", "learned", "fixed", "changed", "next time", "lesson",
+                "improved", "process"]},
+    {"id": "g-leadership", "category": "Behavioural", "framework": "STAR",
+     "q": "Give an example of when you showed leadership.",
+     "looks_for": "Initiative and influence — you don't need a manager title.",
+     "outline": ["The situation that needed someone to step up", "What you took on",
+                 "How you organised or motivated people", "The result"],
+     "pitfalls": ["Only describing a title, not actions", "Taking all the credit"],
+     "points": ["led", "initiative", "team", "organised", "motivated", "decision", "responsibility",
+                "result", "mentored", "delegated"]},
+    {"id": "g-pressure", "category": "Situational", "framework": "STAR",
+     "q": "How do you handle pressure and tight deadlines?",
+     "looks_for": "A calm, practical method and a real example.",
+     "outline": ["Your method (prioritise, plan, communicate)", "A real example", "The result"],
+     "pitfalls": ["“I never get stressed”", "No concrete example"],
+     "points": ["prioritise", "plan", "deadline", "communicate", "calm", "organised", "delivered", "time",
+                "focus", "result"]},
+    {"id": "g-five-years", "category": "Motivation", "framework": "PPF",
+     "q": "Where do you see yourself in five years?",
+     "looks_for": "Ambition that fits this company and role.",
+     "outline": ["Skills you want to build", "Responsibility you'd like to grow into", "How this role starts that path"],
+     "pitfalls": ["“In your chair”", "Plans unrelated to the job (starting your own company next year)"],
+     "points": ["grow", "skills", "responsibility", "learn", "lead", "expert", "contribute", "company",
+                "career", "develop"]},
+    {"id": "g-salary", "category": "Tough", "framework": "PREP",
+     "q": "What are your salary expectations?",
+     "looks_for": "Realistic research and confident, flexible negotiation.",
+     "outline": ["A researched range for this role and city", "Your value in one sentence",
+                 "Openness to the whole package"],
+     "pitfalls": ["Naming a number with no research", "Apologising for your number"],
+     "points": ["range", "research", "market", "experience", "flexible", "package", "value", "role",
+                "benefits", "negotiable"]},
+    {"id": "g-gap", "category": "Tough", "framework": "CAR",
+     "q": "Can you explain this gap in your CV?",
+     "looks_for": "A short honest answer that moves on to what you learned and why you're ready now.",
+     "outline": ["One honest sentence about the reason", "What you did or learned in that time",
+                 "Why you're ready and focused now"],
+     "pitfalls": ["Long defensive explanations", "Lying about dates"],
+     "points": ["time", "learned", "course", "skills", "ready", "focused", "family", "health", "project",
+                "now"]},
+    {"id": "g-questions", "category": "Closing", "framework": "PREP",
+     "q": "Do you have any questions for us?",
+     "looks_for": "Curiosity about the role, team and success — never say “No”.",
+     "outline": ["Ask what success looks like in the first 90 days", "Ask about the team and how it works",
+                 "Ask about the next steps"],
+     "pitfalls": ["“No, I think you covered everything”", "Asking only about salary or holidays first"],
+     "points": ["success", "team", "first", "months", "challenges", "culture", "next steps", "growth",
+                "expect", "role"]},
+]
+
+# --------------------------------------------------------------------------- job fields
+FIELDS = {
+    "general": {
+        "label": "Any field / fresher", "icon": "🌐",
+        "dress": "Business casual unless told otherwise: clean, ironed shirt or blouse, plain trousers or skirt, "
+                 "neat shoes. When in doubt, dress one level above the company's everyday style.",
+        "skills": ["Communication", "Teamwork", "Problem solving", "Learning quickly", "Reliability"],
+        "keywords": ["team", "project", "learn", "communication", "responsible", "deadline", "goal", "result",
+                     "internship", "college", "skills", "organised"],
+        "power_words": ["organised", "delivered", "learned", "coordinated", "improved", "volunteered"],
+        "questions": [
+            "What did you learn from your internship or final-year project?",
+            "Tell me about a group project and your role in it.",
+            "How do you learn a new skill quickly?",
+            "Why did you choose your field of study?",
+        ],
+    },
+    "software": {
+        "label": "Software engineering", "icon": "💻",
+        "dress": "Smart casual: clean shirt or polo, chinos or dark jeans. Avoid slogan T-shirts. For banks and "
+                 "consultancies go business casual.",
+        "skills": ["Data structures & algorithms", "System design", "Clean code & testing", "Debugging",
+                   "Collaboration (code review, Git)"],
+        "keywords": ["code", "api", "database", "testing", "deployed", "performance", "architecture", "bug",
+                     "scalable", "git", "frontend", "backend", "cloud", "python", "java", "javascript", "latency",
+                     "design"],
+        "power_words": ["architected", "optimised", "shipped", "refactored", "automated", "debugged"],
+        "questions": [
+            "Walk me through a technical project you're proud of.",
+            "How would you design a URL shortener?",
+            "Tell me about the hardest bug you've fixed.",
+            "How do you make sure your code is reliable?",
+        ],
+    },
+    "data": {
+        "label": "Data science / analytics", "icon": "📊",
+        "dress": "Business casual: shirt or blouse, trousers, clean shoes.",
+        "skills": ["SQL & Python", "Statistics", "Machine learning", "Data visualisation", "Business storytelling"],
+        "keywords": ["data", "model", "sql", "python", "analysis", "dashboard", "insight", "accuracy", "dataset",
+                     "statistics", "machine learning", "a/b test", "stakeholders", "metric", "prediction"],
+        "power_words": ["analysed", "modelled", "forecast", "visualised", "validated", "uncovered"],
+        "questions": [
+            "Tell me about an analysis that changed a business decision.",
+            "How do you explain a model's results to a non-technical stakeholder?",
+            "How would you handle missing or messy data?",
+            "Which metric would you use to measure the success of a new feature, and why?",
+        ],
+    },
+    "product": {
+        "label": "Product management", "icon": "🧭",
+        "dress": "Smart / business casual; match the company's style with a slightly sharper look.",
+        "skills": ["Customer discovery", "Prioritisation", "Data-driven decisions", "Roadmapping",
+                   "Stakeholder management"],
+        "keywords": ["customer", "user", "roadmap", "prioritise", "metric", "launch", "feature", "feedback",
+                     "stakeholders", "experiment", "problem", "market", "engineering", "goal"],
+        "power_words": ["launched", "prioritised", "validated", "aligned", "grew", "defined"],
+        "questions": [
+            "Tell me about a product you launched from idea to release.",
+            "How do you decide what to build next?",
+            "How would you improve our product?",
+            "Tell me about a time you said no to a stakeholder.",
+        ],
+    },
+    "design": {
+        "label": "UI/UX & creative design", "icon": "🎨",
+        "dress": "Smart casual with a touch of personal style; neat and intentional — your look is part of your "
+                 "portfolio.",
+        "skills": ["User research", "Wireframing & prototyping", "Visual design", "Usability testing",
+                   "Presenting design decisions"],
+        "keywords": ["user", "research", "prototype", "figma", "usability", "wireframe", "design system",
+                     "accessibility", "feedback", "iteration", "persona", "testing", "visual"],
+        "power_words": ["designed", "prototyped", "simplified", "tested", "iterated", "crafted"],
+        "questions": [
+            "Walk me through a case study from your portfolio.",
+            "How do you handle feedback you disagree with?",
+            "How do you balance user needs with business goals?",
+            "Tell me about a design that failed in testing.",
+        ],
+    },
+    "marketing": {
+        "label": "Marketing & communications", "icon": "📣",
+        "dress": "Smart / business casual, polished and current.",
+        "skills": ["Campaign planning", "Content & copywriting", "Digital/social media", "Analytics", "Brand"],
+        "keywords": ["campaign", "brand", "audience", "content", "social media", "engagement", "conversion",
+                     "seo", "roi", "budget", "leads", "analytics", "strategy"],
+        "power_words": ["launched", "grew", "increased", "positioned", "crafted", "converted"],
+        "questions": [
+            "Tell me about a campaign you ran and its results.",
+            "How would you market our product to a new audience?",
+            "How do you measure the success of content?",
+            "Which brand do you admire and why?",
+        ],
+    },
+    "sales": {
+        "label": "Sales & business development", "icon": "🤝",
+        "dress": "Business formal or sharp business casual — you are the product in a sales interview.",
+        "skills": ["Prospecting", "Discovery questions", "Objection handling", "Closing", "CRM discipline"],
+        "keywords": ["target", "quota", "pipeline", "client", "closed", "revenue", "deal", "objection", "crm",
+                     "relationship", "prospect", "negotiation", "customer"],
+        "power_words": ["closed", "exceeded", "negotiated", "won", "generated", "built"],
+        "questions": [
+            "Sell me this pen.",
+            "Tell me about the biggest deal you closed.",
+            "How do you handle rejection?",
+            "How do you handle the objection “your price is too high”?",
+        ],
+    },
+    "finance": {
+        "label": "Finance, banking & accounting", "icon": "💰",
+        "dress": "Business formal: dark suit or blazer, formal shirt, conservative accessories, polished shoes.",
+        "skills": ["Financial analysis", "Excel & modelling", "Attention to detail", "Compliance", "Reporting"],
+        "keywords": ["financial", "analysis", "excel", "model", "budget", "forecast", "audit", "compliance",
+                     "valuation", "reconciliation", "accuracy", "risk", "report", "cash flow"],
+        "power_words": ["analysed", "reconciled", "forecast", "audited", "reduced", "ensured"],
+        "questions": [
+            "Walk me through the three financial statements.",
+            "Tell me about a time accuracy really mattered in your work.",
+            "How would you value a company?",
+            "Why finance, and why our firm?",
+        ],
+    },
+    "hr": {
+        "label": "HR & recruitment", "icon": "🧑‍💼",
+        "dress": "Business casual, approachable and polished.",
+        "skills": ["Recruitment", "Employee relations", "Confidentiality", "HR policies & law", "Empathy"],
+        "keywords": ["employees", "recruitment", "hiring", "onboarding", "policy", "engagement", "retention",
+                     "confidential", "conflict", "training", "culture", "performance"],
+        "power_words": ["recruited", "onboarded", "resolved", "trained", "improved", "facilitated"],
+        "questions": [
+            "How would you handle a complaint between two employees?",
+            "How do you assess culture fit without bias?",
+            "Tell me about a hiring process you improved.",
+            "How do you keep sensitive information confidential?",
+        ],
+    },
+    "healthcare": {
+        "label": "Healthcare & nursing", "icon": "🩺",
+        "dress": "Business casual or clean professional attire; minimal jewellery and fragrance, tied-back hair, "
+                 "closed shoes.",
+        "skills": ["Patient care", "Clinical knowledge", "Communication under stress", "Teamwork", "Ethics"],
+        "keywords": ["patient", "care", "safety", "clinical", "team", "empathy", "protocol", "emergency",
+                     "communication", "family", "treatment", "documentation"],
+        "power_words": ["cared", "assessed", "advocated", "stabilised", "educated", "coordinated"],
+        "questions": [
+            "Tell me about a difficult patient and how you handled them.",
+            "How do you prioritise when several patients need you at once?",
+            "Describe a time you prevented a mistake.",
+            "Why did you choose healthcare?",
+        ],
+    },
+    "teaching": {
+        "label": "Teaching & education", "icon": "🧑‍🏫",
+        "dress": "Business casual, comfortable and approachable.",
+        "skills": ["Lesson planning", "Classroom management", "Differentiation", "Assessment", "Communication "
+                   "with parents"],
+        "keywords": ["students", "lesson", "learning", "classroom", "engagement", "assessment", "parents",
+                     "curriculum", "progress", "behaviour", "differentiated", "feedback"],
+        "power_words": ["taught", "engaged", "mentored", "designed", "improved", "inspired"],
+        "questions": [
+            "How do you manage a disruptive classroom?",
+            "How do you support students who are falling behind?",
+            "Describe a lesson that went really well.",
+            "How do you involve parents in learning?",
+        ],
+    },
+    "customer_service": {
+        "label": "Customer service & support", "icon": "🎧",
+        "dress": "Smart casual / business casual, neat and friendly.",
+        "skills": ["Empathy", "Problem solving", "Patience", "Clear communication", "Product knowledge"],
+        "keywords": ["customer", "issue", "resolved", "empathy", "listen", "satisfaction", "complaint",
+                     "solution", "follow up", "calm", "feedback", "ticket"],
+        "power_words": ["resolved", "assisted", "de-escalated", "retained", "improved", "guided"],
+        "questions": [
+            "Tell me about an angry customer you turned around.",
+            "What does great customer service mean to you?",
+            "How do you handle a question you can't answer?",
+            "How do you stay patient on a busy day?",
+        ],
+    },
+    "engineering": {
+        "label": "Core engineering (mech / civil / electrical)", "icon": "⚙️",
+        "dress": "Business casual; formal for PSU and large-company interviews.",
+        "skills": ["Technical fundamentals", "Safety & standards", "CAD / tools", "Project execution",
+                   "Problem solving on site"],
+        "keywords": ["design", "safety", "project", "site", "standards", "cad", "testing", "maintenance",
+                     "quality", "cost", "efficiency", "materials", "analysis"],
+        "power_words": ["designed", "tested", "improved", "reduced", "maintained", "executed"],
+        "questions": [
+            "Explain your final-year project and your exact contribution.",
+            "Tell me about a time you improved a process or reduced cost.",
+            "How do you make sure work is done safely?",
+            "Explain a core concept from your branch in simple words.",
+        ],
+    },
+    "management": {
+        "label": "Management & leadership", "icon": "🏢",
+        "dress": "Business formal or sharp business casual.",
+        "skills": ["People leadership", "Strategy", "Decision making", "Delivery", "Stakeholder management"],
+        "keywords": ["team", "strategy", "goals", "delivered", "budget", "performance", "hired", "developed",
+                     "stakeholders", "decision", "results", "culture", "growth"],
+        "power_words": ["led", "scaled", "transformed", "mentored", "delivered", "aligned"],
+        "questions": [
+            "How do you handle an under-performing team member?",
+            "Tell me about a tough decision you made as a leader.",
+            "How do you set goals for your team?",
+            "Describe your leadership style with an example.",
+        ],
+    },
+    "hospitality": {
+        "label": "Hospitality & retail", "icon": "🏨",
+        "dress": "Neat business casual or the brand's style; very well groomed — presentation is part of the job.",
+        "skills": ["Guest experience", "Teamwork in shifts", "Upselling", "Handling complaints", "Hygiene"],
+        "keywords": ["guest", "customer", "service", "team", "shift", "complaint", "sales", "experience",
+                     "hygiene", "smile", "busy", "standards"],
+        "power_words": ["welcomed", "resolved", "exceeded", "upsold", "trained", "maintained"],
+        "questions": [
+            "Tell me about a time you went beyond for a guest.",
+            "How do you handle a rush with too few staff?",
+            "How would you deal with a guest's complaint about their meal?",
+            "Why do you want to work in hospitality?",
+        ],
+    },
+}
+
+# --------------------------------------------------------------------------- vocabulary
+WORD_SWAPS = [
+    {"weak": "i think", "strong": "I'm confident / I believe", "why": "Signals doubt about your own answer."},
+    {"weak": "i guess", "strong": "(state it directly)", "why": "Sounds unsure."},
+    {"weak": "maybe", "strong": "I'd recommend / I would", "why": "Weakens a proposal."},
+    {"weak": "kind of", "strong": "(drop it)", "why": "Filler that blurs your point."},
+    {"weak": "sort of", "strong": "(drop it)", "why": "Filler that blurs your point."},
+    {"weak": "basically", "strong": "(drop it)", "why": "Adds nothing and sounds casual."},
+    {"weak": "just", "strong": "(drop it)", "why": "Minimises your contribution (“I just helped”)."},
+    {"weak": "helped with", "strong": "led / delivered / built", "why": "Hides what *you* did."},
+    {"weak": "tried to", "strong": "worked to / achieved", "why": "Suggests you failed."},
+    {"weak": "i was responsible for", "strong": "I owned / I managed", "why": "Passive; say what you did."},
+    {"weak": "a lot of", "strong": "(a number: 30%, 5 clients, 2 weeks)", "why": "Numbers are memorable and credible."},
+    {"weak": "stuff", "strong": "(the specific thing)", "why": "Vague and informal."},
+    {"weak": "things", "strong": "(the specific thing)", "why": "Vague."},
+    {"weak": "hard worker", "strong": "(an example of results)", "why": "Every candidate says it — prove it."},
+    {"weak": "team player", "strong": "(a teamwork example)", "why": "Cliché unless backed by a story."},
+    {"weak": "to be honest", "strong": "(drop it)", "why": "Implies the rest wasn't honest."},
+    {"weak": "sorry", "strong": "(pause and continue)", "why": "Apologising undermines confidence."},
+    {"weak": "like", "strong": "(pause instead)", "why": "Filler when used between words."},
+]
+POWER_VERBS = [
+    "led", "built", "designed", "delivered", "improved", "increased", "reduced", "launched", "managed", "created",
+    "solved", "achieved", "negotiated", "trained", "analysed", "analyzed", "automated", "optimised", "optimized",
+    "resolved", "coordinated", "mentored", "initiated", "implemented", "streamlined", "owned", "developed",
+    "organised", "organized", "grew", "saved", "won", "exceeded", "presented", "decided", "planned", "shipped",
+]
+
+# --------------------------------------------------------------------------- preparation guide
+GUIDE = [
+    {"id": "get", "icon": "🔎", "title": "How to get the interview",
+     "intro": "Most candidates are rejected before a human reads their CV. Make it easy to say yes.",
+     "tips": [
+         "Tailor your CV to each job: copy the exact skill words from the job description (applicant tracking "
+         "systems search for them).",
+         "Write achievements, not duties: “Reduced report time by 40% by automating Excel” beats “Made reports”.",
+         "One page for freshers, two at most for experienced roles; clean layout, no photos unless local norms "
+         "expect them.",
+         "Complete your LinkedIn: professional photo, headline with your target role, 3–5 achievements, and "
+         "“Open to work” for recruiters.",
+         "Referrals are the strongest route: message alumni or employees politely, ask for 15 minutes of advice "
+         "— not directly for a job.",
+         "Apply within the first 3–5 days of a posting, and follow up with the recruiter after a week.",
+         "Build proof: portfolio, GitHub, certificates, case studies or volunteering for your field.",
+         "Track every application (company, date, contact, status) and aim for steady volume — 5 quality "
+         "applications a day beats 50 generic ones a week.",
+     ]},
+    {"id": "research", "icon": "📚", "title": "Research before the day",
+     "intro": "Preparation is the biggest source of confidence.",
+     "tips": [
+         "Read the company website, recent news, products and values; know their competitors.",
+         "Re-read the job description and map each requirement to one story from your experience.",
+         "Look up your interviewers on LinkedIn — find common ground.",
+         "Prepare 6–8 STAR stories (achievement, challenge, conflict, failure, leadership, teamwork) that can "
+         "answer most behavioural questions.",
+         "Practise out loud — on camera — at least three times. Reading answers silently doesn't train your voice.",
+     ]},
+    {"id": "first", "icon": "🌟", "title": "The first 30 seconds",
+     "intro": "Interviewers form a first impression in seconds; a strong start makes everything after easier.",
+     "tips": [
+         "Arrive 10 minutes early (join video calls 3–5 minutes early with everything tested).",
+         "Smile genuinely as you greet them — it relaxes both of you and signals warmth.",
+         "Firm (not crushing) handshake, eye contact, and their name: “Good morning, Ms. Rao — thank you for "
+         "having me.”",
+         "Wait to be offered a seat, then sit upright with both feet on the floor.",
+         "Have your opening line for “Tell me about yourself” memorised word for word — fluency in the first "
+         "sentence sets your pace for the whole interview.",
+     ]},
+    {"id": "dress", "icon": "👔", "title": "Dressing sense",
+     "intro": "Dress for the role you want, one level above the company's daily style.",
+     "tips": [
+         "Formal (banks, law, government, sales): dark suit or blazer, formal shirt, tie optional, polished shoes.",
+         "Business casual (most offices): ironed shirt or blouse, trousers or skirt, clean shoes, no jeans.",
+         "Smart casual (startups, tech, creative): neat shirt or polo, chinos or dark jeans, clean sneakers are "
+         "acceptable.",
+         "Fit and cleanliness matter more than price: ironed, no stains, trimmed nails, neat hair.",
+         "Solid, calm colours (navy, grey, white, light blue) look best on camera; avoid fine stripes and busy "
+         "patterns that flicker on video.",
+         "Minimal jewellery and light or no fragrance.",
+         "On video, dress fully — you may need to stand up.",
+     ]},
+    {"id": "body", "icon": "🧍", "title": "Posture, sitting & body language",
+     "intro": "Your body speaks before you do.",
+     "tips": [
+         "Sit upright, back against the chair, leaning slightly forward (about 10°) to show interest.",
+         "Keep your hands visible and relaxed — open gestures at chest level support your words.",
+         "Don't cross your arms, touch your face, play with a pen or shake your leg.",
+         "Nod occasionally while listening; it shows you're following.",
+         "Keep your head level — a tilted head can read as unsure; a raised chin as arrogant.",
+         "Mirror the interviewer's energy slightly: calm with calm, warm with warm.",
+     ]},
+    {"id": "eyes", "icon": "👀", "title": "Eye contact & facial expression",
+     "intro": "Eye contact builds trust; your face shows enthusiasm.",
+     "tips": [
+         "Hold eye contact for about 60–70% of the time — in 4–5 second stretches, then glance away briefly "
+         "while thinking.",
+         "On video, look at the camera lens when you speak (not at their face on screen); put the call window "
+         "just under the camera.",
+         "With a panel, start and end each answer looking at the person who asked, and include the others "
+         "in between.",
+         "Smile at the start, at the end, and when talking about things you enjoy — a neutral but friendly "
+         "face in between.",
+         "Let your expression match your story: serious for challenges, brighter for results.",
+     ]},
+    {"id": "voice", "icon": "🎙️", "title": "Speaking sense, tone & modulation",
+     "intro": "How you say it is as important as what you say.",
+     "tips": [
+         "Pace: 120–155 words per minute. Nerves make you speed up — pause at every full stop.",
+         "Replace fillers (um, uh, like, you know) with a silent breath. Silence sounds thoughtful.",
+         "End statements on a falling pitch; rising at the end turns facts into questions.",
+         "Stress the key word in each sentence and slow down for numbers and results.",
+         "Vary your volume and pitch — a monotone voice sounds bored even if you aren't.",
+         "Speak from your diaphragm and project to the back of the room; on video speak slightly louder "
+         "than normal.",
+         "Keep answers 60–120 seconds; check in for longer stories (“Would you like more detail?”).",
+     ]},
+    {"id": "vocab", "icon": "📖", "title": "Vocabulary that sounds confident",
+     "intro": "Strong verbs, specific nouns and numbers make you sound capable.",
+     "tips": [
+         "Start achievement sentences with action verbs: led, built, delivered, improved, reduced, launched.",
+         "Quantify everything you can: %, ₹/$, time saved, people, customers, rankings.",
+         "Use the vocabulary of your field correctly — but explain jargon simply if the interviewer isn't "
+         "technical.",
+         "Say “I” for your own actions and “we” for team results — interviewers need to know your part.",
+         "Avoid slang, filler and minimisers (“just”, “only”, “kind of”).",
+     ]},
+    {"id": "answer", "icon": "🧩", "title": "How to answer any question",
+     "intro": "A structure stops rambling and blanking.",
+     "tips": [
+         "Behavioural (“Tell me about a time…”): STAR — Situation, Task, Action, Result.",
+         "Opinion (“What do you think about…”): PREP — Point, Reason, Example, Point.",
+         "“Tell me about yourself”: Present → Past → Future.",
+         "Listen to the full question; it's fine to pause 2–3 seconds before answering.",
+         "If unclear, ask: “Just to make sure — do you mean…?”",
+         "Finish with a result or a link back to the role, then stop talking.",
+     ]},
+    {"id": "tough", "icon": "🧗", "title": "Handling tough moments",
+     "intro": "Composure under pressure is itself what they are testing.",
+     "tips": [
+         "Don't know the answer? Say so honestly, then show how you'd find out: “I haven't used X, but I'd "
+         "approach it by…”.",
+         "Mind goes blank? Repeat the question aloud, take a breath, start with the structure (“The situation "
+         "was…”).",
+         "Made a mistake mid-answer? Correct it calmly: “Let me rephrase that.”",
+         "Stress or salary questions: answer briefly and confidently, don't over-explain.",
+         "Before you go in: box breathing — in 4 s, hold 4 s, out 4 s, hold 4 s — three rounds.",
+     ]},
+    {"id": "ask", "icon": "❓", "title": "Questions to ask them",
+     "intro": "Good questions show you are serious and help you decide too.",
+     "tips": [
+         "“What does success look like in the first 90 days?”",
+         "“What are the biggest challenges for the team right now?”",
+         "“How do you support learning and growth for people in this role?”",
+         "“What do you enjoy most about working here?”",
+         "“What are the next steps in the process?”",
+     ]},
+    {"id": "video", "icon": "📹", "title": "Video interview setup",
+     "intro": "On video, your camera, light and sound are your first impression.",
+     "tips": [
+         "Camera at eye level, about an arm's length away; frame head and shoulders with a little space above "
+         "your head.",
+         "Light in front of you (a window or lamp behind the camera), never behind you.",
+         "Use the best camera available (720p or higher) and clean the lens.",
+         "Plain, tidy background; turn off notifications; close other apps.",
+         "Use earphones with a mic for clear audio; test with a friend or this app beforehand.",
+         "Keep a glass of water and a notepad nearby — but don't read answers.",
+     ]},
+    {"id": "close", "icon": "✅", "title": "Closing & follow-up",
+     "intro": "End as strongly as you began.",
+     "tips": [
+         "Close with a 1–2 sentence summary: why you fit and that you're excited about the role.",
+         "Thank them by name, smile, and confirm the next steps.",
+         "Send a short thank-you email within 24 hours mentioning one thing you discussed.",
+         "Note the questions you found hard and practise them for the next interview.",
+     ]},
+]
+
+
+def all_questions(field: str | None = None) -> list[dict]:
+    """General questions plus the field's role-specific questions (STAR by default)."""
+    out = list(GENERAL_QUESTIONS)
+    f = FIELDS.get(field or "", None)
+    if f:
+        for i, q in enumerate(f["questions"]):
+            out.append({
+                "id": f"{field}-{i}", "category": f["label"], "framework": "STAR", "q": q,
+                "looks_for": f"Real experience with {', '.join(f['skills'][:3]).lower()}, explained clearly, "
+                             "with your own actions and a result.",
+                "outline": ["Set the context in one or two sentences", "Explain your approach and decisions",
+                            "Give the result, ideally with a number", "Say what you learned or would do next"],
+                "pitfalls": ["Staying abstract — give a concrete example", "Jargon without explanation",
+                             "Forgetting the result"],
+                "points": f["keywords"],
+            })
+    return out
+
+
+def find_question(question_id: str, field: str | None = None) -> dict | None:
+    return next((q for q in all_questions(field) if q["id"] == question_id), None)
