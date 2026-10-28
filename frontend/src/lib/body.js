@@ -1,7 +1,7 @@
 // Whole-body analysis for the interview coach (computer vision, runs in the browser):
-//   * MediaPipe Pose Landmarker  -> posture (slouching, shoulder tilt), hands (visible, gesture activity,
+//   * MediaPipe Pose Landmarker (full model) -> posture (slouching, shoulder tilt), hands (visible, gesture activity,
 //                                   face touching, crossed arms)
-//   * MediaPipe Object Detector  -> things in the frame: phone, other people, cups, books…
+//   * MediaPipe Object Detector (EfficientDet-Lite2) -> things in the frame: phone, other people, cups, books…
 // Pose runs on every 3rd frame and objects once a second, so the camera stays smooth.
 // summary() returns the same keys as backend/cv/body_tracker.py.
 
@@ -22,14 +22,14 @@ export function loadBodyModels() {
     const [pose, objects] = await Promise.all([
       make((delegate) =>
         PoseLandmarker.createFromOptions(files, {
-          baseOptions: { modelAssetPath: "/mediapipe/pose_landmarker_lite.task", delegate },
+          baseOptions: { modelAssetPath: "/mediapipe/pose_landmarker_full.task", delegate },
           runningMode: "VIDEO",
           numPoses: 1,
         }),
       ),
       make((delegate) =>
         ObjectDetector.createFromOptions(files, {
-          baseOptions: { modelAssetPath: "/mediapipe/efficientdet_lite0.tflite", delegate },
+          baseOptions: { modelAssetPath: "/mediapipe/efficientdet_lite2.tflite", delegate },
           runningMode: "VIDEO",
           scoreThreshold: 0.45,
           maxResults: 6,

@@ -2,7 +2,7 @@
 
   * MediaPipe Pose            -> posture (slouching, shoulder tilt), hands (visible, gesture activity,
                                  face touching, crossed arms)
-  * MediaPipe Object Detector -> things in the frame: phone, other people, cups, books… (EfficientDet-Lite0;
+  * MediaPipe Object Detector -> things in the frame: phone, other people, cups, books… (EfficientDet-Lite2;
                                  the model is downloaded once to cv/models/, skipped if that is not possible)
 Pose runs on every 3rd frame and objects once a second so the video stays smooth.
 summary() returns the same keys as the browser, which the interview coach scores.
@@ -17,9 +17,9 @@ import cv2
 import mediapipe as mp
 import numpy as np
 
-MODEL_URL = ("https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/int8/1/"
-             "efficientdet_lite0.tflite")
-MODEL_PATH = Path(__file__).parent / "models" / "efficientdet_lite0.tflite"
+MODEL_URL = ("https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite2/float16/1/"
+             "efficientdet_lite2.tflite")
+MODEL_PATH = Path(__file__).parent / "models" / "efficientdet_lite2.tflite"
 NOTABLE = {"cell phone", "person", "cup", "bottle", "book", "laptop", "tv", "remote", "keyboard", "mouse", "dog", "cat"}
 NOSE, L_SH, R_SH, L_EL, R_EL, L_WR, R_WR = 0, 11, 12, 13, 14, 15, 16
 SKELETON = [(L_SH, R_SH), (L_SH, L_EL), (L_EL, L_WR), (R_SH, R_EL), (R_EL, R_WR)]
@@ -51,7 +51,8 @@ class BodyTracker:
     """Thread-safe: update() runs on the video thread, summary()/live on the UI thread."""
 
     def __init__(self, objects: bool = True):
-        self.pose = mp.solutions.pose.Pose(model_complexity=0, min_detection_confidence=0.5,
+        self.pose = mp.solutions.pose.Pose(model_complexity=1,  # full model: more accurate landmarks
+                                            min_detection_confidence=0.5,
                                            min_tracking_confidence=0.5)
         self.detector = _object_detector() if objects else None
         self._lock = threading.Lock()

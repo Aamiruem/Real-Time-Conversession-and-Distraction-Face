@@ -26,14 +26,14 @@ def analyze_upload(
     mode: str = Form("free"),
     prompt: str = Form(""),
     eye_contact: float | None = Form(None, ge=0, le=100),
-    whisper_model: str = Form("base.en"),
+    whisper_model: str = Form("small.en", description="small.en (default) · base.en (fast) · medium.en (most accurate)"),
     conversation_type: str = Form("", description="Adds five-area conversation feedback, e.g. interview, sales"),
     save: bool = Form(True),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Transcribe + score a recording with the speech coach engine; saved as a speech session by default."""
-    from speech.analyzer import analyze
+    from speech.analyzer import DEFAULT_WHISPER, WHISPER_MODELS, analyze
     from speech.audio import decode_audio
     from speech.conversation import CONVERSATION_TYPES, conversation_feedback
 
@@ -49,8 +49,8 @@ def analyze_upload(
         raise HTTPException(400, f"Could not read the audio file: {exc}") from exc
     if len(samples) < 3 * 16000:
         raise HTTPException(400, "Recording too short — speak for at least a few seconds")
-    report = analyze(samples, eye_contact=eye_contact, model_size=whisper_model if whisper_model in ("base.en", "small.en")
-                     else "base.en", passage=prompt if mode == "read" else None)
+    model = whisper_model if whisper_model in WHISPER_MODELS else DEFAULT_WHISPER
+    report = analyze(samples, eye_contact=eye_contact, model_size=model, passage=prompt if mode == "read" else None)
     if report.get("error"):
         raise HTTPException(422, report["error"])
     if conversation_type:

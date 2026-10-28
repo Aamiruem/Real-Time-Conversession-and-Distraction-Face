@@ -24,7 +24,7 @@ export default function ConversationCoach() {
   const [promptIdx, setPromptIdx] = useState(0);
   const [custom, setCustom] = useState("");
   const [useCamera, setUseCamera] = useState(true);
-  const [whisper, setWhisper] = useState("base.en");
+  const [whisper, setWhisper] = useState("small.en");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [result, setResult] = useState(null);
@@ -197,8 +197,9 @@ export default function ConversationCoach() {
             <label className="field" style={{ marginBottom: 0 }}>
               <span>Speech model</span>
               <select value={whisper} onChange={(e) => setWhisper(e.target.value)} disabled={recording}>
-                <option value="base.en">base.en — fast</option>
-                <option value="small.en">small.en — more accurate</option>
+                <option value="small.en">small.en — accurate (recommended)</option>
+                <option value="base.en">base.en — fastest</option>
+                <option value="medium.en">medium.en — most accurate, slower</option>
               </select>
             </label>
           </div>

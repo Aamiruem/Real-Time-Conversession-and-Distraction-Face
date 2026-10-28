@@ -27,6 +27,11 @@ HEDGES = [
 # Whisper drops disfluencies unless the prompt shows them, so prime it with some.
 FILLER_PROMPT = "Umm, let me think like, hmm... Okay, uh, here's what I'm, you know, thinking."
 
+# Whisper sizes the API accepts: small.en is the default (clearly fewer recognition errors than base.en),
+# medium.en is the most accurate but ~3x slower on CPU; base.en is the fast option.
+WHISPER_MODELS = ("small.en", "base.en", "medium.en")
+DEFAULT_WHISPER = "small.en"
+
 WEIGHTS = {"fluency": 0.22, "pace": 0.14, "voice": 0.14, "assertiveness": 0.14, "clarity": 0.18, "eye_contact": 0.18}
 LABELS = {
     "fluency": "Fluency", "pace": "Pace", "voice": "Voice energy", "assertiveness": "Assertiveness",
@@ -35,7 +40,7 @@ LABELS = {
 
 
 @lru_cache(maxsize=2)
-def load_model(size: str = "base.en"):
+def load_model(size: str = "small.en"):
     from faster_whisper import WhisperModel
 
     return WhisperModel(size, device="cpu", compute_type="int8")
@@ -54,7 +59,7 @@ def _clamp(v: float) -> float:
 
 
 # ------------------------------------------------------------------ transcript
-def transcribe(audio: np.ndarray, model_size: str = "base.en") -> list[dict]:
+def transcribe(audio: np.ndarray, model_size: str = "small.en") -> list[dict]:
     segments, _ = load_model(model_size).transcribe(
         audio, language="en", word_timestamps=True, vad_filter=True,
         initial_prompt=FILLER_PROMPT, condition_on_previous_text=False,
@@ -132,7 +137,7 @@ def compare_to_passage(words: list[dict], passage: str) -> dict:
 
 # -------------------------------------------------------------------- analysis
 def analyze(audio: np.ndarray, *, eye_contact: float | None = None, passage: str | None = None,
-            model_size: str = "base.en") -> dict:
+            model_size: str = "small.en") -> dict:
     """Full coaching report for one recording (float32 mono, 16 kHz)."""
     audio = np.asarray(audio, dtype=np.float32)
     duration = len(audio) / SAMPLE_RATE

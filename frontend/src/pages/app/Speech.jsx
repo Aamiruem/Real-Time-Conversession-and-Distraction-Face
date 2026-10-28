@@ -25,7 +25,7 @@ export default function SpeechCoach() {
   const [topic, setTopic] = useState(TOPICS[0]);
   const [custom, setCustom] = useState("");
   const [passage, setPassage] = useState(PASSAGES[0]);
-  const [whisper, setWhisper] = useState("base.en");
+  const [whisper, setWhisper] = useState("small.en");
   const { level, seconds, error: recError, begin, finish } = useVoiceRecorder();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -154,8 +154,9 @@ export default function SpeechCoach() {
             <label className="field">
               <span>Speech model</span>
               <select value={whisper} onChange={(e) => setWhisper(e.target.value)}>
-                <option value="base.en">base.en — fast</option>
-                <option value="small.en">small.en — more accurate pronunciation</option>
+                <option value="small.en">small.en — accurate (recommended)</option>
+                <option value="base.en">base.en — fastest</option>
+                <option value="medium.en">medium.en — most accurate, slower</option>
               </select>
             </label>
           </div>

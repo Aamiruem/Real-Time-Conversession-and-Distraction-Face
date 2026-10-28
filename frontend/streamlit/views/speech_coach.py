@@ -56,8 +56,8 @@ with st.sidebar:
     else:
         idx = st.selectbox("Passage", range(len(PASSAGES)), format_func=lambda i: PASSAGES[i][:40] + "…")
         prompt = PASSAGES[idx]
-    model_size = st.selectbox("Speech model", ["base.en", "small.en"],
-                              help="small.en recognises pronunciation more accurately but is ~3× slower")
+    model_size = st.selectbox("Speech model", ["small.en", "base.en", "medium.en"],
+                              help="small.en: accurate (recommended) · base.en: fastest · medium.en: most accurate, ~3× slower")
 
 label = "Talk about" if mode == "free" else "Read this aloud, clearly"
 st.markdown(f"<div class='prompt-card'><div class='l'>{label}</div>{html.escape(prompt)}</div>",

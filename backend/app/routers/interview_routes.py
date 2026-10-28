@@ -41,14 +41,14 @@ def answer(
     field: str = Form("general"),
     presence: str = Form("", description="JSON from the face tracker: smile_pct, brightness, sharpness…"),
     eye_contact: float | None = Form(None, ge=0, le=100),
-    whisper_model: str = Form("base.en"),
+    whisper_model: str = Form("small.en", description="small.en (default) · base.en (fast) · medium.en (most accurate)"),
     save: bool = Form(True),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Mock-interview answer → speech analysis + interview feedback (content, delivery, presence)."""
     from interview.coach import answer_feedback
-    from speech.analyzer import analyze
+    from speech.analyzer import DEFAULT_WHISPER, WHISPER_MODELS, analyze
     from speech.audio import decode_audio
     from speech.conversation import conversation_feedback
 
@@ -73,7 +73,7 @@ def answer(
     if eye_contact is not None:
         pres.setdefault("eye_contact", eye_contact)
     report = analyze(samples, eye_contact=pres.get("eye_contact"),
-                     model_size=whisper_model if whisper_model in ("base.en", "small.en") else "base.en")
+                     model_size=whisper_model if whisper_model in WHISPER_MODELS else DEFAULT_WHISPER)
     if report.get("error"):
         raise HTTPException(422, report["error"])
     report["conversation"] = conversation_feedback(report, "interview")

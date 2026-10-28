@@ -10,6 +10,6 @@ COPY speech ./speech
 COPY interview ./interview
 COPY app ./app
 # Train the bootstrap fatigue model into the image (retrain later with: python -m ml.train --with-db)
-RUN python -m ml.train && python -c "from faster_whisper import WhisperModel; WhisperModel('base.en', device='cpu', compute_type='int8')"
+RUN python -m ml.train && python -c "from faster_whisper import WhisperModel; WhisperModel('small.en', device='cpu', compute_type='int8')"
 EXPOSE 8000
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips=*"]

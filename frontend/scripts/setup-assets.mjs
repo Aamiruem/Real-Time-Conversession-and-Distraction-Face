@@ -1,15 +1,16 @@
 // Copies the MediaPipe WASM runtime into public/ and downloads the models once, so the browser loads
 // everything from our own origin (no third-party CDN at runtime):
-//   face landmarker (attention, smile) · pose landmarker (posture, gestures) · object detector (phone, people…)
+//   face landmarker (attention, smile) · pose landmarker FULL (posture, gestures — more accurate than "lite")
+//   · object detector EfficientDet-Lite2 (phone, people… — ~34 mAP on COCO vs ~26 for Lite0)
 import { cp, mkdir, stat, writeFile } from "node:fs/promises";
 
 const MODELS = {
   "face_landmarker.task":
     "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
-  "pose_landmarker_lite.task":
-    "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
-  "efficientdet_lite0.tflite":
-    "https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/int8/1/efficientdet_lite0.tflite",
+  "pose_landmarker_full.task":
+    "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task",
+  "efficientdet_lite2.tflite":
+    "https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite2/float16/1/efficientdet_lite2.tflite",
 };
 
 await mkdir("public/mediapipe/wasm", { recursive: true });
