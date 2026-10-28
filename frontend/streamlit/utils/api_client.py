@@ -152,6 +152,11 @@ def leaderboard():
     return _request("GET", "/analytics/leaderboard")
 
 
+def dashboard():
+    """KPIs, goals, trends, skills, activity and next steps for the home dashboard (one call)."""
+    return _request("GET", "/analytics/dashboard")
+
+
 # ---- speech coach
 def save_speech(report: dict, mode: str, prompt: str):
     return _request("POST", "/speech/sessions", json={"report": report, "mode": mode, "prompt": prompt})

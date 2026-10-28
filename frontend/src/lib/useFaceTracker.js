@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { AttentionEngine, LEFT_EYE, LEFT_IRIS, RIGHT_EYE, RIGHT_IRIS, STATE_COLORS } from "./attention";
+import { BodyTracker } from "./body";
 import { PresenceTracker } from "./presence";
 
 let landmarkerPromise = null;
@@ -33,9 +34,10 @@ export function loadFaceLandmarker() {
 /**
  * Camera + face tracking. Attach `videoRef` / `canvasRef`, call start() / stop().
  * `metrics` refreshes ~5×/s for the UI; `engine` holds the full per-frame state.
- * With `presence: true` it also tracks smile, framing and picture quality (`presence` = PresenceTracker).
+ * With `presence: true` it also tracks smile, framing and picture quality (`presence` = PresenceTracker);
+ * with `body: true` it adds posture, hands and objects in the frame (`body` = BodyTracker).
  */
-export function useFaceTracker({ audio = false, presence: withPresence = false } = {}) {
+export function useFaceTracker({ audio = false, presence: withPresence = false, body: withBody = false } = {}) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const engine = useRef(new AttentionEngine());
@@ -43,6 +45,8 @@ export function useFaceTracker({ audio = false, presence: withPresence = false }
   const raf = useRef(0);
   const presence = useRef(null);
   if (withPresence && !presence.current) presence.current = new PresenceTracker();
+  const body = useRef(null);
+  if (withBody && !body.current) body.current = new BodyTracker();
   const [metrics, setMetrics] = useState(AttentionEngine.empty());
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");
@@ -59,6 +63,10 @@ export function useFaceTracker({ audio = false, presence: withPresence = false }
         engine.current.update(lm, res.facialTransformationMatrixes?.[0]?.data, video.videoWidth, video.videoHeight);
         draw(canvasRef.current, video, lm, engine.current.metrics().state);
         presence.current?.update(lm, res.faceBlendshapes?.[0]?.categories, video, engine.current.m);
+        if (body.current) {
+          body.current.update(video, performance.now());
+          body.current.draw(canvasRef.current, video);
+        }
         const now = performance.now();
         if (now - lastUi > 200) {
           lastUi = now;
@@ -76,6 +84,7 @@ export function useFaceTracker({ audio = false, presence: withPresence = false }
     try {
       const [landmarker, media] = await Promise.all([
         loadFaceLandmarker(),
+        body.current?.load().catch(() => null), // body models are optional — face tracking works without them
         navigator.mediaDevices.getUserMedia({
           // HD widescreen when the camera supports it (wider field of view, sharper picture); falls back gracefully
           video: {
@@ -87,13 +96,14 @@ export function useFaceTracker({ audio = false, presence: withPresence = false }
           },
           audio: audio ? { echoCancellation: true, noiseSuppression: true, autoGainControl: false } : false,
         }),
-      ]);
+      ]).then(([l, , m]) => [l, m]);
       stream.current = media;
       const video = videoRef.current;
       video.srcObject = media;
       await video.play();
       engine.current.reset();
       presence.current?.reset();
+      body.current?.reset();
       setStatus("running");
       loop(landmarker);
       return media;
@@ -127,7 +137,7 @@ export function useFaceTracker({ audio = false, presence: withPresence = false }
     [],
   );
 
-  return { videoRef, canvasRef, engine, presence, metrics, status, error, start, stop, stream };
+  return { videoRef, canvasRef, engine, presence, body, metrics, status, error, start, stop, stream };
 }
 
 function draw(canvas, video, lm, state) {

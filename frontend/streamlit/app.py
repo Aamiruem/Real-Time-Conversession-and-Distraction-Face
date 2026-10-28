@@ -7,7 +7,8 @@ import re
 import streamlit as st
 
 from utils import api_client as api
-from utils.ui import APP_NAME, HIDE_SIDEBAR, card, metric_card, page_header, setup, sidebar_user
+from utils.dashboard import render_dashboard
+from utils.ui import APP_NAME, HIDE_SIDEBAR, setup, sidebar_user
 
 setup("Home", "🎯")
 
@@ -56,61 +57,7 @@ def _start_verification(info: dict, dev_codes: dict | None = None):
 if st.session_state.get("token"):
     user = st.session_state["user"]
     sidebar_user()
-    first = (user.get("full_name") or user["username"]).split()[0]
-    page_header(f"Welcome back, {first}", "Here's where your focus and communication stand today.",
-                eyebrow="Dashboard", highlight=first)
-    try:
-        summary = api.my_summary()
-        fatigue = api.my_fatigue()
-    except api.APIError as e:
-        st.error(str(e))
-        summary, fatigue = None, None
-
-    if summary:
-        c = st.columns(5)
-        metric_card(c[0], summary["sessions"], "Focus sessions")
-        metric_card(c[1], f"{summary['avg_focus_pct']}%", "Avg focus")
-        metric_card(c[2], summary["total_minutes"], "Minutes tracked")
-        metric_card(c[3], f"{summary['avg_speech_confidence']}%", "Speaking confidence")
-        metric_card(c[4], summary["messages_sent"], "Messages sent")
-
-    st.write("")
-    left, right = st.columns([2, 1])
-    with right:
-        st.markdown("#### 🧠 Fatigue risk")
-        if fatigue:
-            color = {"low": "#22c55e", "medium": "#eab308", "high": "#ef4444"}[fatigue["risk"]]
-            st.markdown(f"<div class='fl-card'><span class='fl-pill' style='background:{color}33;color:{color};"
-                        f"border-color:{color}'>{fatigue['risk'].upper()} · {fatigue['risk_score']:.0f}/100</span>"
-                        f"<p style='margin-top:10px'>{fatigue['advice']}</p>"
-                        f"<p style='font-size:.78rem;margin-top:8px'>From your last focus session · "
-                        f"{fatigue['model']['algorithm'].replace('_', ' ')} model</p></div>", unsafe_allow_html=True)
-        else:
-            st.markdown("<div class='fl-card'><p>Finish a Focus Monitor session to get your ML fatigue "
-                        "prediction.</p></div>", unsafe_allow_html=True)
-        st.markdown("#### 🔐 Account")
-        ok = lambda v: "✅ verified" if v else "⚠️ not verified"  # noqa: E731
-        st.markdown(f"<div class='fl-card'><p>📧 {user['email']} — {ok(user.get('email_verified'))}</p>"
-                    f"<p>📱 {user.get('phone') or '—'} — {ok(user.get('phone_verified'))}</p></div>",
-                    unsafe_allow_html=True)
-    with left:
-        st.markdown("#### 🚀 Jump back in")
-        pages = [
-            ("🎥", "Focus Monitor", "Live focus %, distraction, blinks, yawns and drowsiness alarm.",
-             "pages/1_Focus_Monitor.py"),
-            ("🗣️", "Speech Coach", "Pronunciation, pace, fillers and a confidence score with tips.",
-             "pages/4_Speech_Coach.py"),
-            ("💬", "Focus Rooms", "Real-time chat where everyone sees each other's live focus.",
-             "pages/2_Focus_Rooms.py"),
-            ("🧪", "AI Lab", "Try each AI technology on its own: CV, NLP, Speech and ML.", "pages/5_AI_Lab.py"),
-            ("📊", "Analytics", "History, speaking progress, leaderboard and conversation insights.",
-             "pages/3_Analytics.py"),
-        ]
-        for row in (pages[:3], pages[3:]):
-            cols = st.columns(3)
-            for col, (icon, title, text, path) in zip(cols, row):
-                card(col, icon, title, text)
-                col.page_link(path, label=f"Open {title}", icon=icon)
+    render_dashboard(user)
     st.stop()
 
 # ======================================================================= signed out
