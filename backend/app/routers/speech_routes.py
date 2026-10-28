@@ -26,7 +26,7 @@ def analyze_upload(
     mode: str = Form("free"),
     prompt: str = Form(""),
     eye_contact: float | None = Form(None, ge=0, le=100),
-    whisper_model: str = Form("small.en", description="small.en (default) · base.en (fast) · medium.en (most accurate)"),
+    whisper_model: str = Form("base.en", description="base.en (default, fast) · small.en (more accurate) · medium.en (most accurate)"),
     conversation_type: str = Form("", description="Adds five-area conversation feedback, e.g. interview, sales"),
     save: bool = Form(True),
     user: User = Depends(get_current_user),

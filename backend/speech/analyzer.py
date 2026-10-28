@@ -27,10 +27,11 @@ HEDGES = [
 # Whisper drops disfluencies unless the prompt shows them, so prime it with some.
 FILLER_PROMPT = "Umm, let me think like, hmm... Okay, uh, here's what I'm, you know, thinking."
 
-# Whisper sizes the API accepts: small.en is the default (clearly fewer recognition errors than base.en),
-# medium.en is the most accurate but ~3x slower on CPU; base.en is the fast option.
-WHISPER_MODELS = ("small.en", "base.en", "medium.en")
-DEFAULT_WHISPER = "small.en"
+# Whisper sizes the API accepts. base.en is the default (fast, ~140 MB); small.en (~480 MB download) makes clearly
+# fewer recognition errors and medium.en (~1.5 GB) is the most accurate but ~3x slower on CPU.
+# If a larger model cannot be loaded (no disk space, offline) the analysis falls back to base.en instead of failing.
+WHISPER_MODELS = ("base.en", "small.en", "medium.en")
+DEFAULT_WHISPER = "base.en"
 
 WEIGHTS = {"fluency": 0.22, "pace": 0.14, "voice": 0.14, "assertiveness": 0.14, "clarity": 0.18, "eye_contact": 0.18}
 LABELS = {
@@ -40,10 +41,23 @@ LABELS = {
 
 
 @lru_cache(maxsize=2)
-def load_model(size: str = "small.en"):
+def load_model(size: str = DEFAULT_WHISPER):
     from faster_whisper import WhisperModel
 
     return WhisperModel(size, device="cpu", compute_type="int8")
+
+
+_UNAVAILABLE: set[str] = set()  # sizes that failed to load once — don't retry a big download on every request
+
+
+def load_model_or_fallback(size: str):
+    """(model, size actually used): a larger model that cannot be downloaded/loaded falls back to the default."""
+    if size != DEFAULT_WHISPER and size not in _UNAVAILABLE:
+        try:
+            return load_model(size), size
+        except Exception:
+            _UNAVAILABLE.add(size)
+    return load_model(DEFAULT_WHISPER), DEFAULT_WHISPER
 
 
 def _norm(word: str) -> str:
@@ -59,8 +73,8 @@ def _clamp(v: float) -> float:
 
 
 # ------------------------------------------------------------------ transcript
-def transcribe(audio: np.ndarray, model_size: str = "small.en") -> list[dict]:
-    segments, _ = load_model(model_size).transcribe(
+def transcribe(audio: np.ndarray, model_size: str = DEFAULT_WHISPER) -> list[dict]:
+    segments, _ = load_model_or_fallback(model_size)[0].transcribe(
         audio, language="en", word_timestamps=True, vad_filter=True,
         initial_prompt=FILLER_PROMPT, condition_on_previous_text=False,
     )
@@ -137,7 +151,7 @@ def compare_to_passage(words: list[dict], passage: str) -> dict:
 
 # -------------------------------------------------------------------- analysis
 def analyze(audio: np.ndarray, *, eye_contact: float | None = None, passage: str | None = None,
-            model_size: str = "small.en") -> dict:
+            model_size: str = DEFAULT_WHISPER) -> dict:
     """Full coaching report for one recording (float32 mono, 16 kHz)."""
     audio = np.asarray(audio, dtype=np.float32)
     duration = len(audio) / SAMPLE_RATE
@@ -195,6 +209,7 @@ def analyze(audio: np.ndarray, *, eye_contact: float | None = None, passage: str
 
     metrics = {
         "duration_sec": round(duration, 1), "words": len(content), "wpm": round(wpm),
+        "whisper_model": load_model_or_fallback(model_size)[1],
         "fillers": filler_total, "filler_breakdown": fillers, "hedges": hedge_total, "hedge_breakdown": hedges,
         "pauses": pauses, "long_pauses": long_pauses, "clarity_pct": round(clarity, 1), "unclear_words": unclear,
         **voice, "eye_contact": None if eye_contact is None else round(eye_contact, 1),

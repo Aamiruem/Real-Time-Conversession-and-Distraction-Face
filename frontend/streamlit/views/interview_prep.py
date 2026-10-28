@@ -38,8 +38,8 @@ with st.sidebar:
         st.session_state["iv_qid"] = ids[(ids.index(st.session_state["iv_qid"]) + 1) % len(ids)]
     qid = st.selectbox("Question", list(by_id), key="iv_qid",
                        format_func=lambda i: f"[{by_id[i]['category']}] {by_id[i]['q'][:55]}")
-    model_size = st.selectbox("Speech model", ["small.en", "base.en", "medium.en"],
-                              help="small.en: accurate (recommended) · base.en: fastest · medium.en: most accurate, ~3× slower")
+    model_size = st.selectbox("Speech model", ["base.en", "small.en", "medium.en"],
+                              help="base.en: fast (installed) · small.en: more accurate (~480 MB download) · medium.en: most accurate (~1.5 GB)")
 q = by_id[qid]
 fw = FRAMEWORKS[q["framework"]]
 

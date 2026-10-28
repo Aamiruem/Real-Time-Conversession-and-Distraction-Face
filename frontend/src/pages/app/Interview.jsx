@@ -75,7 +75,7 @@ export default function InterviewPrep() {
   const [qid, setQid] = useState("g-about");
   const [guide, setGuide] = useState(null);
   const [hints, setHints] = useState(false);
-  const [whisper, setWhisper] = useState("small.en");
+  const [whisper, setWhisper] = useState("base.en");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [result, setResult] = useState(null);
@@ -386,9 +386,9 @@ export default function InterviewPrep() {
                 <label className="field" style={{ margin: "12px 0 0" }}>
                   <span>Speech model</span>
                   <select value={whisper} onChange={(e) => setWhisper(e.target.value)} disabled={recording}>
-                    <option value="small.en">small.en — accurate (recommended)</option>
-                    <option value="base.en">base.en — fastest</option>
-                    <option value="medium.en">medium.en — most accurate, slower</option>
+                    <option value="base.en">base.en — fast (installed)</option>
+                    <option value="small.en">small.en — more accurate (~480 MB download)</option>
+                    <option value="medium.en">medium.en — most accurate, slower (~1.5 GB)</option>
                   </select>
                 </label>
               </div>

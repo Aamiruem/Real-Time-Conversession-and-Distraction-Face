@@ -35,8 +35,8 @@ with st.sidebar:
         st.session_state[key] = (st.session_state.get(key, 0) + 1) % len(prompts)
     custom = st.text_input("…or your own scenario", placeholder="e.g. Ask my manager for a day off")
     prompt = custom.strip() or prompts[st.session_state.get(key, 0)]
-    model_size = st.selectbox("Speech model", ["small.en", "base.en", "medium.en"],
-                              help="small.en: accurate (recommended) · base.en: fastest · medium.en: most accurate, ~3× slower")
+    model_size = st.selectbox("Speech model", ["base.en", "small.en", "medium.en"],
+                              help="base.en: fast (installed) · small.en: more accurate (~480 MB download) · medium.en: most accurate (~1.5 GB)")
 
 lo, hi = CONVERSATION_TYPES[ctype]["wpm"]
 st.markdown(f"<div class='prompt-card'><div class='l'>{CONVERSATION_TYPES[ctype]['icon']} "

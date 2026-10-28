@@ -11,6 +11,6 @@ COPY backend/speech /app/backend/speech
 COPY backend/interview /app/backend/interview
 COPY frontend/streamlit ./
 # Pre-download the speech model so the first Speech Coach analysis is fast
-RUN python -c "from faster_whisper import WhisperModel; WhisperModel('small.en', device='cpu', compute_type='int8')"
+RUN python -c "from faster_whisper import WhisperModel; WhisperModel('base.en', device='cpu', compute_type='int8')"
 EXPOSE 8501
 CMD ["streamlit", "run", "app.py", "--server.address=0.0.0.0", "--server.port=8501"]

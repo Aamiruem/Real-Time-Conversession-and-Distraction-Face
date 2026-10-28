@@ -54,3 +54,21 @@ def test_nlp_api_requires_auth(client, verified_user):
     headers, _ = verified_user
     r = client.post("/nlp/analyze", json={"text": "Great work team!"}, headers=headers).json()
     assert r["sentiment_label"] == "positive"
+
+
+def test_whisper_falls_back_when_a_model_cannot_load(monkeypatch):
+    from speech import analyzer
+
+    calls = []
+
+    def fake_load(size):
+        calls.append(size)
+        if size != analyzer.DEFAULT_WHISPER:
+            raise OSError("not enough space on the disk")
+        return "base-model"
+
+    monkeypatch.setattr(analyzer, "load_model", fake_load)
+    monkeypatch.setattr(analyzer, "_UNAVAILABLE", set())
+    assert analyzer.load_model_or_fallback("small.en") == ("base-model", analyzer.DEFAULT_WHISPER)
+    assert analyzer.load_model_or_fallback("small.en") == ("base-model", analyzer.DEFAULT_WHISPER)
+    assert calls.count("small.en") == 1  # the failed download is not retried
