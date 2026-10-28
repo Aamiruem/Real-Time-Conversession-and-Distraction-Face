@@ -1,5 +1,3 @@
-"use client";
-
 import { STATE_COLORS, STATE_EMOJI } from "@/lib/attention";
 
 export function PageHead({ eyebrow, title, highlight, sub }) {

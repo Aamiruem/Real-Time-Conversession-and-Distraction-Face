@@ -4,9 +4,9 @@ This guide walks through the whole project in the order you would build and ship
 says what you do, which code is involved, and how to check that it works.
 
 ```
- Google ──▶ Next.js (frontend/) — static SEO pages: /, /features/*, sitemap.xml, robots.txt
- Browser ─▶ Next.js React app (/app/*)
-   camera ─▶ MediaPipe face landmarker in the browser (frontend/lib/attention.js) — video never uploaded
+ Google ──▶ React/Vite build (frontend/) — static SEO pages: /, /features/*, sitemap.xml, robots.txt
+ Browser ─▶ React app (/app/*)
+   camera ─▶ MediaPipe face landmarker in the browser (frontend/src/lib/attention.js) — video never uploaded
    mic    ─▶ MediaRecorder ──upload──┐
    /api/* ──────────────────────────┴─▶ FastAPI (backend/app) ┌──▶ AWS RDS PostgreSQL (users, sessions, chat, OTPs)
    /ws/*  ── WebSocket chat rooms ─────▶   ├─ speech/       ├──▶ AWS S3 (session reports)
@@ -120,7 +120,7 @@ feedback labels, and the SEO pages. Each run uses a throw-away SQLite database.
 ```powershell
 # Terminal 1 — API → http://localhost:8010 (docs: /docs). Port 8010 avoids clashing with other local apps on 8000.
 cd backend; ..\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8010
-# Terminal 2 — website + app → http://localhost:3000 (Next.js proxies /api/* to the API)
+# Terminal 2 — website + app → http://localhost:3000 (the Vite dev server proxies /api/* to the API)
 cd frontend; npm run dev
 ```
 
@@ -166,15 +166,15 @@ Put the printed values in `backend/.env`: `AWS_ENABLED=true`, `DATABASE_URL_OVER
 
 ## 10. SEO checklist after launch
 
-* The public pages are **prerendered to static HTML** by Next.js: the landing page and three keyword-targeted
+* The public pages are **prerendered to static HTML** at build time (`scripts/prerender.mjs`): the landing page and three keyword-targeted
   feature pages (`/features/focus-tracker`, `/features/speech-coach`, `/features/fatigue-prediction`).
   Each has a unique title and description, a canonical link, Open Graph/Twitter tags, one H1 and
   schema.org JSON-LD (SoftwareApplication, Organization, WebSite, FAQPage, BreadcrumbList).
 * The Inter font is self-hosted through `next/font`, so there's no layout shift. The OG image and
   icons are file-based metadata.
-* `robots.txt`, `sitemap.xml` and `manifest.webmanifest` are generated from `NEXT_PUBLIC_SITE_URL`.
+* `robots.txt`, `sitemap.xml` and `manifest.webmanifest` are generated from `VITE_SITE_URL`.
   `/app/*` and `/login` are `noindex`.
-* To rank for more keywords, add entries to `FEATURES` in `frontend/lib/site.js`. Each one becomes a new
+* To rank for more keywords, add entries to `FEATURES` in `frontend/src/lib/site.js`. Each one becomes a new
   static page and is added to the sitemap automatically.
 * Submit `https://yourdomain.com/sitemap.xml` in Google Search Console and Bing Webmaster Tools.
 * Check the page with PageSpeed Insights and the Rich Results Test (the FAQ rich result should show up).

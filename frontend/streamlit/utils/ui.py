@@ -26,6 +26,16 @@ html, body, [class*="css"], .stMarkdown, .stButton button, input, textarea, sele
 .block-container {padding-top: 1.4rem; max-width: 1280px;}
 [data-testid="stToolbar"] [data-testid="stToolbarActions"], .stDeployButton, [data-testid="stAppDeployButton"] {display:none !important;}
 [data-testid="stSidebar"] {background: #0d1526; border-right: 1px solid var(--fl-line);}
+[data-testid="stSidebarNav"] header, [data-testid="stNavSectionHeader"] {color: var(--fl-muted) !important;
+    font-size: .7rem !important; font-weight: 700 !important; letter-spacing: .1em; text-transform: uppercase;}
+[data-testid="stSidebarNavItems"] {max-height: none !important;}  /* always show every page (8 + headers) */
+[data-testid="stSidebarNavViewButton"] {display: none;}
+[data-testid="stSidebarNavLink"] {border-radius: 10px; margin: 1px 0; transition: background .15s;}
+[data-testid="stSidebarNavLink"]:hover {background: #ffffff0a;}
+[data-testid="stSidebarNavLink"][aria-current="page"] {background: #38bdf81f; box-shadow: inset 3px 0 0 var(--fl-accent);}
+[data-testid="stMain"] .block-container {animation: fl-fade .25s ease-out;}
+@keyframes fl-fade {from {opacity: 0; transform: translateY(4px);} to {opacity: 1; transform: none;}}
+.js-plotly-plot .plotly .modebar {display: none !important;}
 .stButton button[kind="primary"], .stFormSubmitButton button[kind="primaryFormSubmit"] {
     background: linear-gradient(135deg, var(--fl-accent), var(--fl-accent2)); color: #04121f; border: 0; font-weight: 700;}
 .stButton button, .stFormSubmitButton button {border-radius: 10px;}
@@ -96,7 +106,7 @@ def setup(title: str, icon: str = "🎯"):
     st.set_page_config(page_title=f"{title} · {APP_NAME}", page_icon=icon, layout="wide",
                        menu_items={"About": f"{APP_NAME} — focus tracking, speech coaching and fatigue prediction."})
     st.markdown(CSS, unsafe_allow_html=True)
-    _sync_login()
+    restore_login()
 
 
 def page_header(title: str, subtitle: str = "", eyebrow: str = "", highlight: str = ""):
@@ -111,7 +121,7 @@ def card(col, icon: str, title: str, text: str):
                  unsafe_allow_html=True)
 
 
-def _sync_login():
+def restore_login():
     """Keep the JWT in the URL (?session=…) so a browser refresh does not log the user out.
 
     Streamlit wipes session_state on refresh, but the URL survives; on the next run the token
@@ -154,7 +164,7 @@ def require_login():
     if not st.session_state.get("token"):
         st.markdown(HIDE_SIDEBAR, unsafe_allow_html=True)
         st.warning("Please sign in first.")
-        st.page_link("app.py", label="Go to sign in", icon="🔐")
+        st.page_link("views/home.py", label="Go to sign in", icon="🔐")
         st.stop()
     sidebar_user()
 

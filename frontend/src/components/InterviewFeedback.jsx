@@ -1,9 +1,7 @@
-"use client";
-
 import { ConversationFeedback } from "./ConversationFeedback";
 import { Gauge } from "./ui";
 
-const SECTION_ICONS = { content: "🧠", delivery: "🎙️", presence: "🎥" };
+const SECTION_ICONS = { content: "🧠", delivery: "🎙️", presence: "🎥", body: "🧍" };
 const color = (v) => (v >= 85 ? "#22c55e" : v >= 70 ? "#38bdf8" : v >= 50 ? "#eab308" : "#ef4444");
 
 function Section({ s }) {

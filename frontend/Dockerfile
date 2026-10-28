@@ -1,25 +1,16 @@
-# Next.js (React) frontend — server-rendered marketing pages + the app, built as a standalone server.
-# Build context is frontend/ (docker compose does this for you).
-FROM node:22-alpine AS deps
+# React (Vite) frontend — built to static files (public pages pre-rendered for SEO) and served by nginx.
+# Build context is frontend/ (docker compose does this for you). /api and /ws are routed by deploy/nginx.conf.
+FROM node:22-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY scripts ./scripts
 RUN npm ci --no-audit --no-fund
-
-FROM node:22-alpine AS build
-WORKDIR /app
-ARG NEXT_PUBLIC_SITE_URL=http://localhost
-ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL NEXT_TELEMETRY_DISABLED=1
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/public ./public
 COPY . ./
+ARG VITE_SITE_URL=http://localhost
+ENV VITE_SITE_URL=$VITE_SITE_URL
 RUN npm run build
 
-FROM node:22-alpine
-WORKDIR /app
-ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 HOSTNAME=0.0.0.0
-COPY --from=build /app/.next/standalone ./
-COPY --from=build /app/.next/static ./.next/static
-COPY --from=build /app/public ./public
+FROM nginx:1.27-alpine
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 3000
-CMD ["node", "server.js"]

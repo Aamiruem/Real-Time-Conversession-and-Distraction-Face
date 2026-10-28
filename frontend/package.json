@@ -3,16 +3,22 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3000",
-    "build": "next build",
-    "start": "next start -p 3000",
+    "dev": "vite",
+    "build": "vite build && vite build --ssr && node scripts/prerender.mjs",
+    "preview": "vite preview",
+    "start": "vite preview",
     "postinstall": "node scripts/setup-assets.mjs"
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "0.10.35",
-    "next": "16.4.3",
     "react": "19.3.1",
     "react-dom": "19.3.1",
+    "react-router": "7.18.4",
     "recharts": "3.10.1"
+  },
+  "type": "module",
+  "devDependencies": {
+    "@vitejs/plugin-react": "4.7.0",
+    "vite": "6.4.4"
   }
 }

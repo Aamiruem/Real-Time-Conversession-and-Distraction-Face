@@ -6,3 +6,4 @@ __pycache__/
 .pytest_cache/
 *.db
 backend/ml/artifacts/
+backend/cv/models/

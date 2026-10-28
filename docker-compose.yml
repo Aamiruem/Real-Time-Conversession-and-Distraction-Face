@@ -31,9 +31,7 @@ services:
     build:
       context: ./frontend
       args:
-        NEXT_PUBLIC_SITE_URL: ${SITE_URL:-http://localhost}
-    environment:
-      BACKEND_URL: http://backend:8000
+        VITE_SITE_URL: ${SITE_URL:-http://localhost}
     depends_on:
       - backend
     restart: unless-stopped

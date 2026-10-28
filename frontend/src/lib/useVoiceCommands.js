@@ -1,5 +1,3 @@
-"use client";
-
 import { useCallback, useEffect, useRef, useState } from "react";
 
 // Voice commands: the browser's speech recognition turns speech into text, then a small intent matcher

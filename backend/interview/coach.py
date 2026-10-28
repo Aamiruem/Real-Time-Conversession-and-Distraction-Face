@@ -7,6 +7,7 @@
                 interaction, voice modulation)
   * Presence -> camera measurements from the face tracker: eye contact, smile, expressiveness, framing,
                 head posture, lighting, sharpness and resolution
+  * Body     -> pose landmarker + object detector: upright posture, hands & gestures, phone / other people
 
 Input is a speech-coach report (speech.analyzer.analyze) plus an optional `presence` dict with the keys produced
 by cv.attention_detector.AttentionDetector.presence() / the browser's lib/presence.js.
@@ -216,6 +217,53 @@ def presence_items(p: dict) -> list[dict]:
     return items
 
 
+# ------------------------------------------------------------------------------------------- body language
+def body_items(p: dict) -> list[dict]:
+    """Posture, hands and the surroundings from the pose landmarker + object detector (browser or Python)."""
+    if not p.get("body_visible_pct"):
+        return []
+    items = []
+    slouch, tilt = float(p.get("slouch_pct") or 0), float(p.get("shoulder_tilt") or 0)
+    items.append(_item("body_posture", "Upright posture", 100 - slouch * 0.9 - max(0.0, tilt - 4) * 5,
+                       f"Slouching {slouch:.0f}% of the time · shoulders tilted {tilt:.0f}°",
+                       "Sit back in the chair, lift your chest and keep both shoulders level." if slouch > 20 or tilt > 8
+                       else "Upright and balanced — that reads as confident."))
+
+    hands, act = float(p.get("hands_visible_pct") or 0), p.get("gesture_activity")
+    touch, crossed = float(p.get("face_touch_pct") or 0), float(p.get("arms_crossed_pct") or 0)
+    if hands < 15:
+        score, tip = 65.0, "Let your hands be seen — open gestures at chest level make you look open and sure."
+    elif act is None:
+        score, tip = 80.0, "Use your hands to underline key points."
+    else:
+        act = float(act)
+        score = 70 if act < 0.02 else 100 if act <= 0.12 else max(50.0, 100 - (act - 0.12) * 300)
+        tip = ("Your hands stayed still — use a few open gestures for your key points." if act < 0.02 else
+               "Lots of hand movement — keep gestures slower and within your chest area." if act > 0.12 else
+               "Natural, purposeful gestures.")
+    if touch > 10:
+        score -= 20
+        tip = "You touched your face often — rest your hands on the desk between gestures."
+    if crossed > 20:
+        score -= 25
+        tip = "Uncross your arms — it reads as defensive."
+    items.append(_item("gestures", "Hands & gestures", score,
+                       f"Hands visible {hands:.0f}% · activity {act if act is not None else '—'} · "
+                       f"face touching {touch:.0f}% · arms crossed {crossed:.0f}%", tip))
+
+    phone, people = float(p.get("phone_pct") or 0), int(p.get("people_max") or 0)
+    others = [o["label"] for o in p.get("objects") or [] if o.get("label") != "cell phone" and o.get("pct", 0) >= 20]
+    score = 100 - min(60.0, phone * 2) - (25 if people > 1 else 0) - 5 * min(len(others), 3)
+    items.append(_item("surroundings", "Surroundings", score,
+                       f"Phone in view {phone:.0f}% of the time · up to {max(people, 1)} person(s) in frame"
+                       + (f" · also seen: {', '.join(others)}" if others else ""),
+                       "Put your phone away and out of sight." if phone > 5 else
+                       "Make sure nobody else is in the frame — find a quiet, private space." if people > 1 else
+                       "Clear the desk and background of distracting objects." if others else
+                       "Clean, distraction-free frame."))
+    return items
+
+
 # ------------------------------------------------------------------------------------------------ overall
 def _section(key, label, items):
     total = sum(i.get("weight", 1.0) for i in items)
@@ -250,7 +298,10 @@ def answer_feedback(report: dict, question: dict, field_key: str = "general", pr
     pres = presence_items(p)
     if pres:
         sections.append(_section("presence", "Presence & camera", pres))
-    weights = {"content": 0.4, "delivery": 0.35, "presence": 0.25}
+    body = body_items(p)
+    if body:
+        sections.append(_section("body", "Body language & surroundings", body))
+    weights = {"content": 0.35, "delivery": 0.3, "presence": 0.2, "body": 0.15}
     used = [s for s in sections if s["score"] is not None]
     readiness = sum(s["score"] * weights[s["key"]] for s in used) / sum(weights[s["key"]] for s in used)
     # tips first for what costs the most: the gap to 100, scaled by how much the area counts for interviews

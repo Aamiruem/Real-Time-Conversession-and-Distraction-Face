@@ -44,9 +44,12 @@ def _headers(token: str | None = None) -> dict:
     return {"Authorization": f"Bearer {token}"} if token else {}
 
 
+_http = requests.Session()  # keep-alive: reuses the TCP connection to the API across calls
+
+
 def _request(method: str, path: str, token: str | None = None, **kwargs):
     try:
-        r = requests.request(method, f"{BACKEND_URL}{path}", headers=_headers(token), timeout=10, **kwargs)
+        r = _http.request(method, f"{BACKEND_URL}{path}", headers=_headers(token), timeout=10, **kwargs)
     except requests.ConnectionError as exc:
         raise APIError(f"Backend not reachable at {BACKEND_URL}. Is it running?") from exc
     if r.status_code >= 400:
@@ -99,6 +102,7 @@ def push_focus(metrics: dict, token: str | None = None):
 
 
 def save_session(payload: dict):
+    _cached_get.clear()
     return _request("POST", "/attention/sessions", json=payload)
 
 
@@ -152,13 +156,21 @@ def leaderboard():
     return _request("GET", "/analytics/leaderboard")
 
 
-def dashboard():
-    """KPIs, goals, trends, skills, activity and next steps for the home dashboard (one call)."""
-    return _request("GET", "/analytics/dashboard")
+@st.cache_data(ttl=30, show_spinner=False)
+def _cached_get(path: str, token: str):
+    return _request("GET", path, token=token)
+
+
+def dashboard(fresh: bool = False):
+    """KPIs, goals, trends, skills, activity and next steps for the home dashboard (one call, cached 30 s)."""
+    if fresh:
+        _cached_get.clear()
+    return _cached_get("/analytics/dashboard", st.session_state.get("token") or "")
 
 
 # ---- speech coach
 def save_speech(report: dict, mode: str, prompt: str):
+    _cached_get.clear()  # the dashboard should show the new result straight away
     return _request("POST", "/speech/sessions", json={"report": report, "mode": mode, "prompt": prompt})
 
 

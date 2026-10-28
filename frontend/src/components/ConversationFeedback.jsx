@@ -1,5 +1,3 @@
-"use client";
-
 import { PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer } from "recharts";
 import { Gauge, SpeechResult } from "./ui";
 

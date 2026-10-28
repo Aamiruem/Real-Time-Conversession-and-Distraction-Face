@@ -1,10 +1,10 @@
 // Site-wide SEO constants and the content of the statically generated marketing pages.
-export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
+export const SITE_URL = (import.meta.env.VITE_SITE_URL || "http://localhost:3000").replace(/\/$/, "");
 export const SITE_NAME = "FocusLink AI";
-export const TAGLINE = "AI Focus Tracker, Speech Coach & Fatigue Detection";
+export const TAGLINE = "AI Focus Tracker, Interview & Speech Coach";
 export const DESCRIPTION =
-  "Free AI focus tracker: real-time distraction & drowsiness detection from your webcam, an AI speech coach " +
-  "for confident speaking, machine-learning fatigue prediction and focus-aware chat rooms.";
+  "Free AI focus tracker and interview coach: real-time distraction & drowsiness detection, mock interviews " +
+  "with body-language feedback, an AI speech and conversation coach, and machine-learning fatigue prediction.";
 
 export const FEATURES = [
   {
@@ -112,6 +112,93 @@ export const FEATURES = [
       { q: "How accurate is it?", a: "The live model card in the app shows its current test accuracy and F1 score." },
     ],
   },
+  {
+    slug: "interview-preparation",
+    icon: "💼",
+    title: "AI interview preparation with mock interviews and body-language feedback",
+    metaTitle: "AI Mock Interview Practice – Interview Preparation for Any Job",
+    metaDescription:
+      "Practise mock interviews for 15 job fields. AI scores your answer, delivery, eye contact, smile, posture and gestures, then tells you exactly how to improve.",
+    keywords: [
+      "mock interview practice",
+      "AI interview preparation",
+      "interview questions and answers",
+      "STAR method practice",
+      "body language interview tips",
+      "video interview practice",
+    ],
+    summary:
+      "Answer real interview questions on camera and get an interview-readiness score from what you said, how you said it and how you came across — with the fixes that matter most.",
+    sections: [
+      {
+        heading: "Mock interviews for any field",
+        body: "Software, data, sales, finance, healthcare, teaching, HR, design, engineering, management, hospitality and more — each with role-specific questions, the skills interviewers test and the right dress code.",
+      },
+      {
+        heading: "Content, delivery and presence — all scored",
+        body: "Your answer is checked for relevance (machine-learning text similarity), STAR structure, strong vocabulary and a confident opening. Delivery covers fluency, hedging and voice modulation. Computer vision measures eye contact, smile, posture, hand gestures, lighting and anything distracting in the frame.",
+      },
+      {
+        heading: "A complete preparation guide",
+        body: "From getting the interview (CV keywords, LinkedIn, referrals) to the first 30 seconds, dressing, sitting posture, eye contact, tone, answering tough questions, questions to ask and the follow-up email.",
+      },
+    ],
+    faq: [
+      {
+        q: "Which interview questions can I practise?",
+        a: "Common questions like “Tell me about yourself”, strengths and weaknesses, conflict and failure stories, plus role-specific questions for 15 job fields.",
+      },
+      {
+        q: "Does it check my body language?",
+        a: "Yes. Pose and object detection run in your browser and score posture, gestures, face touching, crossed arms and distractions such as a phone in view.",
+      },
+      {
+        q: "Can I control it hands-free?",
+        a: "Yes — say “start recording”, “stop recording” or “next question”, or use keyboard shortcuts.",
+      },
+    ],
+  },
+  {
+    slug: "conversation-coach",
+    icon: "🗨️",
+    title: "Conversation coach for fluency, confidence and voice modulation",
+    metaTitle: "AI Conversation Coach – Fluency, Confidence & Tone Feedback",
+    metaDescription:
+      "Record any conversation — interview, sales call, presentation, meeting or small talk — and get scores for fluency, word confidence, focus, interaction and voice modulation.",
+    keywords: [
+      "conversation practice",
+      "communication skills",
+      "fluency practice",
+      "voice modulation",
+      "speaking confidence app",
+    ],
+    summary:
+      "Pick one of ten conversation types, talk, and see where you are strong and what needs improvement — as percentages, with suggestions written for that kind of conversation.",
+    sections: [
+      {
+        heading: "Five areas that make a conversation work",
+        body: "Fluency (fillers, pauses, pace), word confidence (hedging vs. decisive wording), focus (eye contact), interaction (questions, “you” and “we”, acknowledging the other person) and voice modulation (pitch and volume variety).",
+      },
+      {
+        heading: "Tailored to the situation",
+        body: "A sales call, a debate and a casual chat need different things. Each conversation type has its own ideal pace, weighting and advice.",
+      },
+      {
+        heading: "Say it better next time",
+        body: "Every recording comes with a rewrite of what you said without fillers and hedges, plus practice drills for your weakest area.",
+      },
+    ],
+    faq: [
+      {
+        q: "Do I need a camera?",
+        a: "No. Voice-only mode scores everything except eye contact.",
+      },
+      {
+        q: "Which conversation types are supported?",
+        a: "Job interview, presentation, team meeting, sales pitch, casual conversation, debate, customer support, teaching, storytelling and phone or video calls.",
+      },
+    ],
+  },
 ];
 
 export const HOME_FAQ = [
@@ -126,6 +213,10 @@ export const HOME_FAQ = [
   {
     q: "How is fatigue predicted?",
     a: "A scikit-learn model uses session length, time of day, drowsy and distracted time, blink rate, yawns and eye openness, and improves from your own ratings.",
+  },
+  {
+    q: "Can I practise job interviews?",
+    a: "Yes. Mock interviews for 15 job fields score your answer, delivery, eye contact, posture and gestures, with a full preparation guide.",
   },
   { q: "Is FocusLink AI free?", a: "Yes — create an account with your email and start a session in seconds." },
 ];

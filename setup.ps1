@@ -1,4 +1,4 @@
-# One-time setup: Python venv + every Python requirement, backend .env, and the Next.js frontend.
+# One-time setup: Python venv + every Python requirement, backend .env, and the React (Vite) frontend.
 # Run from the repo root:  powershell -ExecutionPolicy Bypass -File .\setup.ps1
 $ErrorActionPreference = "Stop"
 Set-Location $PSScriptRoot

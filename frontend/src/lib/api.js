@@ -18,6 +18,7 @@ export function getToken() {
 }
 
 export function setToken(token) {
+  cache.clear(); // another user (or nobody) — never show the previous account's cached data
   try {
     if (token) localStorage.setItem(TOKEN_KEY, token);
     else localStorage.removeItem(TOKEN_KEY);
@@ -43,7 +44,23 @@ function message(detail) {
   return "Something went wrong";
 }
 
+// ---------------------------------------------------------------- read cache (instant revisits)
+const cache = new Map();
+
+/** Last cached response for `path`, if any — render it immediately, then refresh with cachedApi(). */
+export const peekCache = (path) => cache.get(path)?.value;
+
+/** GET with a short in-memory cache; any write (POST/PATCH/DELETE) clears it so pages never show stale results. */
+export async function cachedApi(path, ttlMs = 30_000) {
+  const hit = cache.get(path);
+  if (hit && Date.now() - hit.at < ttlMs) return hit.value;
+  const value = await api(path);
+  cache.set(path, { at: Date.now(), value });
+  return value;
+}
+
 export async function api(path, init = {}) {
+  if (init.method && init.method !== "GET") cache.clear();
   const headers = new Headers(init.headers);
   const token = getToken();
   if (token) headers.set("Authorization", `Bearer ${token}`);

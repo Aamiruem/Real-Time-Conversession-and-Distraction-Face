@@ -5,7 +5,7 @@ Drowsy, Yawning or away**. It also shows your **focus % and distraction %**. A *
 speaking confidence and pronunciation, a **machine-learning model** predicts fatigue risk, and in **Focus
 Rooms** people chat in real time while seeing each other's live focus.
 
-The frontend is a **Next.js (React, JavaScript/JSX) app** with server-rendered, SEO-optimised public pages. The
+The frontend is a **React (Vite + React Router, JavaScript/JSX) app** whose public pages are pre-rendered to static HTML for SEO. The
 backend is **FastAPI**, with data in **SQL (SQLite / AWS RDS PostgreSQL) + S3**. An **MCP server** lets AI
 assistants such as Claude use FocusLink's AI engines and data as tools.
 
@@ -16,7 +16,7 @@ assistants such as Claude use FocusLink's AI engines and data as tools.
 | Area | What it does | Tech |
 |---|---|---|
 | Computer Vision | 478-point face landmarks (with iris), Eye Aspect Ratio, blink rate, yawns (MAR), head pose, gaze — **runs in the browser**, so video never leaves the device | MediaPipe Tasks (WebAssembly), JavaScript |
-| AI state engine | Time-based rules → Focused / Distracted / Drowsy / Yawning / No Face, live **Focus %**, drowsiness alarm | `frontend/lib/attention.js` (port of `backend/cv/`) |
+| AI state engine | Time-based rules → Focused / Distracted / Drowsy / Yawning / No Face, live **Focus %**, drowsiness alarm | `frontend/src/lib/attention.js` (port of `backend/cv/`) |
 | Speech Coach | Transcript, pace (WPM), filler words, pauses, pronunciation clarity, read-aloud accuracy, pitch variety, assertive wording, eye contact → **confidence score** + tips + a "say it like this" rewrite | faster-whisper, NumPy |
 | Conversation Coach | Record a conversation (10 types: interview, presentation, meeting, sales, casual, debate, support, teaching, storytelling, phone) → **fluency, word confidence, focus, interaction and voice modulation** scores, "needs improvement" %, evidence and type-specific suggestions + practice drills | `backend/speech/conversation.py`, `/app/conversation`, Streamlit page 6 |
 | Interview Prep | Mock interviews for 15 job fields (question bank with frameworks, outlines and pitfalls) → **readiness score** from content (TF-IDF relevance, STAR/PREP structure, vocabulary, opening, length), delivery and on-camera presence (eye contact, smile via face blendshapes, expression, framing, posture, lighting, camera sharpness); full guide from getting the interview to follow-up, dress codes, word swaps | `backend/interview/`, `/app/interview`, Streamlit page 7 |
@@ -24,7 +24,7 @@ assistants such as Claude use FocusLink's AI engines and data as tools.
 | NLP | Sentiment (VADER or **Amazon Comprehend**), toxicity, keywords, wording confidence, conversation summaries | vaderSentiment |
 | Real-time rooms | WebSocket chat, presence, typing, everyone's live focus, drowsy alerts | FastAPI WebSockets |
 | Auth | Sign up and log in with username / email / mobile + password, OTP login, password reset. **Easy mode** (default locally): accounts work instantly. **Verified mode**: email + mobile OTP via **AWS SES / SNS** | JWT, bcrypt |
-| SEO | Static HTML landing + keyword-targeted feature pages, metadata API, Open Graph/Twitter, JSON-LD (SoftwareApplication, Organization, FAQPage, BreadcrumbList), sitemap.xml, robots.txt, manifest; the private app is `noindex` | Next.js 16 |
+| SEO | Static HTML landing + keyword-targeted feature pages, metadata API, Open Graph/Twitter, JSON-LD (SoftwareApplication, Organization, FAQPage, BreadcrumbList), sitemap.xml, robots.txt, manifest; the private app is `noindex` | Vite build-time pre-rendering |
 | MCP server | 13 tools (NLP, speech coaching, fatigue ML, model card, users, sessions, rooms, insights, leaderboard), 2 prompts, 1 resource — over stdio or HTTP `/mcp` | Model Context Protocol (`mcp` SDK) |
 | Cloud | RDS, S3, SES, SNS, Comprehend, EC2 + Docker + Nginx | boto3, Docker |
 
@@ -47,20 +47,17 @@ assistants such as Claude use FocusLink's AI engines and data as tools.
 │   ├── requirements-dev.txt    # + tests and the cv engine
 │   ├── .env.example            # backend settings → copy to backend/.env
 │   └── Dockerfile
-├── frontend/                   # Next.js (React) website + app
-│   ├── app/page.jsx            # SEO landing page (static)
-│   ├── app/features/[slug]/    # SEO feature pages + per-page social images (static)
-│   ├── app/login · signup      # auth (password, OTP login, reset, verification)
-│   ├── app/app/…               # private app: dashboard, focus, speech, rooms, analytics, lab
-│   ├── app/sitemap.js · robots.js · manifest.js
-│   ├── components/             # shared React components
-│   ├── lib/attention.js        # in-browser attention engine
-│   ├── lib/useFaceTracker.js   # camera + MediaPipe face landmarker
-│   ├── lib/api.js · auth.jsx   # API client (proxied via /api) + login state
-│   ├── .env.example · Dockerfile
-│   └── streamlit/              # legacy Streamlit UI (optional; the React app replaces it)
+├── frontend/                   # React (Vite) website + app — all code in src/
+│   ├── src/                    # index.html, main.jsx, App.jsx (routes), entry-server.jsx (pre-render)
+│   │   ├── pages/              # Landing, Feature, Login, Signup, NotFound + app/ (Dashboard, Focus, Interview…)
+│   │   ├── styles/globals.css
+│   │   ├── components/         # shared React components (index.js exports them all; Ctrl+K command palette)
+│   │   └── lib/                # attention + body (pose/objects) engines, camera/voice hooks, API client + cache, seo
+│   ├── scripts/                # setup-assets (MediaPipe models) · prerender (static HTML, sitemap, robots)
+│   ├── vite.config.mjs · nginx.conf · Dockerfile
+│   └── streamlit/              # Streamlit UI: app.py (router, grouped nav) + views/ (pages) + utils/
 ├── deploy/
-│   ├── nginx.conf              # / → Next.js, /api/ + /ws/ → FastAPI
+│   ├── nginx.conf              # / → React frontend, /api/ + /ws/ → FastAPI
 │   └── aws/                    # setup_aws.sh (S3, RDS, SES, SNS, IAM) · deploy_ec2.sh
 ├── docker-compose.yml          # db + backend + web + nginx
 ├── requirements.txt            # installs every Python requirement in one go
@@ -165,7 +162,7 @@ docker compose --env-file backend/.env up --build      # http://localhost
 * If the user looks away for 1.5 s or more, the state is **Distracted**.
 * **Focus %** = time spent Focused ÷ total session time.
 
-Thresholds: `frontend/lib/attention.js → THRESHOLDS` (browser) and `backend/cv/attention_detector.py → Thresholds`.
+Thresholds: `frontend/src/lib/attention.js → THRESHOLDS` (browser) and `backend/cv/attention_detector.py → Thresholds`.
 
 ## 🔌 Main API
 

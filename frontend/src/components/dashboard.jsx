@@ -1,6 +1,4 @@
-"use client";
-
-import Link from "next/link";
+import Link from "@/components/Link";
 
 // Validated categorical slots for the dark surface (dataviz reference palette, dark steps):
 // single-series charts use SERIES[0]; never cycle beyond three.

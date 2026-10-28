@@ -13,13 +13,13 @@ from utils.ui import STATE_COLORS
 SERIES = ["#3987e5", "#d95926", "#199e70"]
 GRID, MUTED = "#1e2a44", "#94a3b8"
 PAGES = {
-    "/app/focus": ("pages/1_Focus_Monitor.py", "🎥", "Focus Monitor", "Live focus & drowsiness"),
-    "/app/speech": ("pages/4_Speech_Coach.py", "🗣️", "Speech Coach", "Confidence & pronunciation"),
-    "/app/conversation": ("pages/6_Conversation_Coach.py", "🗨️", "Conversation Coach", "Fluency, tone, interaction"),
-    "/app/interview": ("pages/7_Interview_Prep.py", "💼", "Interview Prep", "Mock interviews, any field"),
-    "/app/rooms": ("pages/2_Focus_Rooms.py", "💬", "Focus Rooms", "Chat with live focus"),
-    "/app/analytics": ("pages/3_Analytics.py", "📊", "Analytics", "History & leaderboard"),
-    "/app/lab": ("pages/5_AI_Lab.py", "🧪", "AI Lab", "Try each AI model"),
+    "/app/focus": ("views/focus_monitor.py", "🎥", "Focus Monitor", "Live focus & drowsiness"),
+    "/app/speech": ("views/speech_coach.py", "🗣️", "Speech Coach", "Confidence & pronunciation"),
+    "/app/conversation": ("views/conversation_coach.py", "🗨️", "Conversation Coach", "Fluency, tone, interaction"),
+    "/app/interview": ("views/interview_prep.py", "💼", "Interview Prep", "Mock interviews, any field"),
+    "/app/rooms": ("views/focus_rooms.py", "💬", "Focus Rooms", "Chat with live focus"),
+    "/app/analytics": ("views/analytics.py", "📊", "Analytics", "History & leaderboard"),
+    "/app/lab": ("views/ai_lab.py", "🧪", "AI Lab", "Try each AI model"),
 }
 
 CSS = """
@@ -105,7 +105,7 @@ def _ago(iso: str) -> str:
 def render_dashboard(user: dict):
     st.markdown(CSS, unsafe_allow_html=True)
     try:
-        d = api.dashboard()
+        d = api.dashboard(fresh=st.session_state.pop("dash_refresh", False))
     except api.APIError as e:
         st.error(f"Could not load your dashboard: {e}. Is the backend running and up to date?")
         return
@@ -125,9 +125,12 @@ def render_dashboard(user: dict):
         f"<div class='goal'>{_ring(today['practice'], today['goal_practice'], SERIES[2])}<div>"
         f"<b>{today['practice']}/{today['goal_practice']}</b><span>Speaking practice today</span></div></div>"
         f"</div></div>", unsafe_allow_html=True)
-    a, b, _ = st.columns([1, 1, 3])
-    a.page_link("pages/1_Focus_Monitor.py", label="Start focus session", icon="▶️")
-    b.page_link("pages/7_Interview_Prep.py", label="Mock interview", icon="💼")
+    a, b, _, r = st.columns([1, 1, 2, 0.6])
+    a.page_link("views/focus_monitor.py", label="Start focus session", icon="▶️")
+    b.page_link("views/interview_prep.py", label="Mock interview", icon="💼")
+    if r.button("↻ Refresh", use_container_width=True, help="Data is cached for 30 seconds"):
+        st.session_state["dash_refresh"] = True
+        st.rerun()
 
     # ---------------- KPIs
     delta = k["week_minutes"] - k["last_week_minutes"]

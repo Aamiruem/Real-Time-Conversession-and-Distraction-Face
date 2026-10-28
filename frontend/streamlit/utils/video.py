@@ -38,6 +38,23 @@ class AttentionProcessor(VideoProcessorBase):
         return av.VideoFrame.from_ndarray(img, format="bgr24")
 
 
+class InterviewProcessor(AttentionProcessor):
+    """Attention + presence (face) and body language (pose + objects) for the interview coach."""
+
+    def __init__(self):
+        super().__init__()
+        from cv.body_tracker import BodyTracker  # imported lazily: only the interview page needs pose/objects
+
+        self.body = BodyTracker()
+
+    def recv(self, frame: av.VideoFrame) -> av.VideoFrame:
+        img = frame.to_ndarray(format="bgr24")
+        img = np.ascontiguousarray(img[:, ::-1])
+        img = self.detector.process(img)
+        self.body.update(img)
+        return av.VideoFrame.from_ndarray(img, format="bgr24")
+
+
 class AudioCollector(AudioProcessorBase):
     """Records the microphone as 16 kHz mono float32 for the speech coach (nothing is played back)."""
 

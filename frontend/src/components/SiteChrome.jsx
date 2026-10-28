@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/Link";
 import { FEATURES, SITE_NAME } from "@/lib/site";
 
 export function Logo() {

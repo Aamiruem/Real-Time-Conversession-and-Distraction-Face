@@ -161,7 +161,7 @@ def section_card(s: dict) -> str:
         f"<div style='font-size:.78rem;color:#94a3b8;margin-top:3px'>{esc(i['detail'])}</div>"
         f"<div style='font-size:.85rem'>→ {esc(i['tip'])}</div></div>"
         for i in s["items"])
-    icon = {"content": "🧠", "delivery": "🎙️", "presence": "🎥"}.get(s["key"], "")
+    icon = {"content": "🧠", "delivery": "🎙️", "presence": "🎥", "body": "🧍"}.get(s["key"], "")
     return (f"<div class='fl-area' style='--a:{_score_color(s['score'])}'><div class='hd'><span>{icon} "
             f"{esc(s['label'])}</span><span class='sc' style='font-size:1.6rem;margin:0'>{s['score']:.0f}%</span>"
             f"</div>{rows}</div>")

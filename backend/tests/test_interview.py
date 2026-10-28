@@ -79,3 +79,22 @@ def test_interview_api(client, verified_user):
                        data={"question_id": "nope"}).status_code == 404
     assert client.post("/interview/answer", headers=headers, files=files,
                        data={"question_id": "g-about", "presence": "[1]"}).status_code == 422
+
+
+def test_body_language_section():
+    good = {"body_visible_pct": 95, "slouch_pct": 5, "shoulder_tilt": 2, "hands_visible_pct": 70,
+            "gesture_activity": 0.06, "face_touch_pct": 0, "arms_crossed_pct": 0, "people_max": 1, "phone_pct": 0,
+            "objects": [{"label": "cup", "pct": 10}]}
+    bad = {**good, "slouch_pct": 60, "shoulder_tilt": 12, "arms_crossed_pct": 50, "people_max": 2, "phone_pct": 40,
+           "objects": [{"label": "cell phone", "pct": 40}, {"label": "book", "pct": 80}]}
+    q = find_question("g-about")
+    by_good = {i["key"]: i for i in answer_feedback(_report(STAR), q, presence=good)["sections"][-1]["items"]}
+    fb_bad = answer_feedback(_report(STAR), q, presence=bad)
+    body = fb_bad["sections"][-1]
+    by_bad = {i["key"]: i for i in body["items"]}
+    assert body["key"] == "body" and set(by_bad) == {"body_posture", "gestures", "surroundings"}
+    assert all(by_good[k]["score"] > by_bad[k]["score"] for k in by_bad)
+    assert "phone" in by_bad["surroundings"]["tip"] and "Uncross" in by_bad["gestures"]["tip"]
+    assert "book" in by_bad["surroundings"]["detail"]
+    # no body data (camera off / pose not loaded) -> no body section
+    assert "body" not in {s["key"] for s in answer_feedback(_report(STAR), q)["sections"]}
