@@ -2,7 +2,7 @@
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
-from backend.config import settings
+from app.config import settings
 
 connect_args = {"check_same_thread": False} if settings.DATABASE_URL.startswith("sqlite") else {}
 
@@ -52,7 +52,7 @@ def _migrate():
 
 
 def init_db():
-    from backend import models  # noqa: F401  (register models)
+    from app import models  # noqa: F401  (register models)
 
     Base.metadata.create_all(bind=engine)
     _migrate()

@@ -52,9 +52,9 @@ ENDPOINT=$(aws rds describe-db-instances --db-instance-identifier "$DB_ID" --reg
   --query "DBInstances[0].Endpoint.Address" --output text)
 
 echo
-echo "Done. Put these in your .env:"
+echo "Done. Put these in backend/.env:"
 echo "AWS_ENABLED=true"
 echo "AWS_REGION=$REGION"
 echo "S3_BUCKET=$BUCKET"
 echo "SES_SENDER=$SES_SENDER"
-echo "DATABASE_URL=postgresql+psycopg2://$DB_USER:$DB_PASS@$ENDPOINT:5432/focuslink"
+echo "DATABASE_URL_OVERRIDE=postgresql+psycopg2://$DB_USER:$DB_PASS@$ENDPOINT:5432/focuslink"

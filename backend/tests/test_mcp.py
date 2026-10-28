@@ -5,7 +5,7 @@ import anyio
 import pytest
 from mcp.shared.memory import create_connected_server_and_client_session
 
-from backend.mcp_server import mcp
+from app.mcp_server import mcp
 
 EXPECTED_TOOLS = {
     "analyze_text", "analyze_conversation", "coach_speech_file", "confident_rewrite", "predict_fatigue",
@@ -86,7 +86,7 @@ def test_data_tools(client, verified_user):
 def test_http_endpoint_requires_api_key(monkeypatch, key, status):
     from starlette.testclient import TestClient
 
-    from backend import mcp_server
+    from app import mcp_server
 
     monkeypatch.setenv("MCP_API_KEY", "secret-key")
     monkeypatch.setattr(mcp_server.mcp, "_session_manager", None)  # a session manager can only run once

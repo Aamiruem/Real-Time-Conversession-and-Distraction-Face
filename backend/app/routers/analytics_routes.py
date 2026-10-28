@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from backend.auth import get_current_user
-from backend.database import get_db
-from backend.models import AttentionSession, Message, SpeechSession, User
+from app.auth import get_current_user
+from app.database import get_db
+from app.models import AttentionSession, Message, SpeechSession, User
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 

@@ -4,10 +4,10 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from backend.auth import get_current_user
-from backend.database import get_db
-from backend.models import SpeechSession, User
-from backend.schemas import SpeechSessionCreate, SpeechSessionOut
+from app.auth import get_current_user
+from app.database import get_db
+from app.models import SpeechSession, User
+from app.schemas import SpeechSessionCreate, SpeechSessionOut
 
 router = APIRouter(prefix="/speech", tags=["speech"])
 MAX_UPLOAD_MB = 25

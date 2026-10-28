@@ -8,7 +8,7 @@ import streamlit as st
 from utils import api_client as api
 from utils.speech_view import decode_audio, render
 from utils.ui import metric_card, page_header, require_login, setup
-from utils.video import ROOT, to_wav  # noqa: F401  (ROOT puts the repo root on sys.path)
+from utils.video import ROOT, to_wav  # noqa: F401  (ROOT puts backend/ on sys.path)
 
 from cv.attention_detector import AttentionDetector, Thresholds  # noqa: E402
 from speech.analyzer import analyze as analyze_speech  # noqa: E402
@@ -183,15 +183,15 @@ with t_arch:
     st.markdown("""
 | Layer | Technology | Where |
 |---|---|---|
-| Computer vision | MediaPipe Face Mesh, OpenCV (solvePnP), NumPy | `cv/attention_detector.py` |
-| NLP | VADER / Amazon Comprehend, keyword + summary algorithms | `nlp/text_analyzer.py` |
-| Speech AI | faster-whisper (CTranslate2), autocorrelation pitch tracking | `speech/analyzer.py` |
-| Machine learning | scikit-learn (LogReg / RandomForest / GradientBoosting), CV model selection, model card | `ml/` |
-| Real-time | WebRTC (streamlit-webrtc), FastAPI WebSockets | `frontend/utils/video.py`, `backend/websocket_manager.py` |
-| API & auth | FastAPI, JWT, bcrypt, email + SMS OTP (AWS SES / SNS) | `backend/` |
-| Data | SQLAlchemy → SQLite (dev) / PostgreSQL on AWS RDS, reports on S3 | `backend/models.py` |
-| Frontend | Streamlit, Plotly; SEO landing page in plain HTML | `frontend/`, `backend/web/` |
-| Deploy | Docker, docker-compose, Nginx (HTTPS), EC2 | `deploy/`, `aws/` |
+| Computer vision | MediaPipe Face Mesh, OpenCV (solvePnP), NumPy | `backend/cv/attention_detector.py` |
+| NLP | VADER / Amazon Comprehend, keyword + summary algorithms | `backend/nlp/text_analyzer.py` |
+| Speech AI | faster-whisper (CTranslate2), autocorrelation pitch tracking | `backend/speech/analyzer.py` |
+| Machine learning | scikit-learn (LogReg / RandomForest / GradientBoosting), CV model selection, model card | `backend/ml/` |
+| Real-time | WebRTC (streamlit-webrtc), FastAPI WebSockets | `frontend/streamlit/utils/video.py`, `backend/app/websocket_manager.py` |
+| API & auth | FastAPI, JWT, bcrypt, email + SMS OTP (AWS SES / SNS) | `backend/app/` |
+| Data | SQLAlchemy → SQLite (dev) / PostgreSQL on AWS RDS, reports on S3 | `backend/app/models.py` |
+| Frontend | Next.js (React) website + app; legacy Streamlit, Plotly | `frontend/`, `frontend/streamlit/` |
+| Deploy | Docker, docker-compose, Nginx (HTTPS), EC2 | `deploy/`, `deploy/aws/` |
 """)
     st.markdown("""
 **Data flow** — the browser streams camera + mic over WebRTC → the Streamlit server runs the CV / speech engines

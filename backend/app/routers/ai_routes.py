@@ -3,11 +3,11 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from backend.auth import get_current_user
-from backend.database import get_db
-from backend.models import AttentionSession, User
-from backend.schemas import FatigueFeatures, SessionOut, TextIn
-from backend.services import nlp_service
+from app.auth import get_current_user
+from app.database import get_db
+from app.models import AttentionSession, User
+from app.schemas import FatigueFeatures, SessionOut, TextIn
+from app.services import nlp_service
 from ml import predict as fatigue_model
 from ml.features import from_session
 

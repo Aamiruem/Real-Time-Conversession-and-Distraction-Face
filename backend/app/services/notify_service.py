@@ -5,8 +5,8 @@ return it to the UI because OTP_DEV_MODE is on. In production a delivery failure
 """
 import logging
 
-from backend.config import settings
-from backend.services.aws_service import _client
+from app.config import settings
+from app.services.aws_service import _client
 
 log = logging.getLogger("focuslink.notify")
 

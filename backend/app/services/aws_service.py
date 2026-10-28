@@ -5,7 +5,7 @@ Everything degrades gracefully when AWS_ENABLED=false or credentials are missing
 import json
 import logging
 
-from backend.config import settings
+from app.config import settings
 
 log = logging.getLogger("focuslink.aws")
 

@@ -1,8 +1,9 @@
 # Next.js (React) frontend — server-rendered marketing pages + the app, built as a standalone server.
+# Build context is frontend/ (docker compose does this for you).
 FROM node:22-alpine AS deps
 WORKDIR /app
-COPY web/package.json web/package-lock.json ./
-COPY web/scripts ./scripts
+COPY package.json package-lock.json ./
+COPY scripts ./scripts
 RUN npm ci --no-audit --no-fund
 
 FROM node:22-alpine AS build
@@ -11,7 +12,7 @@ ARG NEXT_PUBLIC_SITE_URL=http://localhost
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/public ./public
-COPY web/ ./
+COPY . ./
 RUN npm run build
 
 FROM node:22-alpine

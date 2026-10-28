@@ -9,7 +9,8 @@ import av
 import numpy as np
 from streamlit_webrtc import AudioProcessorBase, VideoProcessorBase
 
-ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+# backend/ holds the cv and speech engines this UI runs in-process
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "backend"))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 

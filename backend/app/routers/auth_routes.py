@@ -5,13 +5,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
-from backend.auth import create_access_token, get_current_user, hash_password, verify_password
-from backend.config import settings
-from backend.database import get_db
-from backend.models import User
-from backend.schemas import (OtpLoginIn, OtpRequestIn, OtpSentOut, PasswordResetIn, RegisterOut, ResendIn, Token,
+from app.auth import create_access_token, get_current_user, hash_password, verify_password
+from app.config import settings
+from app.database import get_db
+from app.models import User
+from app.schemas import (OtpLoginIn, OtpRequestIn, OtpSentOut, PasswordResetIn, RegisterOut, ResendIn, Token,
                              UserCreate, UserLogin, UserOut, VerifyIn, VerifyOut, password_problem)
-from backend.services import otp_service
+from app.services import otp_service
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 

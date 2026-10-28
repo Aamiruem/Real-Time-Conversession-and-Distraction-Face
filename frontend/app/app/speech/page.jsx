@@ -118,7 +118,7 @@ export default function SpeechCoach() {
         highlight="Speech Coach"
         sub="Speak to the camera. You get a confidence score from your voice, words and eye contact — plus pronunciation feedback and a better way to say it."
       />
-      <div className="grid" style={{ gridTemplateColumns: "minmax(0,3fr) minmax(0,2fr)" }}>
+      <div className="grid split-3-2">
         <div>
           <div className="card" style={{ marginBottom: 12, borderLeft: "4px solid var(--accent)" }}>
             <div className="eyebrow">{mode === "free" ? "Talk about" : "Read this aloud, clearly"}</div>

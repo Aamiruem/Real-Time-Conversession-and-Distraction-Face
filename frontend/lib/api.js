@@ -67,7 +67,7 @@ export async function api(path, init = {}) {
     }
     if (res.status === 502 || res.status === 504 || (res.status === 500 && detail === "Internal Server Error")) {
       throw new ApiError(
-        "Backend not reachable — start it with: uvicorn backend.main:app --port 8010",
+        "Backend not reachable — start it from backend/ with: uvicorn app.main:app --port 8010",
         res.status,
         detail,
       );

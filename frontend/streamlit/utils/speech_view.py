@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from utils.ui import focus_gauge, metric_card
-from utils.video import ROOT  # noqa: F401  (puts the repo root on sys.path)
+from utils.video import ROOT  # noqa: F401  (puts backend/ on sys.path)
 
 from speech.analyzer import LABELS  # noqa: E402
 from speech.audio import decode_audio  # noqa: E402,F401  (re-exported for the AI Lab)

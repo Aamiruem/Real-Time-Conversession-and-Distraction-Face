@@ -1,0 +1,17 @@
+# Legacy Streamlit UI (frontend/streamlit) — imports backend/cv and backend/speech directly
+streamlit==1.38.0
+streamlit-webrtc==0.47.9
+streamlit-autorefresh==1.0.1
+pyarrow==17.0.0               # last series built against NumPy 1.x (mediapipe pins numpy<2)
+av==12.3.0
+websocket-client==1.8.0
+requests==2.32.3
+pandas==2.2.3
+plotly==5.24.1
+python-dotenv==1.2.4
+
+# Engines it runs in-process (backend/cv, backend/speech)
+opencv-python-headless==4.10.0.84
+mediapipe==0.10.14
+numpy==1.26.4
+faster-whisper==1.1.1

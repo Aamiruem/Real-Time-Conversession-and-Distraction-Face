@@ -143,7 +143,7 @@ export default function Rooms() {
         sub={room?.description || "Chat in real time while everyone sees each other's live focus score."}
       />
       {err && <div className="alert error">{err}</div>}
-      <div className="grid" style={{ gridTemplateColumns: "minmax(0,1.3fr) minmax(0,2.4fr) minmax(0,1.1fr)" }}>
+      <div className="grid split-rooms">
         <div style={{ display: "grid", gap: 12, alignContent: "start" }}>
           <div className="card">
             <label className="field">

@@ -7,4 +7,4 @@ Pure Python + VADER, so it has no server dependencies.
 * `text_confidence(texts)` → 0-100 score for how decisive the wording is
 * `conversation_insights(rows)` → room-level sentiment mix, top keywords, summary, per-user confidence
 
-The backend wrapper (`backend/services/nlp_service.py`) can swap sentiment for Amazon Comprehend.
+The backend wrapper (`backend/app/services/nlp_service.py`) can swap sentiment for Amazon Comprehend.

@@ -48,7 +48,7 @@ export default function Dashboard() {
           <Metric v={summary.messages_sent} l="Messages sent" />
         </div>
       )}
-      <div className="grid" style={{ gridTemplateColumns: "minmax(0,2fr) minmax(0,1fr)" }}>
+      <div className="grid split-2-1">
         <section>
           <h2 style={{ fontSize: "1.2rem" }}>🚀 Jump back in</h2>
           <div className="grid g3">

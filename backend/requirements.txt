@@ -1,4 +1,4 @@
-# Slim dependency set for the backend container only
+# FastAPI backend (API + MCP server + NLP / ML / speech engines) — also what backend/Dockerfile installs
 fastapi==0.115.0
 uvicorn[standard]==0.54.0
 sqlalchemy==2.0.35
@@ -22,5 +22,5 @@ faster-whisper==1.1.1
 av==12.3.0
 python-multipart==0.0.12
 
-# MCP server (backend/mcp_server.py) — AI assistants use FocusLink's AI as tools
+# MCP server (app/mcp_server.py) — AI assistants use FocusLink's AI as tools
 mcp==1.30.0

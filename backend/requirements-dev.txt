@@ -1,0 +1,10 @@
+# Local development: the API plus tests and the Python CV engine (backend/cv, used by the Streamlit UI)
+-r requirements.txt
+
+# ---------- Computer Vision (backend/cv) ----------
+opencv-python-headless==4.10.0.84
+mediapipe==0.10.14
+
+# ---------- Tests ----------
+pytest==8.3.3
+httpx==0.27.2

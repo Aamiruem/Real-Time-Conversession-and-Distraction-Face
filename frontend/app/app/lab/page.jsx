@@ -391,15 +391,15 @@ function MlLab() {
 }
 
 const ARCH = [
-  ["Computer vision", "MediaPipe Face Landmarker (WebAssembly, in-browser)", "web/lib/attention.ts · cv/"],
-  ["NLP", "VADER / Amazon Comprehend, keyword + summary algorithms", "nlp/text_analyzer.py"],
-  ["Speech AI", "faster-whisper (CTranslate2), autocorrelation pitch tracking", "speech/"],
-  ["Machine learning", "scikit-learn model selection, model card, explanations", "ml/"],
-  ["Real time", "WebSockets (FastAPI) for rooms, getUserMedia + MediaRecorder", "backend/websocket_manager.py"],
-  ["API & auth", "FastAPI, JWT, bcrypt, optional email + SMS OTP (AWS SES / SNS)", "backend/"],
-  ["Data", "SQLAlchemy → SQLite (dev) / PostgreSQL on AWS RDS, reports on S3", "backend/models.py"],
-  ["Frontend & SEO", "Next.js (React, server-rendered marketing pages, sitemap, JSON-LD)", "web/"],
-  ["Deploy", "Docker, docker-compose, Nginx (HTTPS), EC2", "deploy/ · aws/"],
+  ["Computer vision", "MediaPipe Face Landmarker (WebAssembly, in-browser)", "frontend/lib/attention.js · backend/cv/"],
+  ["NLP", "VADER / Amazon Comprehend, keyword + summary algorithms", "backend/nlp/text_analyzer.py"],
+  ["Speech AI", "faster-whisper (CTranslate2), autocorrelation pitch tracking", "backend/speech/"],
+  ["Machine learning", "scikit-learn model selection, model card, explanations", "backend/ml/"],
+  ["Real time", "WebSockets (FastAPI) for rooms, getUserMedia + MediaRecorder", "backend/app/websocket_manager.py"],
+  ["API & auth", "FastAPI, JWT, bcrypt, optional email + SMS OTP (AWS SES / SNS)", "backend/app/"],
+  ["Data", "SQLAlchemy → SQLite (dev) / PostgreSQL on AWS RDS, reports on S3", "backend/app/models.py"],
+  ["Frontend & SEO", "Next.js (React, server-rendered marketing pages, sitemap, JSON-LD)", "frontend/"],
+  ["Deploy", "Docker, docker-compose, Nginx (HTTPS), EC2", "deploy/ · deploy/aws/"],
 ];
 
 export default function Lab() {

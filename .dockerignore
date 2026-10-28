@@ -1,9 +1,8 @@
+# Only the Streamlit image builds from the repo root (backend/ and frontend/ have their own .dockerignore)
 .venv
 .git
 **/__pycache__
 **/node_modules
-web/.next
-web/public/mediapipe
+**/.next
+**/.env
 *.db
-.env
-ml/artifacts

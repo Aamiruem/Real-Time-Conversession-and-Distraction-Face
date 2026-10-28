@@ -66,7 +66,7 @@ def test_otp_login_and_password_reset(client, verified_user):
 
 
 def test_easy_signup_without_verification(client, monkeypatch):
-    from backend.config import settings
+    from app.config import settings
 
     monkeypatch.setattr(settings, "REQUIRE_VERIFICATION", False)
     assert client.get("/auth/config").json() == {"require_verification": False}

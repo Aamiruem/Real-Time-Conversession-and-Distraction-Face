@@ -2,12 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from backend.auth import get_current_user
-from backend.database import get_db
-from backend.models import AttentionSession, FocusSnapshot, User
-from backend.schemas import FatigueFeedback, FocusUpdate, SessionCreate, SessionOut
-from backend.services import aws_service
-from backend.websocket_manager import manager
+from app.auth import get_current_user
+from app.database import get_db
+from app.models import AttentionSession, FocusSnapshot, User
+from app.schemas import FatigueFeedback, FocusUpdate, SessionCreate, SessionOut
+from app.services import aws_service
+from app.websocket_manager import manager
 
 router = APIRouter(prefix="/attention", tags=["attention"])
 

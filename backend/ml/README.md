@@ -12,4 +12,4 @@ python -m ml.train            # synthetic only
 python -m ml.train --with-db  # + real labels from "How tired do you feel?" after each session
 ```
 
-Artifacts are written to `ml/artifacts/` (gitignored; the backend Docker image builds them).
+Artifacts are written to `backend/ml/artifacts/` (gitignored; the backend Docker image builds them).

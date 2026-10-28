@@ -1,14 +1,13 @@
 """Train the fatigue-risk classifier.
 
     python -m ml.train                 # synthetic bootstrap data only
-    python -m ml.train --with-db       # + sessions users labelled (uses DATABASE_URL from .env)
+    python -m ml.train --with-db       # + sessions users labelled (uses DATABASE_URL from backend/.env)
 
 Compares two scikit-learn pipelines with 5-fold cross-validation, keeps the best, evaluates it
 on a held-out test split and writes ml/artifacts/{fatigue_model.joblib, model_card.json}.
 """
 import argparse
 import json
-import os
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -44,11 +43,10 @@ def load_data(with_db: bool) -> pd.DataFrame:
     frames = [synthetic()]
     if with_db:
         from sqlalchemy import create_engine
-        from dotenv import load_dotenv
 
-        load_dotenv()
-        url = os.getenv("DATABASE_URL", "sqlite:///./focuslink.db")
-        frames.append(from_database(create_engine(url)))
+        from app.config import settings  # reads backend/.env, same database as the API
+
+        frames.append(from_database(create_engine(settings.DATABASE_URL)))
     return pd.concat(frames, ignore_index=True)
 
 

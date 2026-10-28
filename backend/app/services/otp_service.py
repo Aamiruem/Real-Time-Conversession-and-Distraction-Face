@@ -8,9 +8,9 @@ from fastapi import HTTPException
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
-from backend.config import settings
-from backend.models import OtpCode, User
-from backend.services import notify_service
+from app.config import settings
+from app.models import OtpCode, User
+from app.services import notify_service
 
 
 def _now() -> datetime:

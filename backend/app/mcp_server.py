@@ -10,7 +10,7 @@ platform data as tools:
                room_insights, leaderboard
 
 Two ways to run it:
-    stdio (local):  python -m backend.mcp_server            <- add to Claude Desktop / Claude Code
+    stdio (local):  python -m app.mcp_server            <- add to Claude Desktop / Claude Code
     HTTP (remote):  mounted by the FastAPI app at /mcp when MCP_API_KEY is set
                     (clients send  Authorization: Bearer <MCP_API_KEY>)
 """
@@ -18,15 +18,15 @@ import json
 import os
 from datetime import datetime, timezone
 
-import backend.native_preload  # noqa: F401,I001  (must come before anything that loads scikit-learn)
+import app.native_preload  # noqa: F401,I001  (must come before anything that loads scikit-learn)
 import anyio
 from mcp.server.fastmcp import FastMCP
 from mcp.server.transport_security import TransportSecuritySettings
 from sqlalchemy import func, select
 
-from backend.database import SessionLocal, init_db
-from backend.models import AttentionSession, Message, Room, SpeechSession, User
-from backend.services import nlp_service
+from app.database import SessionLocal, init_db
+from app.models import AttentionSession, Message, Room, SpeechSession, User
+from app.services import nlp_service
 
 INSTRUCTIONS = """FocusLink AI analyses attention, speech confidence, conversations and fatigue.
 Use analyze_text / analyze_conversation for wording, sentiment and confidence; coach_speech_file for a

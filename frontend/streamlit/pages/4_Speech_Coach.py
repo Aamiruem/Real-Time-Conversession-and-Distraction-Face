@@ -12,7 +12,7 @@ from utils.ui import page_header, require_login, setup, state_badge
 from utils.video import (MEDIA_CONSTRAINTS_WITH_MIC, RTC_CONFIGURATION, AttentionProcessor, AudioCollector,
                          to_wav)
 
-from speech.analyzer import analyze  # noqa: E402  (repo root is put on sys.path by utils.video)
+from speech.analyzer import analyze  # noqa: E402  (backend/ is put on sys.path by utils.video)
 
 setup("Speech Coach", "🗣️")
 require_login()

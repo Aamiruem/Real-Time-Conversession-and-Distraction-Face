@@ -3,12 +3,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSock
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from backend.auth import decode_token, get_current_user
-from backend.database import SessionLocal, get_db
-from backend.models import Message, Room, User
-from backend.schemas import MessageCreate, MessageOut, RoomCreate, RoomOut
-from backend.services import nlp_service
-from backend.websocket_manager import manager
+from app.auth import decode_token, get_current_user
+from app.database import SessionLocal, get_db
+from app.models import Message, Room, User
+from app.schemas import MessageCreate, MessageOut, RoomCreate, RoomOut
+from app.services import nlp_service
+from app.websocket_manager import manager
 
 router = APIRouter(tags=["chat"])
 

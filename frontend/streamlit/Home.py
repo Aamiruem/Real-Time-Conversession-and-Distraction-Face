@@ -1,6 +1,6 @@
 """FocusLink AI — Streamlit entry point: sign in / sign up with email + mobile OTP, then the home dashboard.
 
-Run: streamlit run frontend/Home.py
+Run (from frontend/streamlit/): streamlit run Home.py
 """
 import re
 

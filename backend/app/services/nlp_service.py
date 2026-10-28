@@ -2,8 +2,8 @@
 
 Uses VADER locally; switches sentiment to Amazon Comprehend when USE_COMPREHEND=true.
 """
-from backend.config import settings
-from backend.services import aws_service
+from app.config import settings
+from app.services import aws_service
 from nlp.text_analyzer import analyze_text, conversation_insights, text_confidence  # noqa: F401  (re-exported)
 from nlp.text_analyzer import analyze_sentiment as _local_sentiment
 

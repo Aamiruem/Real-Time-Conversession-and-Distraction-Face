@@ -88,7 +88,7 @@ export default function FocusMonitor() {
         highlight="Focus Monitor"
         sub="Look at the camera — focus %, distraction % and drowsiness are computed live on every frame. Video never leaves your device."
       />
-      <div className="grid" style={{ gridTemplateColumns: "minmax(0,3fr) minmax(0,2fr)" }}>
+      <div className="grid split-3-2">
         <div>
           <div className="video-wrap">
             <video ref={videoRef} playsInline muted />

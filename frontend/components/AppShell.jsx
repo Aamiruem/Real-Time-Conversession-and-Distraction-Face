@@ -38,20 +38,22 @@ export function AppShell({ children }) {
         <Link href="/" className="brand" style={{ padding: "4px 10px 14px" }}>
           <Logo /> FocusLink AI
         </Link>
-        {NAV.map(([href, icon, label]) => (
-          <Link key={href} href={href} className={`nav-item ${path === href ? "on" : ""}`}>
-            {icon} {label}
-          </Link>
-        ))}
-        <div style={{ flex: 1 }} />
-        <div className="card" style={{ padding: 12 }}>
+        <nav className="side-nav">
+          {NAV.map(([href, icon, label]) => (
+            <Link key={href} href={href} className={`nav-item ${path === href ? "on" : ""}`}>
+              {icon} {label}
+            </Link>
+          ))}
+        </nav>
+        <div className="side-spacer" />
+        <div className="card side-user" style={{ padding: 12 }}>
           <b>{user.full_name || user.username}</b>
           <div className="small muted" style={{ wordBreak: "break-all" }}>
             @{user.username} · {user.email}
           </div>
         </div>
         <button
-          className="btn ghost sm"
+          className="btn ghost sm side-logout"
           onClick={() => {
             signOut();
             router.replace("/login");
