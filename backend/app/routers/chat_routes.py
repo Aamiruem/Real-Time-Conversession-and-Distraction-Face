@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.auth import decode_token, get_current_user
 from app.database import SessionLocal, get_db
 from app.models import Message, Room, User
-from app.schemas import MessageCreate, MessageOut, RoomCreate, RoomOut
+from app.schemas import MessageCreate, MessageOut, RoomCreate, RoomOut, RoomUpdate
 from app.services import nlp_service
 from app.websocket_manager import manager
 
@@ -62,6 +62,37 @@ def create_room(data: RoomCreate, user: User = Depends(get_current_user), db: Se
     return room
 
 
+def own_room(room_id: int, user: User, db: Session) -> Room:
+    room = db.get(Room, room_id)
+    if not room:
+        raise HTTPException(404, "Room not found")
+    if room.created_by != user.id:
+        raise HTTPException(403, "Only the room's creator can change it")
+    return room
+
+
+@router.patch("/rooms/{room_id}", response_model=RoomOut)
+def update_room(room_id: int, data: RoomUpdate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    room = own_room(room_id, user, db)
+    if data.name and data.name != room.name:
+        if db.scalar(select(Room).where(Room.name == data.name)):
+            raise HTTPException(400, "Room name already exists")
+        room.name = data.name
+    if data.description is not None:
+        room.description = data.description
+    db.commit()
+    db.refresh(room)
+    return room
+
+
+@router.delete("/rooms/{room_id}")
+def delete_room(room_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Delete a room you created, with its messages."""
+    db.delete(own_room(room_id, user, db))
+    db.commit()
+    return {"ok": True}
+
+
 @router.get("/rooms/{room_id}/messages")
 def history(room_id: int, limit: int = 100, _: User = Depends(get_current_user), db: Session = Depends(get_db)):
     rows = db.scalars(
@@ -80,6 +111,40 @@ async def post_message(
     out = store_message(db, room_id, user, data.content)
     await manager.broadcast(room_id, {"type": "chat", **out})
     return out
+
+
+def own_message(room_id: int, message_id: int, user: User, db: Session) -> Message:
+    msg = db.get(Message, message_id)
+    if not msg or msg.room_id != room_id:
+        raise HTTPException(404, "Message not found")
+    if msg.user_id != user.id:
+        raise HTTPException(403, "You can only change your own messages")
+    return msg
+
+
+@router.patch("/rooms/{room_id}/messages/{message_id}")
+async def edit_message(room_id: int, message_id: int, data: MessageCreate, user: User = Depends(get_current_user),
+                       db: Session = Depends(get_db)):
+    """Edit your message; sentiment, toxicity and keywords are re-analysed."""
+    msg = own_message(room_id, message_id, user, db)
+    nlp = nlp_service.analyze_message(data.content)
+    msg.content = data.content
+    msg.sentiment_label, msg.sentiment_score = nlp["sentiment_label"], nlp["sentiment_score"]
+    msg.is_toxic, msg.keywords = nlp["is_toxic"], ",".join(nlp["keywords"])
+    db.commit()
+    db.refresh(msg)
+    out = to_out(msg)
+    await manager.broadcast(room_id, {"type": "edited", **out})
+    return out
+
+
+@router.delete("/rooms/{room_id}/messages/{message_id}")
+async def delete_message(room_id: int, message_id: int, user: User = Depends(get_current_user),
+                         db: Session = Depends(get_db)):
+    db.delete(own_message(room_id, message_id, user, db))
+    db.commit()
+    await manager.broadcast(room_id, {"type": "deleted", "id": message_id})
+    return {"ok": True}
 
 
 @router.get("/rooms/{room_id}/participants")

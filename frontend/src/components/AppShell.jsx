@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { useBackendStatus } from "@/lib/backend";
 import { themeLabel, useTheme } from "@/lib/theme";
 import { BackendNotice } from "./BackendNotice";
+import { CoachPanel, openCoach } from "./CoachPanel";
 import { CommandPalette } from "./CommandPalette";
 import { Logo } from "./SiteChrome";
 
@@ -29,7 +30,7 @@ const NAV = [
     ],
   ],
 ];
-const PAGES = NAV.flatMap(([, items]) => items);
+const PAGES = [...NAV.flatMap(([, items]) => items), ["/app/settings", "⚙️", "Account settings", "#94a3b8", "Profile, password and data"]];
 
 const STATUS = {
   ok: ["ok", "Live"],
@@ -62,6 +63,9 @@ function UserMenu({ user, onLogout }) {
               {user.email}
             </span>
           </div>
+          <Link href="/app/settings" role="menuitem" onClick={() => setOpen(false)}>
+            ⚙️ Account settings
+          </Link>
           <Link href="/app/analytics" role="menuitem" onClick={() => setOpen(false)}>
             📊 My progress
           </Link>
@@ -110,7 +114,7 @@ export function AppShell({ children }) {
     return (
       <main className="offline-wait">
         <Link href="/" className="brand">
-          <Logo /> FocusLink AI
+          <Logo /> Presence AI
         </Link>
         <BackendNotice />
         <p className="muted small">You're still signed in — your dashboard opens by itself as soon as the backend answers.</p>
@@ -133,7 +137,7 @@ export function AppShell({ children }) {
     <div className="shell">
       <aside className="side">
         <Link href="/app" className="brand" style={{ padding: "4px 10px 16px" }}>
-          <Logo /> FocusLink AI
+          <Logo /> Presence AI
         </Link>
         <nav className="side-nav" aria-label="App">
           {NAV.map(([group, items]) => (
@@ -171,6 +175,9 @@ export function AppShell({ children }) {
             <span className={`status-pill ${tone}`} title="Backend status (re-checked automatically)">
               <span className="dot" /> {label}
             </span>
+            <button className="coach-btn" onClick={() => openCoach()} aria-label="Open the AI coach">
+              ✨ <span>Coach</span>
+            </button>
             <button className="topbar-search" onClick={() => setPalette(true)} aria-label="Search pages and actions">
               🔎 <span>Search…</span>
               <kbd>Ctrl K</kbd>
@@ -187,6 +194,7 @@ export function AppShell({ children }) {
         </main>
       </div>
       <CommandPalette open={palette} onClose={() => setPalette(false)} onLogout={logout} />
+      <CoachPanel />
     </div>
   );
 }

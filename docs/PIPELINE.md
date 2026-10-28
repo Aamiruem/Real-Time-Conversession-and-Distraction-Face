@@ -1,4 +1,4 @@
-# FocusLink AI — from first setup to a live AWS deployment
+# Presence AI — from first setup to a live AWS deployment
 
 This guide walks through the whole project in the order you would build and ship it. Each step
 says what you do, which code is involved, and how to check that it works.

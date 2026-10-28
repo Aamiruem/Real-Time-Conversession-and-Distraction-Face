@@ -20,6 +20,7 @@ const Interview = lazy(() => import("./pages/app/Interview"));
 const Rooms = lazy(() => import("./pages/app/Rooms"));
 const Analytics = lazy(() => import("./pages/app/Analytics"));
 const Lab = lazy(() => import("./pages/app/Lab"));
+const Settings = lazy(() => import("./pages/app/Settings"));
 
 function AppLayout() {
   return (
@@ -58,6 +59,7 @@ export default function App() {
           <Route path="rooms" element={<Rooms />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="lab" element={<Lab />} />
+          <Route path="settings" element={<Settings />} />
         </Route>
         <Route path="*" element={<NotFound />} />
       </Routes>

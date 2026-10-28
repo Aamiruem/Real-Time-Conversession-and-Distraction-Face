@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.auth import get_current_user
 from app.database import get_db
 from app.models import SpeechSession, User
-from app.schemas import SpeechSessionCreate, SpeechSessionOut
+from app.schemas import SpeechSessionCreate, SpeechSessionOut, SpeechSessionUpdate
 
 router = APIRouter(prefix="/speech", tags=["speech"])
 MAX_UPLOAD_MB = 25
@@ -105,11 +105,33 @@ def latest(user: User = Depends(get_current_user), db: Session = Depends(get_db)
     return to_out(row, with_report=True) if row else None
 
 
-@router.delete("/sessions/{session_id}")
-def delete(session_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def own_session(session_id: int, user: User, db: Session) -> SpeechSession:
     row = db.get(SpeechSession, session_id)
     if not row or row.user_id != user.id:
         raise HTTPException(404, "Speech session not found")
+    return row
+
+
+@router.get("/sessions/{session_id}", response_model=SpeechSessionOut)
+def get_session(session_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """One recording's full report."""
+    return to_out(own_session(session_id, user, db), with_report=True)
+
+
+@router.patch("/sessions/{session_id}", response_model=SpeechSessionOut)
+def rename_session(session_id: int, data: SpeechSessionUpdate, user: User = Depends(get_current_user),
+                   db: Session = Depends(get_db)):
+    """Rename a recording (its prompt / title)."""
+    row = own_session(session_id, user, db)
+    row.prompt = data.prompt
+    db.commit()
+    db.refresh(row)
+    return to_out(row)
+
+
+@router.delete("/sessions/{session_id}")
+def delete(session_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    row = own_session(session_id, user, db)
     db.delete(row)
     db.commit()
     return {"ok": True}

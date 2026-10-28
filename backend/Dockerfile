@@ -8,6 +8,7 @@ COPY nlp ./nlp
 COPY ml ./ml
 COPY speech ./speech
 COPY interview ./interview
+COPY coach ./coach
 COPY app ./app
 # Train the bootstrap fatigue model into the image (retrain later with: python -m ml.train --with-db)
 RUN python -m ml.train && python -c "from faster_whisper import WhisperModel; WhisperModel('base.en', device='cpu', compute_type='int8')"

@@ -221,3 +221,33 @@ class MessageOut(BaseModel):
     keywords: list[str]
     sender_focus: float | None
     created_at: datetime
+
+
+# ---------------------------------------------------------------- updates (CRUD)
+class ProfileUpdate(BaseModel):
+    full_name: str = Field(max_length=100)
+
+
+class PasswordChange(BaseModel):
+    current_password: str
+    new_password: str = Field(min_length=8, max_length=128)
+
+    @field_validator("new_password")
+    @classmethod
+    def strong_password(cls, v: str) -> str:
+        if problem := password_problem(v):
+            raise ValueError(problem)
+        return v
+
+
+class AccountDelete(BaseModel):
+    password: str
+
+
+class RoomUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=2, max_length=80)
+    description: str | None = Field(default=None, max_length=255)
+
+
+class SpeechSessionUpdate(BaseModel):
+    prompt: str = Field(max_length=2000)

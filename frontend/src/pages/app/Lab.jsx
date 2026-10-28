@@ -407,7 +407,7 @@ export default function Lab() {
         eyebrow="Computer vision · NLP · Speech · Machine learning"
         title="AI Lab"
         highlight="AI Lab"
-        sub="Each AI technology in FocusLink, isolated so you can try it and see what it outputs — from raw input to result."
+        sub="Each AI technology in Presence AI, isolated so you can try it and see what it outputs — from raw input to result."
       />
       <div className="tabs">
         {[

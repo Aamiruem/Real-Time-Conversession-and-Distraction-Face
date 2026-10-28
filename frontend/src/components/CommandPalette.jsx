@@ -14,6 +14,7 @@ const COMMANDS = [
   ["💬", "Focus Rooms", "/app/rooms", "chat room messages"],
   ["📊", "Analytics", "/app/analytics", "history leaderboard progress"],
   ["🧪", "AI Lab", "/app/lab", "nlp ml model computer vision"],
+  ["⚙️", "Account settings", "/app/settings", "profile name password delete account"],
   ["🌐", "Website home", "/", "landing seo features"],
 ];
 
@@ -24,7 +25,8 @@ export function CommandPalette({ open, onClose, onLogout }) {
   const input = useRef(null);
 
   const items = useMemo(() => {
-    const all = [...COMMANDS, ["🚪", "Log out", "logout", "sign out exit"]];
+    const all = [["✨", "Ask the AI coach", "coach", "assistant help question advice recommend"], ...COMMANDS,
+      ["🚪", "Log out", "logout", "sign out exit"]];
     const words = q.toLowerCase().split(/\s+/).filter(Boolean);
     return all.filter(([, label, , kw]) => words.every((w) => `${label} ${kw}`.toLowerCase().includes(w)));
   }, [q]);
@@ -42,6 +44,7 @@ export function CommandPalette({ open, onClose, onLogout }) {
     onClose();
     if (!item) return;
     if (item[2] === "logout") return onLogout();
+    if (item[2] === "coach") return window.dispatchEvent(new CustomEvent("presence:coach"));
     router.push(item[2]);
     // pages that are already open react to the section in the link (e.g. ?tab=bank)
     const tab = new URL(item[2], window.location.origin).searchParams.get("tab");

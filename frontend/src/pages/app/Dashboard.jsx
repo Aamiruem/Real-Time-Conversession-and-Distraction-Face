@@ -19,6 +19,7 @@ import {
 } from "recharts";
 import { ChartCard, EmptyChart, GoalRing, GRID, Kpi, SERIES, TICK, TOOLTIP, timeAgo } from "@/components/dashboard";
 import { Donut, RiskCard } from "@/components/ui";
+import { openCoach } from "@/components/CoachPanel";
 import { cachedApi, peekCache } from "@/lib/api";
 import { useBackendStatus } from "@/lib/backend";
 import { buildDashboardFallback } from "@/lib/dashboardFallback";
@@ -59,6 +60,8 @@ export default function Dashboard() {
   // show the last dashboard instantly when you come back, then refresh it in the background
   const [d, setD] = useState(() => peekCache("/analytics/dashboard") ?? null);
   const [err, setErr] = useState("");
+  const [recs, setRecs] = useState(() => peekCache("/recommendations") ?? null);
+  const [insight, setInsight] = useState(() => peekCache("/coach/insight") ?? null);
   const backend = useBackendStatus();
 
   // (re)load whenever the backend becomes reachable or changes version — e.g. right after it is restarted
@@ -78,6 +81,12 @@ export default function Dashboard() {
       alive = false;
     };
   }, [backend.status, backend.version, user]);
+
+  useEffect(() => {
+    if (backend.status !== "ok") return;
+    cachedApi("/recommendations", 0).then(setRecs).catch(() => setRecs(null));
+    cachedApi("/coach/insight", 60_000).then(setInsight).catch(() => setInsight(null));
+  }, [backend.status]);
 
   const first = (user?.full_name || user?.username || "").split(" ")[0];
   if (err && !d)
@@ -136,6 +145,31 @@ export default function Dashboard() {
         </div>
       </section>
 
+      {/* ---------------------------------------------------------------- AI coach insight */}
+      {insight && (
+        <section className="card insight">
+          <span className="nav-ico" style={{ "--c": "#a78bfa" }}>
+            ✨
+          </span>
+          <div>
+            <div className="card-title" style={{ marginBottom: 4 }}>
+              Your coach says <span className="engine">{insight.engine === "claude" ? "Claude" : "Built-in coach"}</span>
+            </div>
+            {insight.answer.split("\n").map((line, i) => (
+              <p key={i}>{line}</p>
+            ))}
+          </div>
+          <div className="insight-actions">
+            <button className="btn sm" onClick={() => openCoach()}>
+              Ask a follow-up
+            </button>
+            <button className="btn ghost sm" onClick={() => openCoach("What should I practise next?")}>
+              What next?
+            </button>
+          </div>
+        </section>
+      )}
+
       {/* ---------------------------------------------------------------- KPIs */}
       <div className="kpi-grid">
         <Kpi icon="🎯" value={`${k.avg_focus_pct}%`} label="Average focus" sub={`${k.focus_sessions} sessions`} />
@@ -183,6 +217,24 @@ export default function Dashboard() {
           </div>
         </ChartCard>
         <div style={{ display: "grid", gap: 16, alignContent: "start" }}>
+          {recs?.length ? (
+            <ChartCard title="🎯 Recommended for you" sub="Ranked by how much each should help — from your own data">
+              <ul className="recs">
+                {recs.map((r) => (
+                  <li key={r.id}>
+                    <Link href={r.href}>
+                      <span className="rec-ico">{r.icon}</span>
+                      <span className="rec-body">
+                        <b>{r.title}</b>
+                        <span className="small muted">{r.reason}</span>
+                        <span className="small">→ {r.action}</span>
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </ChartCard>
+          ) : (
           <ChartCard title="✨ Next steps" sub="Picked from your own data">
             <div className="next-steps">
               {d.next_steps.map((s) => (
@@ -194,6 +246,7 @@ export default function Dashboard() {
               ))}
             </div>
           </ChartCard>
+          )}
           {d.fatigue ? (
             <RiskCard f={d.fatigue} />
           ) : (

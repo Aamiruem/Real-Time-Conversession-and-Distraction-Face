@@ -46,7 +46,7 @@ await writeFile(
   JSON.stringify(
     {
       name: SITE_NAME,
-      short_name: "FocusLink",
+      short_name: "Presence",
       description: DESCRIPTION,
       start_url: "/app",
       display: "standalone",

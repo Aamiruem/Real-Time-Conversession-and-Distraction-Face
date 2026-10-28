@@ -16,7 +16,7 @@ from speech.analyzer import analyze as analyze_speech  # noqa: E402
 setup("AI Lab", "🧪")
 require_login()
 
-page_header("🧪 AI Lab", "Each AI technology in FocusLink, isolated so you can try it, see how it works and what it "
+page_header("🧪 AI Lab", "Each AI technology in Presence AI, isolated so you can try it, see how it works and what it "
             "outputs — from raw input to result.", eyebrow="Computer vision · NLP · Speech · Machine learning",
             highlight="AI Lab")
 

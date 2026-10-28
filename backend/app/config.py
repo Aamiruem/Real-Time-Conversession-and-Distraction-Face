@@ -23,7 +23,7 @@ def database_url() -> str:
 
 
 class Settings:
-    APP_NAME: str = os.getenv("APP_NAME", "FocusLink AI")
+    APP_NAME: str = os.getenv("APP_NAME", "Presence AI")
     SECRET_KEY: str = os.getenv("SECRET_KEY", "dev-secret-change-me")
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "720"))

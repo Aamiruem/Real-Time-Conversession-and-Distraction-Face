@@ -10,7 +10,8 @@ from app.mcp_server import mcp
 EXPECTED_TOOLS = {
     "analyze_text", "analyze_conversation", "coach_speech_file", "confident_rewrite", "predict_fatigue",
     "fatigue_model_card", "platform_stats", "user_overview", "list_focus_sessions", "list_rooms", "room_messages",
-    "room_insights", "leaderboard",
+    "room_insights", "leaderboard", "recommendations", "ask_coach", "speech_history", "interview_questions",
+    "interview_guide",
 }
 
 
@@ -35,7 +36,7 @@ def test_lists_tools_prompts_resources():
     tools, prompts, resources = run(go)
     assert EXPECTED_TOOLS <= tools
     assert {"weekly_focus_review", "improve_my_message"} <= prompts
-    assert "focuslink://model-card" in resources
+    assert "presence://model-card" in resources
 
 
 def test_ai_tools(client):  # `client` starts the app so the database and tables exist
@@ -94,3 +95,28 @@ def test_http_endpoint_requires_api_key(monkeypatch, key, status):
     headers = {"Authorization": f"Bearer {key}"} if key else {}
     with TestClient(app) as c:
         assert c.post("/mcp", json={}, headers=headers).status_code == status
+
+
+def test_coaching_tools(client, verified_user, monkeypatch):
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
+    headers, creds = verified_user
+    client.post("/speech/sessions", headers=headers, json={"mode": "free", "prompt": "Pitch", "report": {
+        "confidence": 66, "scores": {"fluency": 70, "pace": 80, "clarity": 75, "voice": 50, "assertiveness": 72},
+        "metrics": {"duration_sec": 40, "wpm": 150, "fillers": 3}}})
+
+    async def go():
+        async with create_connected_server_and_client_session(mcp._mcp_server) as s:
+            bad = await s.call_tool("interview_questions", {"field": "astronaut"})
+            return (await _call(s, "recommendations", {"username": creds["username"]}),
+                    await _call(s, "ask_coach", {"username": creds["username"], "question": "How am I doing?"}),
+                    await _call(s, "speech_history", {"username": creds["username"]}),
+                    await _call(s, "interview_questions", {"field": "sales"}),
+                    await _call(s, "interview_guide", {"topic": "dress"}), bad)
+    recs, coach, history, questions, guide, bad = run(go)
+    assert any(r["id"] == "skill-voice" for r in recs)
+    assert coach["engine"] == "built-in" and "66" in coach["answer"]
+    assert history[0]["prompt"] == "Pitch" and history[0]["confidence"] == 66
+    assert any(q["id"] == "sales-0" for q in questions)
+    assert any("Dressing" in g["title"] for g in guide)
+    assert bad.isError

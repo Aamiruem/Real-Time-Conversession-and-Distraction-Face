@@ -4,7 +4,16 @@ import streamlit as st
 
 from utils import api_client as api
 
-APP_NAME = "FocusLink AI"
+APP_NAME = "Presence AI"
+# Presence AI mark (same as frontend/public/icon.svg): focus ring + attention dot + two voice waves
+LOGO_SVG = (
+    "<svg width='28' height='28' viewBox='0 0 64 64' aria-hidden='true'><defs><linearGradient id='plg' x1='0' y1='0' "
+    "x2='1' y2='1'><stop offset='0' stop-color='#38bdf8'/><stop offset='1' stop-color='#a78bfa'/></linearGradient>"
+    "</defs><circle cx='25' cy='32' r='13' fill='none' stroke='url(#plg)' stroke-width='5.5'/><circle cx='25' "
+    "cy='32' r='5' fill='url(#plg)'/><path d='M43 23.5a12 12 0 0 1 0 17' fill='none' stroke='url(#plg)' "
+    "stroke-width='4.5' stroke-linecap='round'/><path d='M50 17a21 21 0 0 1 0 30' fill='none' stroke='url(#plg)' "
+    "stroke-width='4.5' stroke-linecap='round' opacity='.65'/></svg>"
+)
 STATE_COLORS = {
     "Focused": "#22c55e",
     "Distracted": "#f97316",
@@ -153,7 +162,7 @@ def logout():
 def sidebar_user():
     user = st.session_state["user"]
     with st.sidebar:
-        st.markdown(f"<div class='fl-brand'><div class='dot'></div>{APP_NAME}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='fl-brand'>{LOGO_SVG}{APP_NAME}</div>", unsafe_allow_html=True)
         st.markdown(f"<div class='fl-user'><div class='n'>{user.get('full_name') or user['username']}</div>"
                     f"<div class='e'>@{user['username']} · {user['email']}</div></div>", unsafe_allow_html=True)
         if st.button("Log out", use_container_width=True, key="logout"):

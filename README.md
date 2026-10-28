@@ -1,13 +1,15 @@
-# 🎯 FocusLink AI — Real-Time Attention, Distraction Detection & Focus-Aware Conversations
+# Presence AI — Focus, Speak & Interview with Confidence
 
-FocusLink AI watches your webcam and computes, live and per frame, whether you are **Focused, Distracted,
+<img src="frontend/public/icon.svg" width="56" alt="Presence AI logo">
+
+Presence AI watches your webcam and computes, live and per frame, whether you are **Focused, Distracted,
 Drowsy, Yawning or away**. It also shows your **focus % and distraction %**. A **Speech Coach** scores your
 speaking confidence and pronunciation, a **machine-learning model** predicts fatigue risk, and in **Focus
 Rooms** people chat in real time while seeing each other's live focus.
 
 The frontend is a **React (Vite + React Router, JavaScript/JSX) app** whose public pages are pre-rendered to static HTML for SEO. The
 backend is **FastAPI**, with data in **SQL (SQLite / AWS RDS PostgreSQL) + S3**. An **MCP server** lets AI
-assistants such as Claude use FocusLink's AI engines and data as tools.
+assistants such as Claude use Presence AI's engines and data as tools.
 
 📘 **Step-by-step guide from setup to a live AWS deployment: [docs/PIPELINE.md](docs/PIPELINE.md)**
 
@@ -20,6 +22,9 @@ assistants such as Claude use FocusLink's AI engines and data as tools.
 | Speech Coach | Transcript, pace (WPM), filler words, pauses, pronunciation clarity, read-aloud accuracy, pitch variety, assertive wording, eye contact → **confidence score** + tips + a "say it like this" rewrite | faster-whisper, NumPy |
 | Conversation Coach | Record a conversation (10 types: interview, presentation, meeting, sales, casual, debate, support, teaching, storytelling, phone) → **fluency, word confidence, focus, interaction and voice modulation** scores, "needs improvement" %, evidence and type-specific suggestions + practice drills | `backend/speech/conversation.py`, `/app/conversation`, Streamlit page 6 |
 | Interview Prep | Mock interviews for 15 job fields (question bank with frameworks, outlines and pitfalls) → **readiness score** from content (TF-IDF relevance, STAR/PREP structure, vocabulary, opening, length), delivery and on-camera presence (eye contact, smile via face blendshapes, expression, framing, posture, lighting, camera sharpness); full guide from getting the interview to follow-up, dress codes, word swaps | `backend/interview/`, `/app/interview`, Streamlit page 7 |
+| AI coach | Ask anything about your progress, interviews, speaking or focus; automated daily insight on the dashboard. Uses **Claude Opus 5.5** when `ANTHROPIC_API_KEY` is set (server-side fallbacks on), otherwise a built-in coach (TF-IDF retrieval over the guide + your own numbers) | `backend/coach/assistant.py`, `POST /coach/ask` |
+| Recommendations | What to practise next, ranked by expected benefit and explained: best focus time and session length, weakest skill → exercise, interview questions to re-practise (spaced), drowsiness, untried conversation types | `backend/coach/recommend.py`, `GET /recommendations` |
+| Account & data (CRUD) | Profile, password change, account deletion with all data; read/rename/delete recordings; edit/delete your messages; update/delete your rooms | `/auth/me`, `/speech/sessions/{id}`, `/rooms/{id}` |
 | Machine learning | Fatigue-risk classifier: CV model selection, model card, per-prediction explanations, retraining from users' own ratings | scikit-learn |
 | NLP | Sentiment (VADER or **Amazon Comprehend**), toxicity, keywords, wording confidence, conversation summaries | vaderSentiment |
 | Real-time rooms | WebSocket chat, presence, typing, everyone's live focus, drowsy alerts | FastAPI WebSockets |
@@ -101,15 +106,29 @@ cd frontend; npm run build
 The local SQLite database is `backend/focuslink.db`, and the trained fatigue model is in `backend/ml/artifacts/`.
 
 **Why port 8010?** Another project on this machine already uses port 8000. If the frontend talks to the wrong
-backend you'll see errors that aren't from FocusLink, such as "Enter your owner email address".
+backend you'll see errors that aren't from Presence AI, such as "Enter your owner email address".
 
 **Login:** with `AWS_ENABLED=false` (the default), anyone can create an account and is signed in immediately,
 and the mobile number is optional. Set `REQUIRE_VERIFICATION=true` to require email + mobile OTP codes. Until
 AWS SES/SNS is configured, those codes are shown on screen and in the API log.
 
-## 🤖 MCP server (use FocusLink from Claude and other AI assistants)
+## 🔌 API overview (create · read · update · delete)
 
-`backend/app/mcp_server.py` exposes FocusLink over the [Model Context Protocol](https://modelcontextprotocol.io):
+Interactive docs with every endpoint: `http://localhost:8010/docs`. All data lives in SQL (SQLite locally, PostgreSQL on
+AWS RDS via `DATABASE_URL`); reports can go to S3, email/SMS through SES/SNS.
+
+| Resource | Create | Read | Update | Delete |
+|---|---|---|---|---|
+| Account | `POST /auth/register` | `GET /auth/me` | `PATCH /auth/me`, `POST /auth/password` | `DELETE /auth/me` (everything) |
+| Focus sessions | `POST /attention/sessions` | `GET /attention/sessions`, `/{id}` | `PATCH /attention/sessions/{id}/feedback` | `DELETE /attention/sessions/{id}` |
+| Recordings (speech · conversation · interview) | `POST /speech/analyze`, `/interview/answer`, `/speech/sessions` | `GET /speech/sessions`, `/{id}`, `/latest` | `PATCH /speech/sessions/{id}` | `DELETE /speech/sessions/{id}` |
+| Rooms | `POST /rooms` | `GET /rooms` | `PATCH /rooms/{id}` (creator) | `DELETE /rooms/{id}` (creator) |
+| Messages | `POST /rooms/{id}/messages`, WebSocket | `GET /rooms/{id}/messages` | `PATCH …/messages/{mid}` (author) | `DELETE …/messages/{mid}` (author) |
+| Coaching | `POST /coach/ask` | `GET /recommendations`, `/coach/insight`, `/analytics/dashboard` | — | — |
+
+## 🤖 MCP server (use Presence AI from Claude and other AI assistants)
+
+`backend/app/mcp_server.py` exposes Presence AI over the [Model Context Protocol](https://modelcontextprotocol.io):
 
 | Kind | Name | What it does |
 |---|---|---|
@@ -118,14 +137,16 @@ AWS SES/SNS is configured, those codes are shown on screen and in the API log.
 | tool | `predict_fatigue`, `fatigue_model_card` | ML fatigue risk with explanation; model metrics |
 | tool | `platform_stats`, `user_overview`, `list_focus_sessions`, `leaderboard` | Read-only user and focus data |
 | tool | `list_rooms`, `room_messages`, `room_insights` | Read-only chat data + NLP insights |
+| tool | `recommendations`, `ask_coach`, `speech_history` | A user's ranked recommendations, an AI-coach answer, recent recordings |
+| tool | `interview_questions`, `interview_guide` | Question bank per job field; preparation guide (optional topic filter) |
 | prompt | `weekly_focus_review`, `improve_my_message` | Ready-made coaching prompts |
-| resource | `focuslink://model-card` | Model card JSON |
+| resource | `presence://model-card` | Model card JSON |
 
 **Claude Code:** `.mcp.json` in this repo registers it automatically. Open the project and run `/mcp`.
 **Claude Desktop:** add this to `claude_desktop_config.json`:
 
 ```json
-{ "mcpServers": { "focuslink": {
+{ "mcpServers": { "presence": {
     "command": "C:\\path\\to\\project\\.venv\\Scripts\\python.exe",
     "args": ["-m", "app.mcp_server"],
     "env": { "PYTHONPATH": "C:\\path\\to\\project\\backend" } } } }
@@ -164,18 +185,3 @@ docker compose --env-file backend/.env up --build      # http://localhost
 
 Thresholds: `frontend/src/lib/attention.js → THRESHOLDS` (browser) and `backend/cv/attention_detector.py → Thresholds`.
 
-## 🔌 Main API
-
-| Method | Path | Purpose |
-|---|---|---|
-| GET | `/auth/config` | Whether sign-up needs OTP verification |
-| POST | `/auth/register` (→ `/auth/verify` in verified mode) | Sign up; returns a JWT straight away in easy mode |
-| POST | `/auth/login`, `/auth/otp/request`, `/auth/otp/login`, `/auth/password/reset` | Password / OTP sign-in, reset |
-| POST | `/speech/analyze` (multipart audio) | Transcribe + score a recording, save it |
-| GET/POST | `/ml/model`, `/ml/predict`, `/ml/fatigue/me` | Fatigue model card, prediction, your latest risk |
-| POST | `/nlp/analyze` | Full NLP breakdown of a text |
-| POST | `/attention/update`, `/attention/sessions` | Live metrics / save a session (S3 report) |
-| PATCH | `/attention/sessions/{id}/feedback` | Your fatigue rating (training label) |
-| GET/POST | `/rooms`, `/rooms/{id}/messages`, `/rooms/{id}/insights` | Rooms, history, NLP insights |
-| POST | `/mcp` (when `MCP_API_KEY` is set) | Model Context Protocol endpoint for AI assistants |
-| WS | `/ws/rooms/{id}?token=JWT` | Real-time events: `chat`, `presence`, `focus_update`, `alert`, `typing` |

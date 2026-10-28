@@ -2,15 +2,16 @@
 import re
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import or_, select
+from sqlalchemy import delete, or_, select
 from sqlalchemy.orm import Session
 
 from app.auth import create_access_token, get_current_user, hash_password, verify_password
 from app.config import settings
 from app.database import get_db
-from app.models import User
-from app.schemas import (OtpLoginIn, OtpRequestIn, OtpSentOut, PasswordResetIn, RegisterOut, ResendIn, Token,
-                             UserCreate, UserLogin, UserOut, VerifyIn, VerifyOut, password_problem)
+from app.models import FocusSnapshot, Message, OtpCode, Room, SpeechSession, User
+from app.schemas import (AccountDelete, OtpLoginIn, OtpRequestIn, OtpSentOut, PasswordResetIn, RegisterOut, ResendIn, Token,
+                             PasswordChange, ProfileUpdate, UserCreate, UserLogin, UserOut, VerifyIn, VerifyOut,
+                         password_problem)
 from app.services import otp_service
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -157,3 +158,37 @@ def auth_config():
 @router.get("/me", response_model=UserOut)
 def me(user: User = Depends(get_current_user)):
     return user
+
+
+@router.patch("/me", response_model=UserOut)
+def update_me(data: ProfileUpdate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Update your display name."""
+    user.full_name = data.full_name.strip()
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@router.post("/password")
+def change_password(data: PasswordChange, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Change your password (needs the current one)."""
+    if not verify_password(data.current_password, user.password_hash):
+        raise HTTPException(400, "Current password is incorrect")
+    user.password_hash = hash_password(data.new_password)
+    db.commit()
+    return {"ok": True, "message": "Password changed"}
+
+
+@router.delete("/me")
+def delete_me(data: AccountDelete, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Delete your account and everything stored about you (sessions, recordings' results, messages, rooms)."""
+    if not verify_password(data.password, user.password_hash):
+        raise HTTPException(400, "Password is incorrect")
+    own_rooms = select(Room.id).where(Room.created_by == user.id)
+    db.execute(delete(Message).where((Message.user_id == user.id) | Message.room_id.in_(own_rooms)))
+    db.execute(delete(Room).where(Room.created_by == user.id))
+    for model in (SpeechSession, FocusSnapshot, OtpCode):
+        db.execute(delete(model).where(model.user_id == user.id))
+    db.delete(user)  # focus sessions go with it (cascade)
+    db.commit()
+    return {"ok": True, "message": "Your account and data were deleted"}

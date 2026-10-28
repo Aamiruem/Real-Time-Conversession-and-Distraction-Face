@@ -79,7 +79,7 @@ def train(with_db: bool = False, quiet: bool = False) -> dict:
     pred = model.predict(X_te)
     imp = permutation_importance(model, X_te, y_te, n_repeats=5, random_state=7, scoring="f1_macro")
     card = {
-        "name": "FocusLink fatigue-risk classifier",
+        "name": "Presence AI fatigue-risk classifier",
         "task": "Predict fatigue risk (low / medium / high) from a finished focus session",
         "trained_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "algorithm": best,

@@ -83,8 +83,15 @@ export default function InterviewPrep() {
 
   useEffect(() => {
     // deep links from the command palette: /app/interview?tab=bank
-    const t = new URLSearchParams(window.location.search).get("tab");
+    const params = new URLSearchParams(window.location.search);
+    const t = params.get("tab");
     if (TABS.some(([k]) => k === t)) setTab(t);
+    // recommendations link to a question: ?q=g-weakness (general) or ?q=sales-0 (role-specific → that field)
+    const q = params.get("q");
+    if (q) {
+      if (!q.startsWith("g-")) setField(q.slice(0, q.lastIndexOf("-")));
+      setQid(q);
+    }
     const onTab = (e) => TABS.some(([k]) => k === e.detail) && setTab(e.detail);
     window.addEventListener("focuslink:tab", onTab);
     cachedApi("/interview/fields", 600_000).then(setFields).catch((e) => setErr(e.message));

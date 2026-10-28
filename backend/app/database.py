@@ -1,12 +1,26 @@
 """SQLAlchemy engine/session. Works with SQLite locally and PostgreSQL on AWS RDS."""
-from sqlalchemy import create_engine, inspect, text
+from sqlalchemy import create_engine, event, inspect, text
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 from app.config import settings
 
-connect_args = {"check_same_thread": False} if settings.DATABASE_URL.startswith("sqlite") else {}
+IS_SQLITE = settings.DATABASE_URL.startswith("sqlite")
 
-engine = create_engine(settings.DATABASE_URL, connect_args=connect_args, pool_pre_ping=True)
+if IS_SQLITE:
+    engine = create_engine(settings.DATABASE_URL, connect_args={"check_same_thread": False}, pool_pre_ping=True)
+
+    @event.listens_for(engine, "connect")
+    def _sqlite_pragmas(conn, _):
+        # WAL: readers don't wait for writers (API + WebSockets + MCP at once); NORMAL sync is safe with WAL
+        cur = conn.cursor()
+        cur.execute("PRAGMA journal_mode=WAL")
+        cur.execute("PRAGMA synchronous=NORMAL")
+        cur.execute("PRAGMA foreign_keys=ON")
+        cur.close()
+else:
+    # PostgreSQL (AWS RDS): a small warm pool; recycle before RDS / load balancers drop idle connections
+    engine = create_engine(settings.DATABASE_URL, pool_pre_ping=True, pool_size=10, max_overflow=20,
+                           pool_recycle=1800)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 

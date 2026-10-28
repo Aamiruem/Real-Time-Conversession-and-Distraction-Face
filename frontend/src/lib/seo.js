@@ -45,7 +45,7 @@ export function pageMeta(pathname) {
     return {
       ...base,
       title: `Sign in | ${SITE_NAME}`,
-      description: "Sign in to FocusLink AI with your password or a one-time code sent to your email or mobile.",
+      description: "Sign in to Presence AI with your password or a one-time code sent to your email or mobile.",
       robots: "noindex, follow",
     };
   }
@@ -54,7 +54,7 @@ export function pageMeta(pathname) {
       ...base,
       title: `Create your free account | ${SITE_NAME}`,
       description:
-        "Sign up for FocusLink AI: free webcam focus tracking, mock interviews, an AI speech coach and fatigue prediction.",
+        "Sign up for Presence AI: free webcam focus tracking, mock interviews, an AI speech coach and fatigue prediction.",
     };
   }
   // the signed-in app is private: keep it out of search results

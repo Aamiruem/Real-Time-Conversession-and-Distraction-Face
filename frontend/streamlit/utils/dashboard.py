@@ -102,6 +102,36 @@ def _ago(iso: str) -> str:
         f"{s // 3600:.0f} h ago" if s < 86400 else f"{s // 86400:.0f} d ago"
 
 
+def _optional(call):
+    """Features of a newer backend (recommendations, coach): None instead of an error on an older one."""
+    try:
+        return call()
+    except api.APIError:
+        return None
+
+
+def render_coach_chat():
+    """Chat with the AI coach at the bottom of the dashboard (history kept for this browser session)."""
+    st.markdown("#### ✨ Ask your AI coach")
+    st.caption("About your progress, what to practise next, or any interview question.")
+    history = st.session_state.setdefault("coach_history", [])
+    for turn in history:
+        with st.chat_message("user" if turn["role"] == "user" else "assistant", avatar="🧑" if turn["role"] == "user" else "✨"):
+            st.markdown(turn["content"])
+    question = st.chat_input("Ask your coach…")
+    if question:
+        with st.chat_message("user", avatar="🧑"):
+            st.markdown(question)
+        with st.chat_message("assistant", avatar="✨"), st.spinner("Thinking…"):
+            try:
+                r = api.coach_ask(question, history[-6:])
+                st.markdown(r["answer"])
+                st.caption("Claude" if r["engine"] == "claude" else "Built-in coach")
+                history += [{"role": "user", "content": question}, {"role": "assistant", "content": r["answer"]}]
+            except api.APIError as e:
+                st.warning("The AI coach needs the updated backend — restart it." if e.status == 404 else str(e))
+
+
 def render_dashboard(user: dict):
     st.markdown(CSS, unsafe_allow_html=True)
     try:
@@ -132,6 +162,14 @@ def render_dashboard(user: dict):
         st.session_state["dash_refresh"] = True
         st.rerun()
 
+    # ---------------- AI coach: today's automated insight (skipped quietly on an older backend)
+    insight = _optional(api.coach_insight)
+    if insight:
+        engine = "Claude" if insight["engine"] == "claude" else "Built-in coach"
+        st.markdown(f"<div class='fl-card' style='margin:10px 0 16px;height:auto'><b>✨ Your coach says</b> "
+                    f"<span class='fl-pill'>{engine}</span><p style='margin-top:8px'>"
+                    f"{html.escape(insight['answer']).replace(chr(10), '<br>')}</p></div>", unsafe_allow_html=True)
+
     # ---------------- KPIs
     delta = k["week_minutes"] - k["last_week_minutes"]
     cols = st.columns(6)
@@ -161,11 +199,22 @@ def render_dashboard(user: dict):
                       annotation_text="daily goal", annotation_font_color=MUTED)
         st.plotly_chart(_layout(fig, 260), use_container_width=True)
     with right:
-        st.markdown("#### ✨ Next steps")
-        for s in d["next_steps"]:
-            path, icon, title, _ = PAGES.get(s["href"], PAGES["/app/focus"])
-            st.markdown(f"<div class='step'>{s['icon']} {html.escape(s['text'])}</div>", unsafe_allow_html=True)
-            st.page_link(path, label=f"Open {title} →")
+        recs = _optional(api.recommendations)
+        if recs:
+            st.markdown("#### 🎯 Recommended for you")
+            st.caption("Ranked by how much each should help — from your own data")
+            for r in recs[:4]:
+                path, icon, title, _ = PAGES.get(r["href"].split("?")[0], PAGES["/app/focus"])
+                st.markdown(f"<div class='step'>{r['icon']} <b>{html.escape(r['title'])}</b><br>"
+                            f"<small style='color:var(--fl-muted)'>{html.escape(r['reason'])}</small><br>"
+                            f"<small>→ {html.escape(r['action'])}</small></div>", unsafe_allow_html=True)
+                st.page_link(path, label=f"Open {title} →")
+        else:
+            st.markdown("#### ✨ Next steps")
+            for s in d["next_steps"]:
+                path, icon, title, _ = PAGES.get(s["href"], PAGES["/app/focus"])
+                st.markdown(f"<div class='step'>{s['icon']} {html.escape(s['text'])}</div>", unsafe_allow_html=True)
+                st.page_link(path, label=f"Open {title} →")
         st.markdown("#### 🧠 Fatigue risk")
         f = d["fatigue"]
         if f:
@@ -266,3 +315,6 @@ def render_dashboard(user: dict):
         st.markdown("#### Explore")
         for path, icon, title, text in PAGES.values():
             st.page_link(path, label=f"{title} — {text}", icon=icon)
+
+    st.write("")
+    render_coach_chat()

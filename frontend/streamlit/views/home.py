@@ -8,7 +8,7 @@ import streamlit as st
 
 from utils import api_client as api
 from utils.dashboard import render_dashboard
-from utils.ui import APP_NAME, HIDE_SIDEBAR, setup, sidebar_user
+from utils.ui import APP_NAME, HIDE_SIDEBAR, LOGO_SVG, setup, sidebar_user
 
 setup("Dashboard", "🎯")
 
@@ -67,7 +67,7 @@ hero, panel = st.columns([1.1, 1], gap="large")
 with hero:
     st.markdown(f"""
 <div class='fl-hero'>
-  <div class='fl-brand'><div class='dot'></div>{APP_NAME}</div>
+  <div class='fl-brand'>{LOGO_SVG}{APP_NAME}</div>
   <span class='fl-pill'>Computer vision · NLP · Speech AI · Machine learning</span>
   <h1>Stay focused.<br><span>Speak with confidence.</span></h1>
   <p class='lead'>Real-time distraction &amp; drowsiness detection from your webcam, an AI speech coach,

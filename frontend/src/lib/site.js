@@ -1,7 +1,7 @@
 // Site-wide SEO constants and the content of the statically generated marketing pages.
 export const SITE_URL = (import.meta.env.VITE_SITE_URL || "http://localhost:3000").replace(/\/$/, "");
-export const SITE_NAME = "FocusLink AI";
-export const TAGLINE = "AI Focus Tracker, Interview & Speech Coach";
+export const SITE_NAME = "Presence AI";
+export const TAGLINE = "Focus, Speak & Interview with Confidence";
 export const DESCRIPTION =
   "Free AI focus tracker and interview coach: real-time distraction & drowsiness detection, mock interviews " +
   "with body-language feedback, an AI speech and conversation coach, and machine-learning fatigue prediction.";
@@ -16,7 +16,7 @@ export const FEATURES = [
       "Measure your real focus while studying or working. Webcam AI detects distraction, drowsiness, blinks and yawns live and gives you a focus %.",
     keywords: ["focus tracker", "distraction detection", "drowsiness detection", "study focus app", "webcam attention"],
     summary:
-      "FocusLink watches 478 face landmarks in your browser and tells you, second by second, whether you are focused, distracted, drowsy or away.",
+      "Presence AI watches 478 face landmarks in your browser and tells you, second by second, whether you are focused, distracted, drowsy or away.",
     sections: [
       {
         heading: "How the focus score is measured",
@@ -218,7 +218,7 @@ export const HOME_FAQ = [
     q: "Can I practise job interviews?",
     a: "Yes. Mock interviews for 15 job fields score your answer, delivery, eye contact, posture and gestures, with a full preparation guide.",
   },
-  { q: "Is FocusLink AI free?", a: "Yes — create an account with your email and start a session in seconds." },
+  { q: "Is Presence AI free?", a: "Yes — create an account with your email and start a session in seconds." },
 ];
 
 export function jsonLd(data) {

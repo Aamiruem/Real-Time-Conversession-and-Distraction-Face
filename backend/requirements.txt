@@ -22,5 +22,8 @@ faster-whisper==1.1.1
 av==12.3.0
 python-multipart==0.0.12
 
-# MCP server (app/mcp_server.py) — AI assistants use FocusLink's AI as tools
+# AI coach (optional: used when ANTHROPIC_API_KEY is set, otherwise the built-in coach answers)
+anthropic==1.13.0
+
+# MCP server (app/mcp_server.py) — AI assistants use Presence AI's engines as tools
 mcp==1.30.0

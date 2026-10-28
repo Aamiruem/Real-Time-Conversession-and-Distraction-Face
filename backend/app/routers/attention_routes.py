@@ -46,6 +46,14 @@ def list_sessions(user: User = Depends(get_current_user), db: Session = Depends(
     return list(rows)
 
 
+@router.get("/sessions/{session_id}", response_model=SessionOut)
+def get_session(session_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    session = db.get(AttentionSession, session_id)
+    if not session or session.user_id != user.id:
+        raise HTTPException(404, "Session not found")
+    return session
+
+
 @router.patch("/sessions/{session_id}/feedback", response_model=SessionOut)
 def session_feedback(session_id: int, data: FatigueFeedback, user: User = Depends(get_current_user),
                      db: Session = Depends(get_db)):

@@ -49,7 +49,8 @@ _http = requests.Session()  # keep-alive: reuses the TCP connection to the API a
 
 def _request(method: str, path: str, token: str | None = None, **kwargs):
     try:
-        r = _http.request(method, f"{BACKEND_URL}{path}", headers=_headers(token), timeout=10, **kwargs)
+        r = _http.request(method, f"{BACKEND_URL}{path}", headers=_headers(token),
+                          timeout=kwargs.pop("timeout", 10), **kwargs)
     except requests.ConnectionError as exc:
         raise APIError(f"Backend not reachable at {BACKEND_URL}. Is it running?") from exc
     if r.status_code >= 400:
@@ -201,3 +202,29 @@ def my_fatigue():
 
 def analyze_text(text: str):
     return _request("POST", "/nlp/analyze", json={"text": text})
+
+
+# ---- coaching: recommendations + AI coach
+def recommendations():
+    return _request("GET", "/recommendations")
+
+
+def coach_ask(question: str, history: list[dict] | None = None):
+    return _request("POST", "/coach/ask", json={"question": question, "history": history or []}, timeout=60)
+
+
+def coach_insight():
+    return _request("GET", "/coach/insight")
+
+
+# ---- account (CRUD)
+def update_profile(full_name: str):
+    return _request("PATCH", "/auth/me", json={"full_name": full_name})
+
+
+def change_password(current_password: str, new_password: str):
+    return _request("POST", "/auth/password", json={"current_password": current_password, "new_password": new_password})
+
+
+def delete_account(password: str):
+    return _request("DELETE", "/auth/me", json={"password": password})

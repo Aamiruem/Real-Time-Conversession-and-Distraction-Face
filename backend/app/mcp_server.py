@@ -1,13 +1,14 @@
-"""FocusLink AI as an MCP (Model Context Protocol) server.
+"""Presence AI as an MCP (Model Context Protocol) server.
 
-Lets AI assistants (Claude Desktop, Claude Code, any MCP client) use FocusLink's AI engines and read
+Lets AI assistants (Claude Desktop, Claude Code, any MCP client) use Presence AI's engines and read
 platform data as tools:
 
     NLP        analyze_text, analyze_conversation
     Speech     coach_speech_file, confident_rewrite
     ML         predict_fatigue, fatigue_model_card
-    Data       platform_stats, user_overview, list_focus_sessions, list_rooms, room_messages,
+    Data       platform_stats, user_overview, list_focus_sessions, speech_history, list_rooms, room_messages,
                room_insights, leaderboard
+    Coaching   recommendations, ask_coach, interview_questions, interview_guide
 
 Two ways to run it:
     stdio (local):  python -m app.mcp_server            <- add to Claude Desktop / Claude Code
@@ -28,13 +29,14 @@ from app.database import SessionLocal, init_db
 from app.models import AttentionSession, Message, Room, SpeechSession, User
 from app.services import nlp_service
 
-INSTRUCTIONS = """FocusLink AI analyses attention, speech confidence, conversations and fatigue.
+INSTRUCTIONS = """Presence AI analyses attention, speech confidence, conversations and fatigue.
 Use analyze_text / analyze_conversation for wording, sentiment and confidence; coach_speech_file for a
 recording on the server's disk; predict_fatigue for a focus session's fatigue risk; the data tools to look
-up users, focus sessions and chat rooms. Scores are 0-100 unless stated otherwise."""
+up users, focus sessions and chat rooms; recommendations / ask_coach for personal coaching and
+interview_questions / interview_guide for interview preparation. Scores are 0-100 unless stated otherwise."""
 
 mcp = FastMCP(
-    "FocusLink AI",
+    "Presence AI",
     instructions=INSTRUCTIONS,
     stateless_http=True,
     json_response=True,
@@ -147,7 +149,7 @@ def fatigue_model_card() -> dict:
     return fatigue_model.load()[1]
 
 
-@mcp.resource("focuslink://model-card")
+@mcp.resource("presence://model-card")
 def model_card_resource() -> str:
     """Fatigue model card (JSON)."""
     return json.dumps(fatigue_model_card(), indent=2)
@@ -156,7 +158,7 @@ def model_card_resource() -> str:
 # ===================================================================== platform data (read-only)
 @mcp.tool()
 def platform_stats() -> dict:
-    """Totals across FocusLink: users, focus sessions, minutes tracked, average focus, speech sessions,
+    """Totals across Presence AI: users, focus sessions, minutes tracked, average focus, speech sessions,
     rooms and chat messages."""
     with SessionLocal() as db:
         n_sessions, seconds, avg_focus = db.execute(select(
@@ -274,6 +276,70 @@ def leaderboard(limit: int = 10) -> list[dict]:
             .order_by(func.avg(AttentionSession.focus_pct).desc()).limit(min(limit, 50))).all()
         return [{"rank": i + 1, "username": u, "avg_focus_pct": round(f, 1), "minutes": round(d / 60, 1), "sessions": n}
                 for i, (u, f, d, n) in enumerate(rows)]
+
+
+# ===================================================================== coaching & interview prep
+@mcp.tool()
+def recommendations(username: str) -> list[dict]:
+    """What a user should practise next, ranked by expected benefit — each with the data behind it (best focus
+    time, session length, weakest speaking skill, interview questions to re-practise, drowsiness)."""
+    from app.routers.coach_routes import build_context
+
+    with SessionLocal() as db:
+        return build_context(db, _user(db, username))["recommendations"]
+
+
+@mcp.tool()
+def ask_coach(username: str, question: str) -> dict:
+    """Ask the AI coach a question on a user's behalf (their progress, interviews, speaking, focus).
+    Answers with Claude when the server has ANTHROPIC_API_KEY, otherwise with the built-in coach."""
+    from app.routers.coach_routes import build_context
+    from coach import assistant
+
+    with SessionLocal() as db:
+        return assistant.answer(question, build_context(db, _user(db, username)))
+
+
+@mcp.tool()
+def speech_history(username: str, limit: int = 10) -> list[dict]:
+    """A user's recent recordings (newest first): mode (free / read / conversation / interview), prompt,
+    confidence and — for mock interviews — readiness."""
+    with SessionLocal() as db:
+        u = _user(db, username)
+        rows = db.scalars(select(SpeechSession).where(SpeechSession.user_id == u.id)
+                          .order_by(SpeechSession.created_at.desc()).limit(min(limit, 100)))
+        out = []
+        for s in rows:
+            try:
+                readiness = (json.loads(s.report or "{}").get("interview") or {}).get("readiness")
+            except ValueError:
+                readiness = None
+            out.append({"id": s.id, "at": _iso(s.created_at), "mode": s.mode, "prompt": s.prompt[:200],
+                        "confidence": s.confidence, "wpm": s.wpm, "fillers": s.fillers, "readiness": readiness})
+        return out
+
+
+@mcp.tool()
+def interview_questions(field: str = "general") -> list[dict]:
+    """Interview question bank for a job field (general, software, data, product, design, marketing, sales,
+    finance, hr, healthcare, teaching, customer_service, engineering, management, hospitality): each question
+    with what interviewers look for, the answer structure, an outline and pitfalls."""
+    from interview.knowledge import FIELDS, all_questions
+
+    if field not in FIELDS:
+        raise ValueError(f"Unknown field {field!r}; use one of: {', '.join(FIELDS)}")
+    return [{k: q[k] for k in ("id", "category", "q", "framework", "looks_for", "outline", "pitfalls")}
+            for q in all_questions(field)]
+
+
+@mcp.tool()
+def interview_guide(topic: str = "") -> list[dict]:
+    """The interview preparation guide (getting the interview, first impression, dressing, body language,
+    eye contact, voice, vocabulary, answering, tough questions, video setup, follow-up). Optional topic filter."""
+    from interview.knowledge import GUIDE
+
+    t = topic.lower().strip()
+    return [s for s in GUIDE if not t or t in (s["title"] + " " + s["intro"] + " ".join(s["tips"])).lower()]
 
 
 # ===================================================================== prompts

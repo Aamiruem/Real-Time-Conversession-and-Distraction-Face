@@ -1,4 +1,4 @@
-"""FocusLink AI — Streamlit entry point: restores the login, then routes to the pages with grouped navigation.
+"""Presence AI — Streamlit entry point: restores the login, then routes to the pages with grouped navigation.
 
 Run (from frontend/streamlit/): streamlit run app.py
 
@@ -26,6 +26,7 @@ if st.session_state.get("token"):
             st.Page("views/analytics.py", title="Analytics", icon="📊"),
             st.Page("views/ai_lab.py", title="AI Lab", icon="🧪"),
         ],
+        "Account": [st.Page("views/account.py", title="Account settings", icon="⚙️")],
     })
 else:
     pg = st.navigation([st.Page("views/home.py", title="Sign in", icon="🔐", default=True)], position="hidden")
