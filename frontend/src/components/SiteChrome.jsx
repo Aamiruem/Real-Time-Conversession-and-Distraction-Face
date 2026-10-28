@@ -1,5 +1,6 @@
 import Link from "@/components/Link";
 import { FEATURES, SITE_NAME } from "@/lib/site";
+import { themeLabel, useTheme } from "@/lib/theme";
 
 export function Logo() {
   return (
@@ -17,6 +18,7 @@ export function Logo() {
 }
 
 export function SiteHeader() {
+  const { theme, toggle } = useTheme();
   return (
     <header className="nav">
       <div className="container">
@@ -27,6 +29,9 @@ export function SiteHeader() {
           <Link href="/#features">Features</Link>
           <Link href="/#how">How it works</Link>
           <Link href="/#faq">FAQ</Link>
+          <button className="icon-btn" onClick={toggle} aria-label={themeLabel(theme)} title={themeLabel(theme)}>
+            {theme === "dark" ? "☀️" : "🌙"}
+          </button>
           <Link href="/login">Sign in</Link>
           <Link className="btn sm" href="/signup">
             Get started free

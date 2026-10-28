@@ -6,7 +6,7 @@ import { AttentionEngine, LEFT_EYE, RIGHT_EYE, THRESHOLDS } from "@/lib/attentio
 import { loadFaceLandmarker } from "@/lib/useFaceTracker";
 
 const AXIS = { stroke: "#64748b", fontSize: 12 };
-const TT = { contentStyle: { background: "#111a2e", border: "1px solid #1e2a44", borderRadius: 10 } };
+const TT = { contentStyle: { background: "var(--surface)", border: "1px solid #1e2a44", borderRadius: 10 } };
 
 /* ---------------------------------------------------------------- computer vision on a photo */
 function VisionLab() {
@@ -151,7 +151,7 @@ function NlpLab() {
                   <YAxis {...AXIS} />
                   <Tooltip {...TT} />
                   <Bar dataKey="v" name="share">
-                    {["#ef4444", "#94a3b8", "#22c55e"].map((c) => (
+                    {["#ef4444", "var(--muted)", "#22c55e"].map((c) => (
                       <Cell key={c} fill={c} />
                     ))}
                   </Bar>
@@ -293,7 +293,7 @@ function MlLab() {
           <h3>Permutation importance</h3>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart layout="vertical" data={Object.entries(card.feature_importance).map(([k, v]) => ({ k, v }))}>
-              <CartesianGrid stroke="#1e2a44" />
+              <CartesianGrid stroke="var(--line)" />
               <XAxis type="number" {...AXIS} />
               <YAxis type="category" dataKey="k" width={110} {...AXIS} />
               <Tooltip {...TT} />

@@ -42,3 +42,8 @@ def test_dashboard_aggregates_everything(client, verified_user):
     # weakest skill (voice 60) and the sub-80 interview readiness become next steps
     texts = " ".join(s["text"] for s in d["next_steps"])
     assert "voice" in texts and "72%" in texts
+
+
+def test_health_reports_api_version(client):
+    h = client.get("/health").json()
+    assert h["status"] == "ok" and h["api_version"] >= 3 and "dashboard" in h["features"]

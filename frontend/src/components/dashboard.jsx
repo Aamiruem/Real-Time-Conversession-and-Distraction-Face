@@ -2,14 +2,14 @@ import Link from "@/components/Link";
 
 // Validated categorical slots for the dark surface (dataviz reference palette, dark steps):
 // single-series charts use SERIES[0]; never cycle beyond three.
-export const SERIES = ["#3987e5", "#d95926", "#199e70"];
-export const GRID = "#1e2a44";
-export const TICK = { fill: "#94a3b8", fontSize: 11 };
+export const SERIES = ["var(--series-1)", "var(--series-2)", "var(--series-3)"];
+export const GRID = "var(--line)";
+export const TICK = { fill: "var(--muted)", fontSize: 11 };
 export const TOOLTIP = {
-  contentStyle: { background: "#0d1526", border: "1px solid #1e2a44", borderRadius: 10, fontSize: 12 },
-  labelStyle: { color: "#e2e8f0", fontWeight: 700 },
-  itemStyle: { color: "#e2e8f0" },
-  cursor: { stroke: "#94a3b8", strokeDasharray: "3 3" },
+  contentStyle: { background: "var(--surface2)", border: "1px solid #1e2a44", borderRadius: 10, fontSize: 12 },
+  labelStyle: { color: "var(--text)", fontWeight: 700 },
+  itemStyle: { color: "var(--text)" },
+  cursor: { stroke: "var(--muted)", strokeDasharray: "3 3" },
 };
 
 export function ChartCard({ title, sub, action, children, className = "" }) {
@@ -76,7 +76,7 @@ export function GoalRing({ value, goal, label, unit, color = SERIES[0] }) {
           transform="rotate(-90 44 44)"
           style={{ transition: "stroke-dasharray .6s" }}
         />
-        <text x="44" y="49" textAnchor="middle" fill="#e2e8f0" fontSize="16" fontWeight="800">
+        <text x="44" y="49" textAnchor="middle" fill="var(--text)" fontSize="16" fontWeight="800">
           {pct >= 1 ? "✓" : `${Math.round(pct * 100)}%`}
         </text>
       </svg>

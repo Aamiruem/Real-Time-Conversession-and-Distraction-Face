@@ -48,9 +48,16 @@ def root():
     return {"app": settings.APP_NAME, "docs": "/docs", "health": "/health"}
 
 
+# Bump when the frontend starts relying on new endpoints; the React app compares it with what it needs and shows
+# "backend out of date — restart it" instead of failing with 404s.
+API_VERSION = 3
+FEATURES = ["dashboard", "conversation", "interview", "body-language"]
+
+
 @app.get("/health")
 def health():
-    return {"status": "ok", "app": settings.APP_NAME, "aws": settings.AWS_ENABLED, "mcp": mcp_app is not None}
+    return {"status": "ok", "app": settings.APP_NAME, "api_version": API_VERSION, "features": FEATURES,
+            "aws": settings.AWS_ENABLED, "mcp": mcp_app is not None}
 
 
 if mcp_app is not None:

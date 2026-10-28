@@ -14,7 +14,8 @@ from pathlib import Path
 import joblib
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
+from sklearn.ensemble import (ExtraTreesClassifier, GradientBoostingClassifier, HistGradientBoostingClassifier,
+                              RandomForestClassifier, VotingClassifier)
 from sklearn.inspection import permutation_importance
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, f1_score
@@ -36,6 +37,18 @@ CANDIDATES = {
     "random_forest": lambda: Pipeline([("clf", RandomForestClassifier(n_estimators=150, min_samples_leaf=3,
                                                                       random_state=7))]),
     "gradient_boosting": lambda: Pipeline([("clf", GradientBoostingClassifier(random_state=7))]),
+    # class-balanced variants: the "medium" class is the rarest and hardest, so weight it up
+    "hist_gradient_boosting": lambda: Pipeline([("clf", HistGradientBoostingClassifier(
+        learning_rate=0.06, max_iter=300, l2_regularization=0.5, class_weight="balanced", random_state=7))]),
+    "extra_trees": lambda: Pipeline([("clf", ExtraTreesClassifier(
+        n_estimators=400, min_samples_leaf=2, class_weight="balanced", random_state=7))]),
+    "soft_voting_ensemble": lambda: Pipeline([("scale", StandardScaler()), ("clf", VotingClassifier([
+        ("lr", LogisticRegression(max_iter=2000, class_weight="balanced")),
+        ("rf", RandomForestClassifier(n_estimators=300, min_samples_leaf=3, class_weight="balanced_subsample",
+                                      random_state=7)),
+        ("hgb", HistGradientBoostingClassifier(learning_rate=0.06, max_iter=250, class_weight="balanced",
+                                               random_state=7)),
+    ], voting="soft"))]),
 }
 
 

@@ -30,7 +30,7 @@ export function Gauge({ value, label, size = 180 }) {
   return (
     <figure style={{ margin: 0, textAlign: "center" }} aria-label={`${label}: ${v.toFixed(0)}%`}>
       <svg width={size} height={size * 0.62} viewBox="0 0 180 112">
-        <path d="M20 100 A70 70 0 0 1 160 100" fill="none" stroke="#1e2a44" strokeWidth="16" strokeLinecap="round" />
+        <path d="M20 100 A70 70 0 0 1 160 100" fill="none" stroke="var(--line)" strokeWidth="16" strokeLinecap="round" />
         <path
           d="M20 100 A70 70 0 0 1 160 100"
           fill="none"
@@ -40,7 +40,7 @@ export function Gauge({ value, label, size = 180 }) {
           strokeDasharray={`${(v / 100) * c} ${c}`}
           style={{ transition: "stroke-dasharray .4s" }}
         />
-        <text x="90" y="92" textAnchor="middle" fill="#e2e8f0" fontSize="30" fontWeight="800">
+        <text x="90" y="92" textAnchor="middle" fill="var(--text)" fontSize="30" fontWeight="800">
           {v.toFixed(0)}%
         </text>
       </svg>
@@ -56,7 +56,7 @@ export function Donut({ segments, size = 150, label }) {
   let offset = 0;
   return (
     <svg width={size} height={size} viewBox="0 0 140 140" role="img" aria-label={label}>
-      <circle cx="70" cy="70" r={r} fill="none" stroke="#1e2a44" strokeWidth="16" />
+      <circle cx="70" cy="70" r={r} fill="none" stroke="var(--line)" strokeWidth="16" />
       {segments.map(([k, v, color]) => {
         const len = (Math.max(0, v) / 100) * c;
         const el = (
@@ -77,10 +77,10 @@ export function Donut({ segments, size = 150, label }) {
         offset += len;
         return el;
       })}
-      <text x="70" y="72" textAnchor="middle" fill="#e2e8f0" fontSize="24" fontWeight="800">
+      <text x="70" y="72" textAnchor="middle" fill="var(--text)" fontSize="24" fontWeight="800">
         {(segments[0]?.[1] ?? 0).toFixed(1)}%
       </text>
-      <text x="70" y="92" textAnchor="middle" fill="#94a3b8" fontSize="10" letterSpacing="1.5">
+      <text x="70" y="92" textAnchor="middle" fill="var(--muted)" fontSize="10" letterSpacing="1.5">
         {segments[0]?.[0].toUpperCase()}
       </text>
     </svg>

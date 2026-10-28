@@ -20,6 +20,8 @@ import {
 import { ChartCard, EmptyChart, GoalRing, GRID, Kpi, SERIES, TICK, TOOLTIP, timeAgo } from "@/components/dashboard";
 import { Donut, RiskCard } from "@/components/ui";
 import { cachedApi, peekCache } from "@/lib/api";
+import { useBackendStatus } from "@/lib/backend";
+import { buildDashboardFallback } from "@/lib/dashboardFallback";
 import { STATE_COLORS } from "@/lib/attention";
 import { useAuth } from "@/lib/auth";
 
@@ -57,19 +59,36 @@ export default function Dashboard() {
   // show the last dashboard instantly when you come back, then refresh it in the background
   const [d, setD] = useState(() => peekCache("/analytics/dashboard") ?? null);
   const [err, setErr] = useState("");
+  const backend = useBackendStatus();
 
+  // (re)load whenever the backend becomes reachable or changes version — e.g. right after it is restarted
   useEffect(() => {
+    if (backend.status === "checking" || backend.status === "offline") return;
+    let alive = true;
+    setErr("");
     cachedApi("/analytics/dashboard", 0)
-      .then(setD)
-      .catch((e) => setErr(e.message));
-  }, []);
+      .catch((e) => {
+        // older backend without the dashboard endpoint: build it from the data it does have
+        if (e.status === 404 && user) return buildDashboardFallback(user.username);
+        throw e;
+      })
+      .then((data) => alive && setD(data))
+      .catch((e) => alive && setErr(e.message));
+    return () => {
+      alive = false;
+    };
+  }, [backend.status, backend.version, user]);
 
   const first = (user?.full_name || user?.username || "").split(" ")[0];
-  if (err)
+  if (err && !d)
     return (
-      <div className="alert error">
-        Could not load your dashboard: {err}. Is the backend running and up to date? (restart it with{" "}
-        <code>uvicorn app.main:app --reload --port 8010</code> from <code>backend/</code>)
+      <div className="card empty-state">
+        <span aria-hidden="true">📉</span>
+        <h2>Your dashboard didn't load</h2>
+        <p className="muted">{err}</p>
+        <button className="btn" onClick={() => location.reload()}>
+          ↻ Try again
+        </button>
       </div>
     );
   if (!d) return <Skeleton />;
@@ -89,6 +108,11 @@ export default function Dashboard() {
           <h1>
             {greeting()}, <span className="grad">{first}</span>
           </h1>
+          {d.limited && (
+            <span className="status-chip" style={{ "--area": "#eab308", marginBottom: 8 }} title="Restart the backend for interview readiness and the newest panels">
+              Limited mode · older backend
+            </span>
+          )}
           <p className="muted">
             {k.streak_days
               ? `🔥 ${k.streak_days}-day streak — keep it going today.`
@@ -147,10 +171,10 @@ export default function Dashboard() {
                 <CartesianGrid vertical={false} stroke={GRID} />
                 <XAxis dataKey="label" tick={TICK} tickLine={false} axisLine={false} interval="preserveStartEnd" />
                 <YAxis tick={TICK} tickLine={false} axisLine={false} allowDecimals={false} />
-                <ReferenceLine y={d.today.goal_focus_minutes} stroke="#94a3b8" strokeDasharray="4 4" label={{ value: "daily goal", fill: "#94a3b8", fontSize: 11, position: "insideTopRight" }} />
+                <ReferenceLine y={d.today.goal_focus_minutes} stroke="var(--muted)" strokeDasharray="4 4" label={{ value: "daily goal", fill: "var(--muted)", fontSize: 11, position: "insideTopRight" }} />
                 <Tooltip
                   {...TOOLTIP}
-                  cursor={{ fill: "#ffffff0a" }}
+                  cursor={{ fill: "var(--hover)" }}
                   formatter={(v, name, p) => [`${v} min · ${p.payload.practice} practice · ${p.payload.messages} msgs`, "Focus"]}
                 />
                 <Bar dataKey="focus_minutes" name="Focus minutes" fill={SERIES[0]} radius={[4, 4, 0, 0]} maxBarSize={28} />
@@ -191,7 +215,7 @@ export default function Dashboard() {
                   <XAxis dataKey="label" tick={TICK} tickLine={false} axisLine={false} />
                   <YAxis domain={[0, 100]} tick={TICK} tickLine={false} axisLine={false} />
                   <Tooltip {...TOOLTIP} formatter={(v, n, p) => [`${v}% · ${p.payload.minutes} min`, "Focus"]} />
-                  <Line type="monotone" dataKey="focus" stroke={SERIES[0]} strokeWidth={2} dot={{ r: 4, strokeWidth: 2, stroke: "#111a2e" }} />
+                  <Line type="monotone" dataKey="focus" stroke={SERIES[0]} strokeWidth={2} dot={{ r: 4, strokeWidth: 2, stroke: "var(--surface)" }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -246,9 +270,9 @@ export default function Dashboard() {
                   <CartesianGrid vertical={false} stroke={GRID} />
                   <XAxis dataKey="label" tick={TICK} tickLine={false} axisLine={false} />
                   <YAxis domain={[0, 100]} tick={TICK} tickLine={false} axisLine={false} />
-                  <ReferenceLine y={70} stroke="#94a3b8" strokeDasharray="4 4" label={{ value: "confident", fill: "#94a3b8", fontSize: 11, position: "insideTopLeft" }} />
+                  <ReferenceLine y={70} stroke="var(--muted)" strokeDasharray="4 4" label={{ value: "confident", fill: "var(--muted)", fontSize: 11, position: "insideTopLeft" }} />
                   <Tooltip {...TOOLTIP} formatter={(v, n, p) => [`${v}% · ${p.payload.mode}`, "Confidence"]} />
-                  <Line type="monotone" dataKey="confidence" stroke={SERIES[0]} strokeWidth={2} dot={{ r: 4, strokeWidth: 2, stroke: "#111a2e" }} />
+                  <Line type="monotone" dataKey="confidence" stroke={SERIES[0]} strokeWidth={2} dot={{ r: 4, strokeWidth: 2, stroke: "var(--surface)" }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -274,7 +298,7 @@ export default function Dashboard() {
                   <YAxis domain={[0, 100]} tick={TICK} tickLine={false} axisLine={false} />
                   <Tooltip
                     {...TOOLTIP}
-                    cursor={{ fill: "#ffffff0a" }}
+                    cursor={{ fill: "var(--hover)" }}
                     formatter={(v, n, p) => [
                       `${Math.round(v)}% · content ${Math.round(p.payload.content ?? 0)} · delivery ${Math.round(p.payload.delivery ?? 0)}${p.payload.presence != null ? ` · presence ${Math.round(p.payload.presence)}` : ""}`,
                       "Readiness",

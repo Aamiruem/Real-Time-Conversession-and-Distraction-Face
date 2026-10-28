@@ -94,10 +94,10 @@ export function ConversationFeedback({ report, audioUrl }) {
         <div style={{ height: 260 }}>
           <ResponsiveContainer width="100%" height="100%">
             <RadarChart data={c.areas.map((a) => ({ area: SHORT[a.key], score: a.score }))} outerRadius="66%">
-              <PolarGrid stroke="#1e2a44" />
-              <PolarAngleAxis dataKey="area" tick={{ fill: "#94a3b8", fontSize: 11 }} />
+              <PolarGrid stroke="var(--line)" />
+              <PolarAngleAxis dataKey="area" tick={{ fill: "var(--muted)", fontSize: 11 }} />
               <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
-              <Radar dataKey="score" stroke="#38bdf8" fill="#38bdf8" fillOpacity={0.3} isAnimationActive={false} />
+              <Radar dataKey="score" stroke="var(--series-1)" fill="var(--series-1)" fillOpacity={0.3} isAnimationActive={false} />
             </RadarChart>
           </ResponsiveContainer>
         </div>

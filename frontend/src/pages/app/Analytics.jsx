@@ -19,8 +19,8 @@ import { api, toDate } from "@/lib/api";
 import { STATE_COLORS } from "@/lib/attention";
 
 const AXIS = { stroke: "#64748b", fontSize: 12 };
-const TT = { contentStyle: { background: "#111a2e", border: "1px solid #1e2a44", borderRadius: 10 } };
-const COLORS = ["#38bdf8", "#a78bfa", "#22c55e", "#eab308", "#f97316", "#ef4444", "#94a3b8"];
+const TT = { contentStyle: { background: "var(--surface)", border: "1px solid #1e2a44", borderRadius: 10 } };
+const COLORS = ["#38bdf8", "#a78bfa", "#22c55e", "#eab308", "#f97316", "#ef4444", "var(--muted)"];
 const day = (s) =>
   toDate(s).toLocaleDateString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 
@@ -97,7 +97,7 @@ export default function Analytics() {
           <div className="card">
             <ResponsiveContainer width="100%" height={320}>
               <LineChart data={sessions.map((s) => ({ ...s, when: day(s.started_at) }))}>
-                <CartesianGrid stroke="#1e2a44" />
+                <CartesianGrid stroke="var(--line)" />
                 <XAxis dataKey="when" {...AXIS} />
                 <YAxis {...AXIS} domain={[0, 100]} />
                 <Tooltip {...TT} />
@@ -155,7 +155,7 @@ export default function Analytics() {
           <div className="card">
             <ResponsiveContainer width="100%" height={320}>
               <LineChart data={speech.map((s) => ({ ...s, when: day(s.created_at) }))}>
-                <CartesianGrid stroke="#1e2a44" />
+                <CartesianGrid stroke="var(--line)" />
                 <XAxis dataKey="when" {...AXIS} />
                 <YAxis {...AXIS} domain={[0, 100]} />
                 <Tooltip {...TT} />
@@ -204,7 +204,7 @@ export default function Analytics() {
               <h3>Live focus % samples</h3>
               <ResponsiveContainer width="100%" height={280}>
                 <LineChart data={snaps.map((s) => ({ ...s, when: toDate(s.timestamp).toLocaleTimeString() }))}>
-                  <CartesianGrid stroke="#1e2a44" />
+                  <CartesianGrid stroke="var(--line)" />
                   <XAxis dataKey="when" {...AXIS} />
                   <YAxis {...AXIS} domain={[0, 100]} />
                   <Tooltip {...TT} />
@@ -216,7 +216,7 @@ export default function Analytics() {
               <h3>State distribution</h3>
               <ResponsiveContainer width="100%" height={280}>
                 <BarChart data={stateCounts}>
-                  <CartesianGrid stroke="#1e2a44" />
+                  <CartesianGrid stroke="var(--line)" />
                   <XAxis dataKey="state" {...AXIS} />
                   <YAxis {...AXIS} />
                   <Tooltip {...TT} />
@@ -238,7 +238,7 @@ export default function Analytics() {
           <div className="card">
             <ResponsiveContainer width="100%" height={320}>
               <BarChart data={board}>
-                <CartesianGrid stroke="#1e2a44" />
+                <CartesianGrid stroke="var(--line)" />
                 <XAxis dataKey="username" {...AXIS} />
                 <YAxis {...AXIS} domain={[0, 100]} />
                 <Tooltip {...TT} />
@@ -295,7 +295,7 @@ export default function Analytics() {
                           {Object.keys(ins.sentiment_distribution).map((k) => (
                             <Cell
                               key={k}
-                              fill={{ positive: "#22c55e", neutral: "#94a3b8", negative: "#ef4444" }[k] ?? "#64748b"}
+                              fill={{ positive: "#22c55e", neutral: "var(--muted)", negative: "#ef4444" }[k] ?? "#64748b"}
                             />
                           ))}
                         </Pie>

@@ -252,7 +252,7 @@ export default function Rooms() {
                 padding: "6px 10px",
                 margin: "6px 0",
                 borderRadius: 10,
-                background: "#0a1222",
+                background: "var(--inset)",
                 borderLeft: `4px solid ${STATE_COLORS[p.state] ?? "#64748b"}`,
               }}
             >
