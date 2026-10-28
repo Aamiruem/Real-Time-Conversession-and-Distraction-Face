@@ -1,5 +1,15 @@
-"""Database tables."""
+"""Database tables.  `python models.py` (inside backend/app) creates any missing tables and lists them."""
+import sys
 from datetime import datetime, timezone
+from pathlib import Path
+
+if __name__ == "__main__":  # started as a script: hand over to the real `app.models` module
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from app.database import Base, init_db
+
+    init_db()
+    print("Tables ready: " + ", ".join(sorted(Base.metadata.tables)))
+    sys.exit()
 
 from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship

@@ -48,7 +48,7 @@ export function CommandPalette({ open, onClose, onLogout }) {
     router.push(item[2]);
     // pages that are already open react to the section in the link (e.g. ?tab=bank)
     const tab = new URL(item[2], window.location.origin).searchParams.get("tab");
-    window.dispatchEvent(new CustomEvent("focuslink:tab", { detail: tab ?? "mock" }));
+    window.dispatchEvent(new CustomEvent("presence:tab", { detail: tab ?? "mock" }));
   };
   return (
     <div className="palette-backdrop" onMouseDown={onClose}>

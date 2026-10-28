@@ -1,5 +1,5 @@
 # Legacy Streamlit UI. It runs backend/cv and backend/speech in-process, so build from the repo root:
-#   docker build -f frontend/streamlit/Dockerfile -t focuslink-streamlit .
+#   docker build -f frontend/streamlit/Dockerfile -t presence-streamlit .
 FROM python:3.11-slim
 WORKDIR /app/frontend/streamlit
 ENV PYTHONUNBUFFERED=1

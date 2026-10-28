@@ -395,7 +395,7 @@ const ARCH = [
   ["Real time", "WebSockets (FastAPI) for rooms, getUserMedia + MediaRecorder", "backend/app/websocket_manager.py"],
   ["API & auth", "FastAPI, JWT, bcrypt, optional email + SMS OTP (AWS SES / SNS)", "backend/app/"],
   ["Data", "SQLAlchemy → SQLite (dev) / PostgreSQL on AWS RDS, reports on S3", "backend/app/models.py"],
-  ["Frontend & SEO", "Next.js (React, server-rendered marketing pages, sitemap, JSON-LD)", "frontend/"],
+  ["Frontend & SEO", "React 19 + Vite (prerendered marketing pages, sitemap, JSON-LD)", "frontend/"],
   ["Deploy", "Docker, docker-compose, Nginx (HTTPS), EC2", "deploy/ · deploy/aws/"],
 ];
 

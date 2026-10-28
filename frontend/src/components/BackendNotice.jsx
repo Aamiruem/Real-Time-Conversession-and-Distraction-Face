@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { checkBackend, REQUIRED_API_VERSION, useBackendStatus } from "@/lib/backend";
 
-const COMMAND = "cd backend; ..\\.venv\\Scripts\\python.exe -m uvicorn app.main:app --reload --port 8010";
+// run-backend.ps1 stops an old backend on port 8010 first; with the full path it works from any folder
+const ROOT = import.meta.env.VITE_PROJECT_ROOT || "";
+const COMMAND = `powershell -ExecutionPolicy Bypass -File "${ROOT ? `${ROOT}\\` : ".\\"}run-backend.ps1"`;
 
 const COPY = {
   outdated: {
@@ -60,8 +62,8 @@ export function BackendNotice() {
           </button>
         </div>
         <p className="small muted">
-          Stop the old one first (Ctrl+C in its window). Or run <code>.\start.ps1</code> from the project folder to
-          start everything. {c.note}
+          Paste it into any PowerShell window — it stops the old backend for you. Or run <code>.\start.ps1</code> in
+          the project folder to start everything. {c.note}
         </p>
       </div>
       <div className="notice-side">

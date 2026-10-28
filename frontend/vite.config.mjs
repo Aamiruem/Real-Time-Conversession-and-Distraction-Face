@@ -4,8 +4,13 @@ import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
 import { defineConfig, loadEnv } from "vite";
 
-export default defineConfig(({ mode, isSsrBuild }) => {
+export default defineConfig(({ command, mode, isSsrBuild }) => {
   const env = loadEnv(mode, process.cwd(), "");
+  // dev only: lets the "backend offline/outdated" notice show a start command that works from any folder
+  // (never set for builds, so a deployed site doesn't contain a local path)
+  if (command === "serve") {
+    process.env.VITE_PROJECT_ROOT = fileURLToPath(new URL("..", import.meta.url)).replace(/[\\/]$/, "");
+  }
   const backend = (env.BACKEND_URL || "http://127.0.0.1:8010").replace(/\/$/, "");
   const proxy = {
     "/api": {

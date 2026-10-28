@@ -190,7 +190,7 @@ with t_arch:
 | Real-time | WebRTC (streamlit-webrtc), FastAPI WebSockets | `frontend/streamlit/utils/video.py`, `backend/app/websocket_manager.py` |
 | API & auth | FastAPI, JWT, bcrypt, email + SMS OTP (AWS SES / SNS) | `backend/app/` |
 | Data | SQLAlchemy → SQLite (dev) / PostgreSQL on AWS RDS, reports on S3 | `backend/app/models.py` |
-| Frontend | Next.js (React) website + app; legacy Streamlit, Plotly | `frontend/`, `frontend/streamlit/` |
+| Frontend | React 19 + Vite website + app; Streamlit dashboard, Plotly | `frontend/`, `frontend/streamlit/` |
 | Deploy | Docker, docker-compose, Nginx (HTTPS), EC2 | `deploy/`, `deploy/aws/` |
 """)
     st.markdown("""

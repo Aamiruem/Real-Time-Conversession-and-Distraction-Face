@@ -30,30 +30,32 @@ assistants such as Claude use Presence AI's engines and data as tools.
 | Real-time rooms | WebSocket chat, presence, typing, everyone's live focus, drowsy alerts | FastAPI WebSockets |
 | Auth | Sign up and log in with username / email / mobile + password, OTP login, password reset. **Easy mode** (default locally): accounts work instantly. **Verified mode**: email + mobile OTP via **AWS SES / SNS** | JWT, bcrypt |
 | SEO | Static HTML landing + keyword-targeted feature pages, metadata API, Open Graph/Twitter, JSON-LD (SoftwareApplication, Organization, FAQPage, BreadcrumbList), sitemap.xml, robots.txt, manifest; the private app is `noindex` | Vite build-time pre-rendering |
-| MCP server | 13 tools (NLP, speech coaching, fatigue ML, model card, users, sessions, rooms, insights, leaderboard), 2 prompts, 1 resource — over stdio or HTTP `/mcp` | Model Context Protocol (`mcp` SDK) |
+| MCP server | 18 tools (NLP, speech coaching, fatigue ML, model card, users, sessions, rooms, insights, leaderboard, recommendations, AI coach, interview questions + guide), 2 prompts, 1 resource — over stdio or HTTP `/mcp` | Model Context Protocol (`mcp` SDK) |
 | Cloud | RDS, S3, SES, SNS, Comprehend, EC2 + Docker + Nginx | boto3, Docker |
 
 ## 📁 Project structure
 
 ```text
-├── backend/                    # everything server-side (Python) — run commands from here
+├── backend/                    # everything server-side (Python)
 │   ├── app/                    # FastAPI package: auth/OTP, attention, speech, rooms + WS, analytics, ML/NLP API
-│   │   ├── main.py             # entry point (uvicorn app.main:app)
+│   │   ├── main.py             # entry point (uvicorn app.main:app, or python main.py)
 │   │   ├── config.py · database.py · models.py · schemas.py · auth.py
-│   │   ├── routers/            # one module per API area
+│   │   ├── routers/            # one module per API area (full CRUD for profile, sessions, rooms, messages)
 │   │   ├── services/           # AWS, NLP wrapper, OTP, email/SMS
 │   │   └── mcp_server.py       # MCP server: AI tools for Claude & other assistants
-│   ├── cv/                     # Python attention engine (reference; used by the Streamlit UI)
+│   ├── coach/                  # AI coach (Claude + built-in fallback) and the recommendation engine
+│   ├── interview/              # interview question bank, guide and answer/delivery/body scoring
+│   ├── cv/                     # Python attention + body/object engines (used by the Streamlit UI)
 │   ├── nlp/                    # text analysis engine
-│   ├── speech/                 # speech coach engine + audio decoding
+│   ├── speech/                 # speech coach engine (Whisper) + audio decoding
 │   ├── ml/                     # fatigue model: features, dataset, train, predict
-│   ├── tests/                  # pytest: auth/OTP, easy mode, AI modules, ML API, MCP, speech upload
+│   ├── tests/                  # pytest: auth, CRUD, coach, dashboard, AI modules, ML API, MCP, speech, interview
 │   ├── requirements.txt        # API dependencies (what the Docker image installs)
 │   ├── requirements-dev.txt    # + tests and the cv engine
 │   ├── .env.example            # backend settings → copy to backend/.env
 │   └── Dockerfile
 ├── frontend/                   # React (Vite) website + app — all code in src/
-│   ├── src/                    # index.html, main.jsx, App.jsx (routes), entry-server.jsx (pre-render)
+│   ├── src/                    # index.html, main.jsx, Root.jsx (routes), entry-server.jsx (pre-render)
 │   │   ├── pages/              # Landing, Feature, Login, Signup, NotFound + app/ (Dashboard, Focus, Interview…)
 │   │   ├── styles/globals.css
 │   │   ├── components/         # shared React components (index.js exports them all; Ctrl+K command palette)
@@ -64,9 +66,12 @@ assistants such as Claude use Presence AI's engines and data as tools.
 ├── deploy/
 │   ├── nginx.conf              # / → React frontend, /api/ + /ws/ → FastAPI
 │   └── aws/                    # setup_aws.sh (S3, RDS, SES, SNS, IAM) · deploy_ec2.sh
+├── docs/PIPELINE.md            # initial → live walkthrough
 ├── docker-compose.yml          # db + backend + web + nginx
 ├── requirements.txt            # installs every Python requirement in one go
-└── docs/PIPELINE.md            # initial → live walkthrough
+├── setup.ps1                   # one-time setup: venv, requirements, .env files, npm install
+├── start.ps1                   # starts API + React app + Streamlit, each in its own window
+└── run-backend.ps1             # starts (or restarts) just the API, from any folder
 ```
 
 ## 🚀 Run locally (Windows)
@@ -90,7 +95,7 @@ copy backend\.env.example backend\.env
 cd frontend; npm install; cd ..
 
 # Terminal 1 — API on port 8010 (docs: http://localhost:8010/docs)
-cd backend; ..\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8010
+.\run-backend.ps1        # stops an older backend on the port first; or: python backend\app\main.py
 
 # Terminal 2 — website + app on http://localhost:3000
 cd frontend; npm run dev
@@ -184,4 +189,3 @@ docker compose --env-file backend/.env up --build      # http://localhost
 * **Focus %** = time spent Focused ÷ total session time.
 
 Thresholds: `frontend/src/lib/attention.js → THRESHOLDS` (browser) and `backend/cv/attention_detector.py → Thresholds`.
-

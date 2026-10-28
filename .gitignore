@@ -1,9 +1,18 @@
+# Secrets
 .env
+
+# Python
 .venv/
 venv/
 __pycache__/
 *.pyc
 .pytest_cache/
+
+# Local databases (SQLite files and their -shm/-wal journals)
 *.db
+*.db-shm
+*.db-wal
+
+# Generated models and artifacts (recreated by setup.ps1 / training)
 backend/ml/artifacts/
 backend/cv/models/

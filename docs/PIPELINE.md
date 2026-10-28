@@ -119,7 +119,7 @@ feedback labels, and the SEO pages. Each run uses a throw-away SQLite database.
 
 ```powershell
 # Terminal 1 — API → http://localhost:8010 (docs: /docs). Port 8010 avoids clashing with other local apps on 8000.
-cd backend; ..\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8010
+.\run-backend.ps1   # replaces an older backend on the port; or: python backend\app\main.py
 # Terminal 2 — website + app → http://localhost:3000 (the Vite dev server proxies /api/* to the API)
 cd frontend; npm run dev
 ```

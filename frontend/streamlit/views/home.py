@@ -20,7 +20,7 @@ COUNTRY_CODES = {
     "🇧🇹 Bhutan (+975)": "+975", "🇲🇾 Malaysia (+60)": "+60", "🇮🇩 Indonesia (+62)": "+62",
     "🇹🇭 Thailand (+66)": "+66", "🇻🇳 Vietnam (+84)": "+84",
     "🇯🇵 Japan (+81)": "+81", "🇰🇷 South Korea (+82)": "+82", "🇨🇳 China (+86)":  "+86",
-    
+
 }
 
 

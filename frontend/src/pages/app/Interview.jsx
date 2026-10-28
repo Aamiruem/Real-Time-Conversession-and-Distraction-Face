@@ -93,7 +93,7 @@ export default function InterviewPrep() {
       setQid(q);
     }
     const onTab = (e) => TABS.some(([k]) => k === e.detail) && setTab(e.detail);
-    window.addEventListener("focuslink:tab", onTab);
+    window.addEventListener("presence:tab", onTab);
     cachedApi("/interview/fields", 600_000).then(setFields).catch((e) => setErr(e.message));
     cachedApi("/interview/guide", 600_000).then(setGuide).catch(() => {});
     // warm up the camera AI while you read the question, so "Camera check" starts almost instantly
@@ -103,7 +103,7 @@ export default function InterviewPrep() {
       .then((r) => r?.report?.interview && setResult((cur) => cur ?? { report: r.report, when: r.created_at }))
       .catch(() => {});
     return () => {
-      window.removeEventListener("focuslink:tab", onTab);
+      window.removeEventListener("presence:tab", onTab);
       (window.cancelIdleCallback ?? window.clearTimeout)(idle);
     };
   }, []);

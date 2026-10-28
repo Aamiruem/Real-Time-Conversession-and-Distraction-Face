@@ -1,10 +1,18 @@
 """Presence AI backend.
 
-Run (from backend/):  uvicorn app.main:app --reload --port 8010
-Docs: http://localhost:8010/docs   (the public website + app is the Next.js frontend in frontend/)
+Run, from anywhere:   run-backend.ps1 in the project folder (stops an old backend on the port first)
+          or:         python backend/app/main.py   (also works as `python main.py` inside backend/app)
+          or (dev):   cd backend; uvicorn app.main:app --port 8010
+Docs: http://localhost:8010/docs   (the website + app is the React frontend in frontend/)
 MCP:  python -m app.mcp_server (stdio), or POST /mcp with  Authorization: Bearer $MCP_API_KEY
 """
+import os
+import sys
 from contextlib import asynccontextmanager
+from pathlib import Path
+
+if __package__ in (None, ""):  # started as a script (python main.py): make the `app` package importable
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import app.native_preload  # noqa: F401,I001  (must come before anything that loads scikit-learn)
 from fastapi import FastAPI
@@ -66,3 +74,17 @@ def health():
 if mcp_app is not None:
     # Mounted last at "/" so every API route above matches first; the MCP app itself only answers /mcp.
     app.mount("/", mcp_app)
+
+
+if __name__ == "__main__":
+    import socket
+
+    import uvicorn
+
+    port = int(os.getenv("PORT", "8010"))
+    with socket.socket() as probe:
+        if probe.connect_ex(("127.0.0.1", port)) == 0:
+            sys.exit(f"Port {port} is already in use - probably an older backend. Stop it (Ctrl+C in its window, "
+                     "or run run-backend.ps1 in the project folder, which does it for you), or use another port: "
+                     "$env:PORT=8011")
+    uvicorn.run(app, host="127.0.0.1", port=port)

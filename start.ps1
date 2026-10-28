@@ -4,12 +4,8 @@ param([switch]$NoStreamlit)
 Set-Location $PSScriptRoot
 $py = Join-Path $PSScriptRoot ".venv\Scripts\python.exe"
 
-Start-Process powershell -WorkingDirectory "$PSScriptRoot\backend" -ArgumentList "-NoExit", "-Command",
-    "& '$py' -m uvicorn app.main:app --reload --port 8010"
-# Empty leftovers from the old Next.js layout (all React code is in frontend\src now)
-foreach ($d in "frontend\app", "frontend\components") {
-    if ((Test-Path $d) -and -not (Get-ChildItem $d -Force)) { Remove-Item $d }
-}
+# run-backend.ps1 replaces an old backend still holding port 8010, so the latest code always loads
+Start-Process powershell -ArgumentList "-NoExit", "-ExecutionPolicy", "Bypass", "-File", "`"$PSScriptRoot\run-backend.ps1`""
 Start-Process powershell -WorkingDirectory "$PSScriptRoot\frontend" -ArgumentList "-NoExit", "-Command", "npm run dev"
 if (-not $NoStreamlit) {
     Start-Process powershell -WorkingDirectory "$PSScriptRoot\frontend\streamlit" -ArgumentList "-NoExit", "-Command",
