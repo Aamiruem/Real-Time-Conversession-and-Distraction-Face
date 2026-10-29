@@ -31,6 +31,11 @@ import { Icon } from "@/components/Icons";
 
 const FEATURES = ["/app/focus", "/app/speech", "/app/conversation", "/app/interview", "/app/meet", "/app/rooms", "/app/vision", "/app/lab"];
 
+// time-of-day advice ("you focus best in the evening") uses the viewer's own clock
+const TZ = -new Date().getTimezoneOffset();
+const RECS = `/recommendations?tz=${TZ}`;
+const INSIGHT = `/coach/insight?tz=${TZ}`;
+
 const greeting = () => {
   const h = new Date().getHours();
   return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
@@ -55,8 +60,8 @@ export default function Dashboard() {
   // show the last dashboard instantly when you come back, then refresh it in the background
   const [d, setD] = useState(() => peekCache("/analytics/dashboard") ?? null);
   const [err, setErr] = useState("");
-  const [recs, setRecs] = useState(() => peekCache("/recommendations") ?? null);
-  const [insight, setInsight] = useState(() => peekCache("/coach/insight") ?? null);
+  const [recs, setRecs] = useState(() => peekCache(RECS) ?? null);
+  const [insight, setInsight] = useState(() => peekCache(INSIGHT) ?? null);
   const backend = useBackendStatus();
 
   // (re)load whenever the backend becomes reachable or changes version — e.g. right after it is restarted
@@ -79,8 +84,8 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (backend.status !== "ok") return;
-    cachedApi("/recommendations", 0).then(setRecs).catch(() => setRecs(null));
-    cachedApi("/coach/insight", 60_000).then(setInsight).catch(() => setInsight(null));
+    cachedApi(RECS, 0).then(setRecs).catch(() => setRecs(null));
+    cachedApi(INSIGHT, 60_000).then(setInsight).catch(() => setInsight(null));
   }, [backend.status]);
 
   const first = (user?.full_name || user?.username || "").split(" ")[0];

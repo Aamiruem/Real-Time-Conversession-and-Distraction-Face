@@ -732,13 +732,17 @@ video.hidden { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-
 .dash-col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 /* the two dashboard columns end level: the patterns card grows into whatever height the right column needs */
 .dash-top { align-items: stretch; }
-.dash-col > .patterns { flex: 1; }
+.dash-col > :last-child { flex: 1; } /* whichever column is shorter stretches its last card */
 .patterns-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; flex: 1; }
 .pattern { display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: 14px; background: var(--inset);
   border: 1px solid var(--line); min-width: 0; }
 .pattern h4 { margin: 0; font-size: .78rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 .pattern-chart { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; align-items: center; }
-.pattern-chart .legend small { font-size: .74rem; }
+.pattern .legend { gap: 9px; }
+.pattern .legend div { align-items: flex-start; }
+.pattern .legend i { margin-top: 5px; }
+.legend-name { display: grid; line-height: 1.25; }
+.legend-name small { font-size: .72rem; }
 .pattern-insight { margin: auto 0 0; display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; border-radius: 10px;
   font-size: .86rem; line-height: 1.45; color: var(--text);
   background: color-mix(in srgb, #0891b2 9%, var(--surface)); border: 1px solid color-mix(in srgb, #0891b2 22%, var(--line)); }

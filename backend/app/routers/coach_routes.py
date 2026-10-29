@@ -3,7 +3,7 @@ import json
 from datetime import datetime, timedelta, timezone
 from statistics import mean
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -25,6 +25,7 @@ class ChatTurn(BaseModel):
 class CoachQuestion(BaseModel):
     question: str = Field(min_length=1, max_length=500)
     history: list[ChatTurn] = Field(default_factory=list, max_length=12)
+    tz: int = Field(0, ge=-840, le=840, description="Minutes east of UTC, for time-of-day advice")
 
 
 def _aware(dt: datetime) -> datetime:
@@ -67,7 +68,11 @@ def _streak(focus: list[dict]) -> int:
     return n
 
 
-def build_context(db: Session, user: User) -> dict:
+# the viewer's time zone, minutes east of UTC (India: 330) — so "focus best in the evening" means *their* evening
+TzOffset = Query(0, ge=-840, le=840, description="Minutes east of UTC (JavaScript: -new Date().getTimezoneOffset())")
+
+
+def build_context(db: Session, user: User, tz: int = 0) -> dict:
     h = load_history(db, user)
     focus, speech = h["focus"], h["speech"]
     recent = speech[-5:]
@@ -82,23 +87,24 @@ def build_context(db: Session, user: User) -> dict:
         "weakest_skill": f"{SKILLS[weakest][0].lower()} ({skill_avgs[weakest]:.0f}%)" if weakest else None,
         "latest_readiness": h["interviews"][-1]["readiness"] if h["interviews"] else None,
     }
-    recs = recommend(h["focus"], h["speech"], h["interviews"], h["conversation_types"])
+    local = [{**s, "started_at": s["started_at"] + timedelta(minutes=tz)} for s in h["focus"]]  # time-of-day advice
+    recs = recommend(local, h["speech"], h["interviews"], h["conversation_types"])
     return {"name": (user.full_name or user.username).split()[0], "stats": stats, "recommendations": recs}
 
 
 @router.get("/recommendations")
-def recommendations(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def recommendations(tz: int = TzOffset, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """What to practise next, ranked by expected benefit, each with the data behind it."""
-    return build_context(db, user)["recommendations"]
+    return build_context(db, user, tz)["recommendations"]
 
 
 @router.post("/coach/ask")
 def ask(data: CoachQuestion, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Ask the AI coach anything about your progress, interviews, speaking or focus."""
-    return assistant.answer(data.question, build_context(db, user), [t.model_dump() for t in data.history])
+    return assistant.answer(data.question, build_context(db, user, data.tz), [t.model_dump() for t in data.history])
 
 
 @router.get("/coach/insight")
-def daily_insight(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def daily_insight(tz: int = TzOffset, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Automated coaching note for today (shown on the dashboard)."""
-    return assistant.insight(build_context(db, user))
+    return assistant.insight(build_context(db, user, tz))

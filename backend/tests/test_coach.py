@@ -107,3 +107,20 @@ def test_coach_api(client, verified_user, monkeypatch):
     assert ans["engine"] == "built-in" and ans["answer"]
     assert client.get("/coach/insight", headers=headers).json()["answer"]
     assert client.post("/coach/ask", headers=headers, json={"question": ""}).status_code == 422
+
+
+def test_time_of_day_advice_uses_the_viewers_time_zone(client, verified_user):
+    """14:00 UTC is 19:30 in India: with tz=330 the best focus time is the evening, not the afternoon."""
+    headers, _ = verified_user
+    day = datetime.now(timezone.utc).replace(hour=14, minute=0, second=0, microsecond=0) - timedelta(days=1)
+    for i in range(3):  # strong sessions at 14:00 UTC, weak ones at 03:00 UTC
+        for hour, focus in ((14, 92), (3, 55)):
+            client.post("/attention/sessions", headers=headers, json={
+                "started_at": (day.replace(hour=hour) - timedelta(days=i)).isoformat(), "duration_sec": 1500,
+                "focus_pct": focus, "distracted_pct": 100 - focus, "drowsy_pct": 0})
+    titles = lambda tz: [r["title"] for r in client.get(f"/recommendations?tz={tz}", headers=headers).json()]  # noqa: E731
+    assert "Schedule deep work in the afternoon" in titles(0)
+    assert "Schedule deep work in the evening" in titles(330)
+    assert client.get("/recommendations?tz=9999", headers=headers).status_code == 422
+    r = client.post("/coach/ask", headers=headers, json={"question": "When do I focus best?", "tz": 330})
+    assert r.status_code == 200

@@ -29,7 +29,7 @@ export function CoachPanel() {
     setTurns((t) => [...t, { role: "user", content: q }]);
     setBusy(true);
     try {
-      const r = await api("/coach/ask", { method: "POST", json: { question: q, history } });
+      const r = await api("/coach/ask", { method: "POST", json: { question: q, history, tz: -new Date().getTimezoneOffset() } });
       setTurns((t) => [...t, { role: "assistant", content: r.answer, engine: r.engine }]);
       setFollowUps(r.follow_ups);
     } catch (e) {
