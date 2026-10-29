@@ -11,21 +11,47 @@ import Signup from "./pages/Signup";
 import Loading from "./pages/app/Loading";
 
 // Public pages load with the first bundle (and are pre-rendered for SEO); each private app page is its own
-// chunk, downloaded only when you open it — so the landing page stays small and fast.
-const Dashboard = lazy(() => import("./pages/app/Dashboard"));
-const Focus = lazy(() => import("./pages/app/Focus"));
-const Speech = lazy(() => import("./pages/app/Speech"));
-const Conversation = lazy(() => import("./pages/app/Conversation"));
-const Interview = lazy(() => import("./pages/app/Interview"));
-const Rooms = lazy(() => import("./pages/app/Rooms"));
-const Meet = lazy(() => import("./pages/app/Meet"));
-const Vision = lazy(() => import("./pages/app/Vision"));
-const Analytics = lazy(() => import("./pages/app/Analytics"));
-const Lab = lazy(() => import("./pages/app/Lab"));
-const Settings = lazy(() => import("./pages/app/Settings"));
-const MeetLink = lazy(() => import("./pages/app/MeetLink"));
+// chunk, downloaded only when needed — so the landing page stays small and fast. Once the app is open, the other
+// pages are fetched in the background while the browser is idle, so switching pages is instant (no loading flash).
+const PAGES = {
+  Dashboard: () => import("./pages/app/Dashboard"),
+  Focus: () => import("./pages/app/Focus"),
+  Speech: () => import("./pages/app/Speech"),
+  Conversation: () => import("./pages/app/Conversation"),
+  Interview: () => import("./pages/app/Interview"),
+  Rooms: () => import("./pages/app/Rooms"),
+  Meet: () => import("./pages/app/Meet"),
+  Vision: () => import("./pages/app/Vision"),
+  Analytics: () => import("./pages/app/Analytics"),
+  Lab: () => import("./pages/app/Lab"),
+  Settings: () => import("./pages/app/Settings"),
+  MeetLink: () => import("./pages/app/MeetLink"),
+};
+const Dashboard = lazy(PAGES.Dashboard);
+const Focus = lazy(PAGES.Focus);
+const Speech = lazy(PAGES.Speech);
+const Conversation = lazy(PAGES.Conversation);
+const Interview = lazy(PAGES.Interview);
+const Rooms = lazy(PAGES.Rooms);
+const Meet = lazy(PAGES.Meet);
+const Vision = lazy(PAGES.Vision);
+const Analytics = lazy(PAGES.Analytics);
+const Lab = lazy(PAGES.Lab);
+const Settings = lazy(PAGES.Settings);
+const MeetLink = lazy(PAGES.MeetLink);
+
+function usePrefetchPages() {
+  useEffect(() => {
+    if (navigator.connection?.saveData) return; // respect data saver
+    const idle = window.requestIdleCallback ?? ((fn) => setTimeout(fn, 1500));
+    const cancel = window.cancelIdleCallback ?? clearTimeout;
+    const id = idle(() => Object.values(PAGES).forEach((load) => load().catch(() => {})));
+    return () => cancel(id);
+  }, []);
+}
 
 function AppLayout() {
+  usePrefetchPages();
   return (
     <AppShell>
       <Suspense fallback={<Loading />}>

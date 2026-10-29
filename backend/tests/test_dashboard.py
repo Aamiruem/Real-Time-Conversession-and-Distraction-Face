@@ -31,6 +31,9 @@ def test_dashboard_aggregates_everything(client, verified_user):
     d = client.get("/analytics/dashboard", headers=headers).json()
     k = d["kpis"]
     assert k["focus_sessions"] == 1 and k["focus_minutes"] == 20 and k["avg_focus_pct"] == 80
+    assert d["practice_mix"] == {"focus": 1, "speech": 1, "conversation": 0, "interview": 1}
+    assert len(d["focus_times"]) == 1 and d["focus_times"][0]["focus"] == 80 and d["focus_times"][0]["minutes"] == 20
+    assert d["focus_times"][0]["at"].endswith("+00:00")  # UTC, so the browser can convert to local time
     assert k["practice_sessions"] == 2 and k["avg_confidence"] == 72.5
     assert k["interview_answers"] == 1 and k["latest_readiness"] == 72.5 and k["streak_days"] == 1
     assert k["rank"] >= 1

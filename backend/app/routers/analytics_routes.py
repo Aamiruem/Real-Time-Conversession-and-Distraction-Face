@@ -61,8 +61,12 @@ def leaderboard(_: User = Depends(get_current_user), db: Session = Depends(get_d
     return [{"username": u, "avg_focus_pct": round(f, 1), "minutes": round(d / 60, 1)} for u, f, d in rows]
 
 
+def _utc(dt: datetime) -> datetime:
+    return (dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)).astimezone(timezone.utc)
+
+
 def _day(dt: datetime) -> date:
-    return (dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)).astimezone(timezone.utc).date()
+    return _utc(dt).date()
 
 
 def _label(dt: datetime) -> str:
@@ -212,6 +216,12 @@ def dashboard(user: User = Depends(get_current_user), db: Session = Depends(get_
         "state_split": {"Focused": avg("focus_pct"), "Distracted": avg("distracted_pct"),
                         "Drowsy": avg("drowsy_pct"), "No Face": avg("no_face_pct")},
         "focus_trend": focus_trend,
+        # when each focus session started (UTC) — the browser groups them by the viewer's local time of day
+        "focus_times": [{"at": _utc(s.started_at).isoformat(), "minutes": round(s.duration_sec / 60, 1),
+                         "focus": round(s.focus_pct, 1)} for s in focus[-200:]],
+        "practice_mix": {"focus": n, "conversation": sum(s.mode == "conversation" for s in speech),
+                         "interview": sum(s.mode == "interview" for s in speech),
+                         "speech": sum(s.mode not in ("conversation", "interview") for s in speech)},
         "speech_trend": speech_trend,
         "skills": [{"key": k, "label": SKILLS[k], "score": v} for k, v in skills.items()],
         "interview_trend": interviews[-10:],

@@ -51,7 +51,7 @@ export function Gauge({ value, label, size = 180 }) {
 }
 
 /** Ring chart: `segments` are [label, percent, color]; the first segment's percent is shown in the middle. */
-export function Donut({ segments, size = 150, label }) {
+export function Donut({ segments, size = 150, label, center, caption }) {
   const r = 52,
     c = 2 * Math.PI * r;
   let offset = 0;
@@ -79,10 +79,10 @@ export function Donut({ segments, size = 150, label }) {
         return el;
       })}
       <text x="70" y="72" textAnchor="middle" fill="var(--text)" fontSize="24" fontWeight="800">
-        {(segments[0]?.[1] ?? 0).toFixed(1)}%
+        {center ?? `${(segments[0]?.[1] ?? 0).toFixed(1)}%`}
       </text>
       <text x="70" y="92" textAnchor="middle" fill="var(--muted)" fontSize="10" letterSpacing="1.5">
-        {segments[0]?.[0].toUpperCase()}
+        {(caption ?? segments[0]?.[0] ?? "").toUpperCase()}
       </text>
     </svg>
   );

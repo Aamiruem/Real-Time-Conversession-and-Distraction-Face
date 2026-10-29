@@ -108,6 +108,13 @@ export async function buildDashboardFallback(username) {
     focus_trend: f.slice(-12).map((s) => ({
       label: label(s.at), focus: round1(s.focus_pct), distracted: round1(s.distracted_pct), drowsy: round1(s.drowsy_pct), minutes: round1(s.duration_sec / 60),
     })),
+    focus_times: f.slice(-200).map((s) => ({ at: s.at.toISOString(), minutes: round1(s.duration_sec / 60), focus: round1(s.focus_pct) })),
+    practice_mix: {
+      focus: f.length,
+      speech: sp.filter((s) => s.mode !== "conversation" && s.mode !== "interview").length,
+      conversation: sp.filter((s) => s.mode === "conversation").length,
+      interview: sp.filter((s) => s.mode === "interview").length,
+    },
     speech_trend: sp.slice(-12).map((s) => ({ label: label(s.at), confidence: round1(s.confidence), mode: s.mode })),
     skills,
     interview_trend: [],

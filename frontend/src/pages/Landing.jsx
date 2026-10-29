@@ -2,18 +2,22 @@ import Link from "@/components/Link";
 import { SiteFooter, SiteHeader } from "@/components/SiteChrome";
 import { DESCRIPTION, FEATURES, HOME_FAQ, jsonLd, SITE_NAME, SITE_URL } from "@/lib/site";
 import { useState } from "react";
-import { api, setToken } from "@/lib/api";
+import { api } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
+import { useRouter } from "@/lib/navigation";
 
 /** One click into the app with a guest account (kept tiny: this page is the SEO landing page). */
 function TryAsGuest() {
   const [busy, setBusy] = useState(false);
+  const { signIn } = useAuth();
+  const router = useRouter();
   const go = async () => {
     setBusy(true);
     try {
-      setToken((await api("/auth/guest", { method: "POST" })).access_token);
-      window.location.assign("/app");
+      signIn(await api("/auth/guest", { method: "POST" }));
+      router.push("/app"); // no page reload: straight into the app
     } catch {
-      window.location.assign("/login"); // guests turned off or backend offline: the normal sign-in page
+      router.push("/login"); // guests turned off or backend offline: the normal sign-in page
     }
   };
   return (

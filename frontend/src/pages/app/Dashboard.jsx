@@ -19,6 +19,7 @@ import {
 } from "recharts";
 import { ChartCard, EmptyChart, GoalRing, GRID, Kpi, SERIES, TICK, TOOLTIP, timeAgo } from "@/components/dashboard";
 import { Donut, RiskCard } from "@/components/ui";
+import { PatternsCard } from "@/components/PatternsCard";
 import { openCoach } from "@/components/CoachPanel";
 import { cachedApi, peekCache } from "@/lib/api";
 import { useBackendStatus } from "@/lib/backend";
@@ -223,6 +224,7 @@ export default function Dashboard() {
             <p className="small">Finish a focus session to get your machine-learning fatigue prediction.</p>
           </ChartCard>
         )}
+        <PatternsCard focusTimes={d.focus_times} mix={d.practice_mix} />
         </div>
         <div className="dash-col">
           {recs?.length ? (

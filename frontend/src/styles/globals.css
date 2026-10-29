@@ -365,7 +365,6 @@ details.faq p { color: var(--muted); margin: 10px 0 0; }
 /* dashboard */
 .dash { display: grid; gap: 18px; }
 .dash-row { margin: 0; }
-.dash-top { align-items: start; }
 .dash-hero { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px; align-items: center; padding: 26px 28px;
   background: radial-gradient(600px 220px at 0% 0%, #2563eb24, transparent 70%),
     radial-gradient(500px 240px at 100% 100%, #7c3aed1f, transparent 70%), var(--surface);
@@ -730,4 +729,19 @@ video.hidden { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-
 .rf-bar.lower { right: 50%; }
 .rf-value { white-space: nowrap; text-align: right; }
 
-.dash-col { display: grid; gap: 16px; align-content: start; min-width: 0; }
+.dash-col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+/* the two dashboard columns end level: the patterns card grows into whatever height the right column needs */
+.dash-top { align-items: stretch; }
+.dash-col > .patterns { flex: 1; }
+.patterns-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; flex: 1; }
+.pattern { display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: 14px; background: var(--inset);
+  border: 1px solid var(--line); min-width: 0; }
+.pattern h4 { margin: 0; font-size: .78rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.pattern-chart { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; align-items: center; }
+.pattern-chart .legend small { font-size: .74rem; }
+.pattern-insight { margin: auto 0 0; display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; border-radius: 10px;
+  font-size: .86rem; line-height: 1.45; color: var(--text);
+  background: color-mix(in srgb, #0891b2 9%, var(--surface)); border: 1px solid color-mix(in srgb, #0891b2 22%, var(--line)); }
+.pattern-insight svg { flex: none; margin-top: 3px; color: #0891b2; }
+.pattern-empty { margin: auto 0; color: var(--muted); font-size: .9rem; }
+@media (max-width: 1280px) { .patterns-grid { grid-template-columns: minmax(0, 1fr); } }
