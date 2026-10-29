@@ -6,6 +6,7 @@
 Compares two scikit-learn pipelines with 5-fold cross-validation, keeps the best, evaluates it
 on a held-out test split and writes ml/artifacts/{fatigue_model.joblib, model_card.json}.
 """
+
 import argparse
 import json
 from datetime import datetime, timezone
@@ -15,7 +16,7 @@ import joblib
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import (ExtraTreesClassifier, GradientBoostingClassifier, HistGradientBoostingClassifier,
-                              RandomForestClassifier, VotingClassifier)
+                            RandomForestClassifier, VotingClassifier)
 from sklearn.inspection import permutation_importance
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, f1_score
@@ -33,9 +34,9 @@ USER_WEIGHT = 5.0  # a real labelled session counts as much as 5 simulated ones
 
 CANDIDATES = {
     "logistic_regression": lambda: Pipeline([("scale", StandardScaler()),
-                                             ("clf", LogisticRegression(max_iter=2000, C=1.0))]),
+                                            ("clf", LogisticRegression(max_iter=2000, C=1.0))]),
     "random_forest": lambda: Pipeline([("clf", RandomForestClassifier(n_estimators=150, min_samples_leaf=3,
-                                                                      random_state=7))]),
+                                                                random_state=7))]),
     "gradient_boosting": lambda: Pipeline([("clf", GradientBoostingClassifier(random_state=7))]),
     # class-balanced variants: the "medium" class is the rarest and hardest, so weight it up
     "hist_gradient_boosting": lambda: Pipeline([("clf", HistGradientBoostingClassifier(
@@ -45,9 +46,9 @@ CANDIDATES = {
     "soft_voting_ensemble": lambda: Pipeline([("scale", StandardScaler()), ("clf", VotingClassifier([
         ("lr", LogisticRegression(max_iter=2000, class_weight="balanced")),
         ("rf", RandomForestClassifier(n_estimators=300, min_samples_leaf=3, class_weight="balanced_subsample",
-                                      random_state=7)),
+                                    random_state=7)),
         ("hgb", HistGradientBoostingClassifier(learning_rate=0.06, max_iter=250, class_weight="balanced",
-                                               random_state=7)),
+                                            random_state=7)),
     ], voting="soft"))]),
 }
 
@@ -71,7 +72,7 @@ def train(with_db: bool = False, quiet: bool = False) -> dict:
 
     cv = StratifiedKFold(5, shuffle=True, random_state=7)
     scores = {name: float(cross_val_score(make(), X_tr, y_tr, cv=cv, scoring="f1_macro").mean())
-              for name, make in CANDIDATES.items()}
+            for name, make in CANDIDATES.items()}
     best = max(scores, key=scores.get)
     model = CANDIDATES[best]()
     model.fit(X_tr, y_tr, clf__sample_weight=w_tr)

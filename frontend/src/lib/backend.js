@@ -5,7 +5,7 @@
 import { useSyncExternalStore } from "react";
 
 /** API version this frontend needs (backend/app/main.py → API_VERSION). */
-export const REQUIRED_API_VERSION = 6;
+export const REQUIRED_API_VERSION = 8;
 
 let state = { status: "checking", version: null, checkedAt: 0 };
 const listeners = new Set();

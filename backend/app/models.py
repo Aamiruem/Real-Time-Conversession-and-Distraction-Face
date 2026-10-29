@@ -151,6 +151,29 @@ class Message(Base):
     user = relationship("User")
 
 
+class Recording(Base):
+    """A saved camera recording: the video file lives in S3 (AWS_ENABLED) or backend/recordings/, the details here."""
+
+    __tablename__ = "recordings"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    room_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)  # focus room it was made in
+    title: Mapped[str] = mapped_column(String(120), default="")
+    source: Mapped[str] = mapped_column(String(20), default="rooms")
+    mime_type: Mapped[str] = mapped_column(String(40), default="video/webm")
+    size_bytes: Mapped[int] = mapped_column(Integer, default=0)
+    duration_sec: Mapped[float] = mapped_column(Float, default=0)
+    quality: Mapped[str] = mapped_column(String(10), default="medium")  # low | medium | high
+    speed: Mapped[str] = mapped_column(String(10), default="realtime")  # AI tracking rate: eco | balanced | realtime
+    avg_focus: Mapped[float | None] = mapped_column(Float, nullable=True)
+    focused_pct: Mapped[float | None] = mapped_column(Float, nullable=True)
+    timeline: Mapped[str] = mapped_column(Text, default="[]")  # [{t, focus, state}] one sample a second
+    storage: Mapped[str] = mapped_column(String(10), default="local")  # local | s3
+    storage_key: Mapped[str] = mapped_column(String(300), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+
+
 class RoutinePlan(Base):
     """Your daily routine (blocks, prayer settings) as JSON — one per user."""
 
@@ -173,3 +196,34 @@ class RoutineCheck(Base):
     day: Mapped[str] = mapped_column(String(10), index=True)
     block_id: Mapped[str] = mapped_column(String(40))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class MeetingRoom(Base):
+    """A video meeting link (abc-defg-hij): who hosts it, its title / time, and who may join without asking."""
+
+    __tablename__ = "meeting_rooms"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    code: Mapped[str] = mapped_column(String(12), unique=True, index=True)
+    host_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    title: Mapped[str] = mapped_column(String(120), default="")
+    scheduled_for: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # open: anyone with the link joins · trusted: guests ask first · ask: everyone but the hosts asks first
+    access: Mapped[str] = mapped_column(String(10), default="open")
+    chat_on: Mapped[bool] = mapped_column(Boolean, default=True)
+    share_on: Mapped[bool] = mapped_column(Boolean, default=True)  # can non-hosts present their screen
+    react_on: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class MeetingAttendance(Base):
+    """One person's time in a meeting (Meet's attendance report). A rejoin is a new row."""
+
+    __tablename__ = "meeting_attendance"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    room_id: Mapped[int] = mapped_column(ForeignKey("meeting_rooms.id"), index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    name: Mapped[str] = mapped_column(String(100), default="")
+    joined_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    left_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

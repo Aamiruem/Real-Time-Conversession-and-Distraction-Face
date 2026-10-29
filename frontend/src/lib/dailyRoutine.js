@@ -169,3 +169,48 @@ export function categoryHours(blocks) {
     .map(([k, m]) => ({ key: k, hours: m / 60, ...CATEGORIES[k] }))
     .sort((a, z) => z.hours - a.hours);
 }
+
+/** App pages a block's Start button can open. */
+export const LINKS = [
+  ["", "No button"],
+  ["/app/focus", "Focus Monitor — coding / study session"],
+  ["/app/speech", "Speech Coach — English speaking"],
+  ["/app/conversation", "Conversation Coach — English talking"],
+  ["/app/interview", "Interview Prep — mock interview"],
+  ["/app/vision", "Vision Studio — yoga & skincare routines"],
+  ["/app/lab", "AI Lab — try AI models"],
+  ["/app/meet", "Meet — video call"],
+  ["/app/rooms", "Focus Rooms — study with others"],
+  ["/app/analytics", "Analytics — review progress"],
+  ["/app", "Dashboard"],
+];
+
+export const DAY_PRESETS = [
+  ["Every day", [0, 1, 2, 3, 4, 5, 6]],
+  ["Weekdays", [1, 2, 3, 4, 5]],
+  ["Weekend", [0, 6]],
+];
+
+/** Plan blocks that share a day with `b` and overlap it in time (overnight blocks wrap past midnight). */
+export function overlapping(blocks, b) {
+  const days = new Set(b.days ?? [0, 1, 2, 3, 4, 5, 6]);
+  const s = toMin(b.start), e = s + Number(b.minutes);
+  return blocks.filter((x) => {
+    if (x.id === b.id || !(x.days ?? [0, 1, 2, 3, 4, 5, 6]).some((d) => days.has(d))) return false;
+    const xs = toMin(x.start), xe = xs + x.minutes;
+    return [-1440, 0, 1440].some((k) => xs + k < e && s < xe + k);
+  });
+}
+
+export const timeRange = (startMin, minutes) => `${clock12(startMin)} – ${clock12(startMin + minutes)}`;
+export function clock12(min) {
+  const t = ((Math.round(min) % 1440) + 1440) % 1440;
+  const h = Math.floor(t / 60), m = t % 60;
+  return `${((h + 11) % 12) + 1}:${String(m).padStart(2, "0")} ${h < 12 ? "am" : "pm"}`;
+}
+/** The next date (from today) that falls on weekday `wd` (0 = Sunday). */
+export function nextWeekday(wd, from = new Date()) {
+  const d = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+  d.setDate(d.getDate() + ((wd - d.getDay() + 7) % 7));
+  return d;
+}

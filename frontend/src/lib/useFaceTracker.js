@@ -7,6 +7,19 @@ import { faceFrame } from "./voiceCoach";
 
 let landmarkerPromise = null;
 
+/** Camera resolutions for the `quality` option. */
+export const CAMERA_QUALITY = {
+  low: { label: "480p", width: 854, height: 480 },
+  medium: { label: "720p", width: 1280, height: 720 },
+  high: { label: "1080p", width: 1920, height: 1080 },
+};
+/** How often the face is analysed for the `speed` option (0 = every camera frame). Lower = less CPU / battery. */
+export const TRACKING_SPEED = {
+  eco: { label: "Eco", fps: 8 },
+  balanced: { label: "Balanced", fps: 15 },
+  realtime: { label: "Real-time", fps: 0 },
+};
+
 /** One shared MediaPipe FaceLandmarker (loaded lazily from our own /public folder). */
 export function loadFaceLandmarker() {
   landmarkerPromise ??= (async () => {
@@ -35,8 +48,15 @@ export function loadFaceLandmarker() {
  * `metrics` refreshes ~5×/s for the UI; `engine` holds the full per-frame state.
  * With `presence: true` it also tracks smile, framing and picture quality (`presence` = PresenceTracker);
  * with `body: true` it adds posture, hands and objects in the frame (`body` = BodyTracker).
+ * `quality` (CAMERA_QUALITY key) and `speed` (TRACKING_SPEED key) can change while the camera runs.
  */
-export function useFaceTracker({ audio = false, presence: withPresence = false, body: withBody = false } = {}) {
+export function useFaceTracker({
+  audio = false,
+  presence: withPresence = false,
+  body: withBody = false,
+  quality = "medium",
+  speed = "realtime",
+} = {}) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const engine = useRef(new AttentionEngine());
@@ -49,14 +69,20 @@ export function useFaceTracker({ audio = false, presence: withPresence = false, 
   const [metrics, setMetrics] = useState(AttentionEngine.empty());
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");
+  const minGap = useRef(0);
+  minGap.current = TRACKING_SPEED[speed]?.fps ? 1000 / TRACKING_SPEED[speed].fps : 0;
+  const size = CAMERA_QUALITY[quality] ?? CAMERA_QUALITY.medium;
 
   const loop = useCallback((landmarker) => {
     let lastUi = 0;
     let lastVideoTime = -1;
+    let lastDetect = 0;
     const tick = () => {
       const video = videoRef.current;
-      if (video && video.readyState >= 2 && video.currentTime !== lastVideoTime) {
+      const due = performance.now() - lastDetect >= minGap.current;
+      if (due && video && video.readyState >= 2 && video.currentTime !== lastVideoTime) {
         lastVideoTime = video.currentTime;
+        lastDetect = performance.now();
         const res = landmarker.detectForVideo(video, performance.now());
         const lm = res.faceLandmarks?.[0];
         engine.current.update(lm, res.facialTransformationMatrixes?.[0]?.data, video.videoWidth, video.videoHeight);
@@ -87,8 +113,8 @@ export function useFaceTracker({ audio = false, presence: withPresence = false, 
         navigator.mediaDevices.getUserMedia({
           // HD widescreen when the camera supports it (wider field of view, sharper picture); falls back gracefully
           video: {
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
+            width: { ideal: size.width },
+            height: { ideal: size.height },
             aspectRatio: { ideal: 16 / 9 },
             frameRate: { ideal: 30 },
             facingMode: "user",
@@ -115,7 +141,13 @@ export function useFaceTracker({ audio = false, presence: withPresence = false, 
       );
       return null;
     }
-  }, [audio, loop]);
+  }, [audio, loop, size]);
+
+  // switch resolution on the running camera (no restart, so tracking and any recording carry on)
+  useEffect(() => {
+    const track = stream.current?.getVideoTracks()[0];
+    track?.applyConstraints({ width: { ideal: size.width }, height: { ideal: size.height }, aspectRatio: { ideal: 16 / 9 } }).catch(() => {});
+  }, [size]);
 
   const stop = useCallback(() => {
     cancelAnimationFrame(raf.current);

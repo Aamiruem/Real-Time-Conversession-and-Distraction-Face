@@ -75,6 +75,10 @@ class Settings:
     S3_BUCKET: str = os.getenv("S3_BUCKET", "focuslink-ai-reports")
     USE_COMPREHEND: bool = _bool("USE_COMPREHEND")
 
+    # Camera recordings: video files go to S3_BUCKET when AWS is on, otherwise to this folder
+    RECORDINGS_DIR: Path = Path(os.getenv("RECORDINGS_DIR", str(BACKEND_DIR / "recordings")))
+    RECORDING_MAX_MB: int = int(os.getenv("RECORDING_MAX_MB", "500"))
+
     # One-time passwords: email via Amazon SES, SMS via Amazon SNS
     SES_SENDER: str = os.getenv("SES_SENDER", "")            # verified SES identity, e.g. no-reply@yourdomain.com
     SNS_SENDER_ID: str = os.getenv("SNS_SENDER_ID", "FOCUSAI")  # alphanumeric sender id (where supported)

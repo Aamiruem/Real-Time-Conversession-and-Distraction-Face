@@ -68,18 +68,31 @@ export const inviteLink = (code) => invite(code).url;
 
 export class Meeting {
   /** @param {string} code  @param {{stream: MediaStream, quality: string, onChange: (s) => void}} opts */
-  constructor(code, { stream, quality = "hd", effect = { id: "none" }, onChange }) {
+  constructor(code, { stream, quality = "hd", effect = { id: "none" }, onChange, onNotice }) {
     this.code = code;
     this.stream = stream;
     this.quality = quality;
     this.onChange = onChange;
+    this.onNotice = onNotice; // short messages for the person ("The host muted you")
     this.pcs = new Map(); // peer id -> { pc, polite, makingOffer, ignoreOffer, stream, lastStats }
     this.iceServers = [{ urls: "stun:stun.l.google.com:19302" }];
     this.screen = null;
     this.effect = effect; // { id, image }: background blur / replacement
     this.fx = null; // { track, stop } while an effect runs
     this.retries = 0;
-    this.state = { status: "connecting", you: null, peers: {}, chat: [], reactions: [], captions: {}, started: null };
+    this.state = {
+      status: "connecting", // connecting | waiting | joined | reconnecting | left | full | unauthorized | disconnected | notfound | denied | removed | ended
+      you: null,
+      amHost: false,
+      title: "",
+      settings: { access: "open", chat: true, share: true, react: true },
+      waiting: [], // people asking to join (hosts only)
+      peers: {},
+      chat: [],
+      reactions: [],
+      captions: {},
+      started: null,
+    };
   }
 
   emit(patch) {
@@ -103,8 +116,12 @@ export class Meeting {
       }
     };
     ws.onclose = (e) => {
-      if (this.state.status === "left" || this.ws !== ws) return;
-      if (e.code === 4403 || this.state.status === "full") return this.emit({ status: "full" });
+      if (["left", "denied", "removed", "ended"].includes(this.state.status) || this.ws !== ws) return;
+      const final = { 4403: "full", 4404: "notfound", 4405: "denied", 4406: "removed", 4410: "ended" }[e.code];
+      if (final || this.state.status === "full") {
+        this.closeAll();
+        return this.emit({ status: final ?? "full" });
+      }
       if (e.code === 4401) return this.emit({ status: "unauthorized" });
       // network blip: rejoin (as a new participant; the others drop the old connection)
       this.closeAll();
@@ -125,7 +142,17 @@ export class Meeting {
         this.retries = 0;
         this.iceServers = m.ice_servers?.length ? m.ice_servers : this.iceServers;
         const peers = Object.fromEntries(m.peers.map((p) => [p.id, p]));
-        this.emit({ status: "joined", you: m.you, peers, chat: m.chat ?? [], started: m.started * 1000 });
+        this.emit({
+          status: "joined",
+          you: m.you,
+          amHost: !!m.host,
+          title: m.title ?? "",
+          settings: m.settings ?? this.state.settings,
+          waiting: m.waiting ?? [],
+          peers,
+          chat: m.chat ?? [],
+          started: m.started * 1000,
+        });
         this.send({ type: "state", ...this.localState() });
         for (const p of m.peers) this.createPC(p.id); // the newcomer calls everyone (their tracks trigger the offers)
         break;
@@ -134,7 +161,58 @@ export class Meeting {
         this.setPeer(m.id, m); // their offer arrives as a "signal"
         break;
       case "state":
-        this.setPeer(m.id, m);
+        if (m.id === this.state.you) {
+          // a host made you a co-host (or took it back)
+          if (m.host !== this.state.amHost) this.onNotice?.(m.host ? "You're now a co-host" : "You're no longer a co-host");
+          this.emit({ amHost: !!m.host });
+        } else this.setPeer(m.id, m);
+        break;
+      // ---- "Ask to join" and host controls
+      case "waiting":
+        this.emit({ status: "waiting", title: m.title ?? "", hostsHere: m.hosts_here });
+        break;
+      case "knock":
+        this.emit({ waiting: [...this.state.waiting.filter((w) => w.id !== m.id), { id: m.id, name: m.name }] });
+        break;
+      case "knocks":
+        this.emit({ waiting: m.waiting });
+        break;
+      case "knock_done":
+        this.emit({ waiting: this.state.waiting.filter((w) => w.id !== m.id) });
+        break;
+      case "muted_by_host":
+        this.stream?.getAudioTracks().forEach((t) => (t.enabled = false));
+        this.send({ type: "state", mic: false });
+        this.onNotice?.(`${m.by} muted you`);
+        this.emit({});
+        break;
+      case "hand_lowered":
+        this.hand = false;
+        this.onNotice?.(`${m.by} lowered your hand`);
+        this.emit({});
+        break;
+      case "stop_share":
+        await this.stopShare();
+        this.onNotice?.(m.reason ?? `${m.by} stopped your presentation`);
+        this.emit({});
+        break;
+      case "settings": {
+        const was = this.state.settings;
+        this.emit({ settings: m.settings, title: m.title ?? this.state.title });
+        if (m.by && was.chat !== m.settings.chat) this.onNotice?.(`${m.by} turned chat ${m.settings.chat ? "on" : "off"}`);
+        if (m.by && was.share !== m.settings.share)
+          this.onNotice?.(`${m.by} ${m.settings.share ? "let everyone present" : "turned off screen sharing for everyone"}`);
+        break;
+      }
+      case "notice":
+        this.onNotice?.(m.text);
+        break;
+      case "denied":
+      case "removed":
+      case "ended":
+        this.closeAll();
+        this.screen?.stop();
+        this.emit({ status: m.type, removedBy: m.by });
         break;
       case "left": {
         this.closePC(m.id);
@@ -432,6 +510,26 @@ export class Meeting {
 
   closeAll() {
     for (const id of [...this.pcs.keys()]) this.closePC(id);
+  }
+
+  // ------------------------------------------------------------ host controls (the server checks you're a host)
+  /** Let someone in (or everyone waiting, with all). */
+  admit(id, all = false) {
+    this.send({ type: "admit", id, all });
+  }
+  deny(id, all = false) {
+    this.send({ type: "deny", id, all });
+  }
+  /** mute | lower_hand | stop_share | remove | cohost, for one person (id) or everyone (all: true) */
+  hostAction(type, extra) {
+    this.send({ type, ...extra });
+  }
+  /** { access: open|trusted|ask, chat, share, react } */
+  updateSettings(settings) {
+    this.send({ type: "settings", settings });
+  }
+  endForAll() {
+    this.send({ type: "end" });
   }
 
   leave() {

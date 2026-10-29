@@ -167,14 +167,127 @@ function cityNight(ctx, w, h) {
   }
 }
 
-/** Effects shown in the picker. blur = how far the background is shrunk before being stretched back (bigger = softer). */
+function beach(ctx, w, h) {
+  const sky = ctx.createLinearGradient(0, 0, 0, h * 0.55);
+  sky.addColorStop(0, "#60a5fa");
+  sky.addColorStop(1, "#dbeafe");
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, w, h * 0.55);
+  ctx.fillStyle = "#fef9c3";
+  ctx.beginPath();
+  ctx.arc(w * 0.8, h * 0.18, h * 0.08, 0, Math.PI * 2);
+  ctx.fill(); // sun
+  const sea = ctx.createLinearGradient(0, h * 0.55, 0, h * 0.72);
+  sea.addColorStop(0, "#0284c7");
+  sea.addColorStop(1, "#38bdf8");
+  ctx.fillStyle = sea;
+  ctx.fillRect(0, h * 0.55, w, h * 0.17);
+  ctx.fillStyle = "#f0f9ff";
+  ctx.fillRect(0, h * 0.715, w, h * 0.012); // surf line
+  ctx.fillStyle = "#f5deb3";
+  ctx.fillRect(0, h * 0.725, w, h * 0.275); // sand
+  ctx.fillStyle = "#7c5a3a";
+  ctx.beginPath();
+  ctx.moveTo(w * 0.1, h);
+  ctx.quadraticCurveTo(w * 0.13, h * 0.6, w * 0.2, h * 0.32);
+  ctx.lineTo(w * 0.215, h * 0.33);
+  ctx.quadraticCurveTo(w * 0.15, h * 0.62, w * 0.13, h);
+  ctx.fill(); // palm trunk
+  ctx.fillStyle = "#15803d";
+  for (const a of [-2.6, -2, -1.2, -0.5, 0.2]) {
+    ctx.beginPath();
+    ctx.ellipse(w * 0.205 + Math.cos(a) * w * 0.07, h * 0.32 + Math.sin(a) * h * 0.06, w * 0.08, h * 0.022, a, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function mountains(ctx, w, h) {
+  const sky = ctx.createLinearGradient(0, 0, 0, h);
+  sky.addColorStop(0, "#fde68a");
+  sky.addColorStop(0.5, "#fca5a5");
+  sky.addColorStop(1, "#a78bfa");
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, w, h);
+  const ridge = (base, amp, color, seed) => {
+    const rnd = seeded(seed);
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(0, h);
+    for (let x = 0; x <= w; x += w / 8) ctx.lineTo(x, h * base - rnd() * h * amp);
+    ctx.lineTo(w, h);
+    ctx.fill();
+  };
+  ridge(0.62, 0.3, "#7c6aa8", 3);
+  ridge(0.75, 0.22, "#4c3f75", 9);
+  ridge(0.9, 0.14, "#2e2550", 21);
+}
+
+function galaxy(ctx, w, h) {
+  const rnd = seeded(99);
+  const g = ctx.createRadialGradient(w * 0.6, h * 0.4, 0, w * 0.6, h * 0.4, w * 0.7);
+  g.addColorStop(0, "#4c1d95");
+  g.addColorStop(0.5, "#1e1b4b");
+  g.addColorStop(1, "#020617");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, w, h);
+  for (let i = 0; i < (w * h) / 900; i++) {
+    ctx.fillStyle = `rgba(255,255,255,${0.3 + rnd() * 0.7})`;
+    ctx.fillRect(rnd() * w, rnd() * h, rnd() > 0.95 ? 2 : 1, rnd() > 0.95 ? 2 : 1);
+  }
+  ctx.fillStyle = "#f472b6";
+  ctx.beginPath();
+  ctx.arc(w * 0.15, h * 0.25, h * 0.06, 0, Math.PI * 2);
+  ctx.fill(); // a planet
+}
+
+function modernOffice(ctx, w, h) {
+  ctx.fillStyle = "#e5e7eb";
+  ctx.fillRect(0, 0, w, h);
+  // floor-to-ceiling windows with a skyline
+  const sky = ctx.createLinearGradient(0, 0, 0, h * 0.75);
+  sky.addColorStop(0, "#bae6fd");
+  sky.addColorStop(1, "#f0f9ff");
+  ctx.fillStyle = sky;
+  ctx.fillRect(w * 0.05, h * 0.05, w * 0.9, h * 0.7);
+  const rnd = seeded(5);
+  for (let x = w * 0.05; x < w * 0.95; ) {
+    const bw = w * (0.04 + rnd() * 0.05);
+    const bh = h * (0.15 + rnd() * 0.3);
+    ctx.fillStyle = `hsl(210 15% ${62 + rnd() * 15}%)`;
+    ctx.fillRect(x, h * 0.75 - bh, Math.min(bw, w * 0.95 - x), bh);
+    x += bw + 3;
+  }
+  ctx.fillStyle = "#9ca3af";
+  for (let i = 0; i <= 4; i++) ctx.fillRect(w * 0.05 + (i * w * 0.9) / 4 - 4, h * 0.05, 8, h * 0.7); // mullions
+  ctx.fillStyle = "#d6d3d1";
+  ctx.fillRect(0, h * 0.75, w, h * 0.25); // floor
+  ctx.fillStyle = "#57534e";
+  rrect(ctx, w * 0.62, h * 0.7, w * 0.3, h * 0.05, 6); // desk
+  ctx.fillStyle = "#3f7d4f";
+  for (let i = 0; i < 6; i++) {
+    ctx.beginPath();
+    ctx.ellipse(w * 0.12 + (rnd() - 0.5) * w * 0.05, h * (0.5 + rnd() * 0.15), w * 0.025, h * 0.07, rnd() * 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.fillStyle = "#e7e5e4";
+  rrect(ctx, w * 0.09, h * 0.66, w * 0.06, h * 0.1, 6); // plant pot
+}
+
+/**
+ * Effects shown in the picker. blur = background blur radius in pixels at 1280 px wide (scaled to the camera);
+ * shrink = the fallback for browsers without canvas filters (how far the background is shrunk and stretched back).
+ */
 export const EFFECTS = [
   { id: "none", label: "No effect", swatch: "transparent" },
-  { id: "blur-light", label: "Slightly blur", blur: 8, swatch: "linear-gradient(135deg,#94a3b8,#cbd5e1)" },
-  { id: "blur", label: "Blur", blur: 20, swatch: "linear-gradient(135deg,#64748b,#94a3b8)" },
+  { id: "blur-light", label: "Slightly blur", blur: 10, shrink: 8, swatch: "linear-gradient(135deg,#94a3b8,#cbd5e1)" },
+  { id: "blur", label: "Blur", blur: 26, shrink: 20, swatch: "linear-gradient(135deg,#64748b,#94a3b8)" },
+  { id: "office-modern", label: "Modern office", paint: modernOffice, scene: true },
   { id: "bookshelf", label: "Bookshelf", paint: bookshelf, scene: true },
   { id: "living", label: "Living room", paint: livingRoom, scene: true },
+  { id: "beach", label: "Beach", paint: beach, scene: true },
+  { id: "mountains", label: "Mountains", paint: mountains, scene: true },
   { id: "city", label: "City at night", paint: cityNight, scene: true },
+  { id: "galaxy", label: "Space", paint: galaxy, scene: true },
   { id: "studio", label: "Studio", paint: gradient(["#0f172a", "#1e3a8a", "#312e81"]), swatch: "linear-gradient(135deg,#0f172a,#1e3a8a,#312e81)" },
   { id: "sunset", label: "Sunset", paint: gradient(["#f97316", "#db2777", "#7c3aed"]), swatch: "linear-gradient(135deg,#f97316,#db2777,#7c3aed)" },
   { id: "ocean", label: "Ocean", paint: gradient(["#0ea5e9", "#0369a1", "#0c4a6e"]), swatch: "linear-gradient(135deg,#0ea5e9,#0369a1,#0c4a6e)" },
@@ -190,8 +303,17 @@ export const FILTERS = [
   { id: "vivid", label: "Vivid", css: "saturate(1.45) contrast(1.08)" },
   { id: "mono", label: "Black & white", css: "grayscale(1) contrast(1.1)" },
   { id: "vintage", label: "Vintage", css: "sepia(.5) contrast(.95) brightness(1.05)" },
+  { id: "studio", label: "Studio light", css: "brightness(1.06) contrast(1.05) saturate(1.08)" },
+  { id: "soft", label: "Soft glow", css: "brightness(1.08) contrast(.94) saturate(1.05)" },
 ];
 const LOW_LIGHT = "brightness(1.35) contrast(1.06) saturate(1.05)"; // "Adjust for low light"
+
+// Canvas filters (blur, colour) are fast where supported (Chrome, Edge, Firefox, Safari 18+)
+const CANVAS_FILTER = typeof CanvasRenderingContext2D !== "undefined" && "filter" in CanvasRenderingContext2D.prototype;
+const smoothstep = (lo, hi, x) => {
+  const t = Math.min(1, Math.max(0, (x - lo) / (hi - lo)));
+  return t * t * (3 - 2 * t);
+};
 
 /** A small preview image of a drawn scene (for the picker). */
 export function sceneSwatch(effect, w = 160, h = 90) {
@@ -232,7 +354,8 @@ class Compositor {
       const s = Math.max(w / this.image.width, h / this.image.height); // cover
       bctx.drawImage(this.image, (w - this.image.width * s) / 2, (h - this.image.height * s) / 2, this.image.width * s, this.image.height * s);
     } else this.effect.paint?.(bctx, w, h);
-    const k = this.effect.blur ?? 1;
+    // blur: filter a quarter-size copy (fast), or without filters, shrink hard and stretch back
+    const k = CANVAS_FILTER ? 4 : (this.effect.shrink ?? 1);
     this.small = canvas(Math.max(8, Math.round(w / k)), Math.max(8, Math.round(h / k)));
     this.sctx = this.small.getContext("2d");
   }
@@ -260,8 +383,15 @@ class Compositor {
         this.maskImage = new ImageData(mask.width, mask.height);
       }
       const conf = mask.getAsFloat32Array();
+      // steady edges: blend with the last frames (no flicker), then sharpen the soft middle of the mask
+      if (this.smooth?.length !== conf.length) this.smooth = Float32Array.from(conf);
+      const sm = this.smooth;
       const px = this.maskImage.data;
-      for (let i = 0; i < conf.length; i++) px[i * 4 + 3] = conf[i] * 255;
+      for (let i = 0; i < conf.length; i++) {
+        const c = conf[i];
+        sm[i] += (c - sm[i]) * (Math.abs(c - sm[i]) > 0.5 ? 0.85 : 0.55); // follow fast movement, damp jitter
+        px[i * 4 + 3] = smoothstep(0.3, 0.7, sm[i]) * 255;
+      }
       this.mctx.putImageData(this.maskImage, 0, 0);
     }
     res.close();
@@ -272,13 +402,23 @@ class Compositor {
     if (this.mask) {
       ctx.globalCompositeOperation = "destination-in";
       ctx.imageSmoothingEnabled = true;
-      ctx.drawImage(this.mask, 0, 0, w, h); // …cut out by the mask (smooth upscaling = soft edges)
+      ctx.imageSmoothingQuality = "high";
+      if (CANVAS_FILTER) ctx.filter = `blur(${Math.max(1, w / 640)}px)`; // feathered edge, like a real lens
+      ctx.drawImage(this.mask, 0, 0, w, h); // …cut out by the mask
+      ctx.filter = "none";
     }
     ctx.globalCompositeOperation = "destination-over"; // background goes behind you
     if (this.effect.blur) {
-      // shrink then stretch back: a fast, smooth blur that works in every browser
-      this.sctx.imageSmoothingQuality = "high";
-      this.sctx.drawImage(source, 0, 0, this.small.width, this.small.height);
+      const s = this.sctx,
+        sw = this.small.width,
+        sh = this.small.height;
+      s.imageSmoothingQuality = "high";
+      if (CANVAS_FILTER) {
+        const r = (this.effect.blur * w) / 1280 / 4; // radius on the quarter-size copy
+        s.filter = `blur(${r}px)`;
+        s.drawImage(source, -r * 2, -r * 2, sw + r * 4, sh + r * 4); // drawn past the edges: no dark border
+        s.filter = "none";
+      } else s.drawImage(source, 0, 0, sw, sh);
       ctx.imageSmoothingQuality = "high";
       ctx.drawImage(this.small, 0, 0, w, h);
     } else ctx.drawImage(this.bg, 0, 0, w, h);

@@ -8,6 +8,9 @@ __pycache__/
 *.pyc
 .pytest_cache/
 
+# Camera recordings saved on disk (when S3 is off)
+backend/recordings/
+
 # Local databases (SQLite files and their -shm/-wal journals)
 *.db
 *.db-shm

@@ -268,3 +268,85 @@
   .gm-more { right: 8px; }
   .gm-captions p { font-size: 1rem; }
 }
+
+/* share the link (WhatsApp / email / share sheet) */
+.gm-share { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 10px; }
+.gm-share a { text-decoration: none; }
+.gm-panel .gm-share, .gm-ready-card .gm-share, .gm-dialog .gm-share { justify-content: flex-start; }
+/* "join directly" option */
+.gm-skip { display: flex; align-items: center; gap: 8px; max-width: 340px; color: var(--muted); font-size: .84rem; text-align: left; cursor: pointer; }
+.gm-skip input { width: 16px; height: 16px; flex: none; accent-color: var(--gm-blue); }
+.gm-settings .gm-skip { color: inherit; max-width: none; margin-top: 6px; }
+/* call timer and recording mark */
+.gm-timer { padding: 2px 8px; border-radius: 6px; background: #ffffff1a; font-variant-numeric: tabular-nums; font-size: .88rem; }
+.gm-rec { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; border: 0; cursor: pointer;
+  background: #ea4335; color: #fff; font-family: inherit; font-size: .78rem; font-weight: 700; letter-spacing: .06em; }
+.gm-rec i { width: 8px; height: 8px; border-radius: 50%; background: #fff; animation: gm-rec-blink 1.2s infinite; }
+@keyframes gm-rec-blink { 50% { opacity: .25; } }
+@media (prefers-reduced-motion: reduce) { .gm-rec i { animation: none; } }
+/* keyboard shortcuts list */
+.gm-keys { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: .85rem; }
+.gm-keys kbd { display: inline-block; min-width: 118px; padding: 2px 8px; border-radius: 5px; border: 1px solid #dadce0; background: #f1f3f4;
+  color: #202124; font: 600 .78rem ui-monospace, monospace; }
+
+/* ---- scheduling, "Your meetings" and attendance */
+.gm-form { display: grid; gap: 14px; margin-top: 14px; }
+.gm-form > label { display: grid; gap: 6px; font-size: .88rem; font-weight: 600; }
+.gm-form input:not([type="radio"]) { width: 100%; }
+.gm-form fieldset { border: 0; padding: 0; margin: 0; }
+.gm-form legend { font-size: .88rem; font-weight: 600; margin-bottom: 6px; }
+.gm-form .gm-radios label { color: var(--text); }
+.gm-form .gm-radios label:hover { background: color-mix(in srgb, var(--gm-blue) 6%, transparent); }
+.gm-form .gm-radios label.on { background: color-mix(in srgb, var(--gm-blue) 12%, transparent); }
+.gm-form .gm-radios small { color: var(--muted); }
+.gm-form-actions { display: flex; justify-content: flex-end; gap: 10px; }
+.gm-primary.small { height: 36px; padding: 0 16px; font-size: .88rem; }
+.gm-mine { max-width: 1100px; margin: 8px auto 40px; padding: 0 24px; }
+.gm-mine h2 { font-size: 1.05rem; font-weight: 600; margin: 22px 0 10px; }
+.gm-mine ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.gm-mrow { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 12px 14px;
+  border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.gm-mrow-icon { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; color: var(--gm-blue);
+  background: color-mix(in srgb, var(--gm-blue) 12%, transparent); }
+.gm-mrow-body { display: grid; gap: 2px; min-width: 0; }
+.gm-mrow-body b { display: flex; align-items: center; gap: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gm-mrow-body small { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gm-mrow-actions { display: flex; align-items: center; gap: 6px; }
+.gm-mrow-actions .gm-icon-btn.light { color: var(--muted); }
+.gm-mrow-extra { grid-column: 1 / -1; overflow-x: auto; }
+.gm-live { padding: 1px 8px; border-radius: 999px; background: #e6f4ea; color: #137333; font-size: .7rem; font-weight: 700; }
+.gm-attend { width: 100%; border-collapse: collapse; font-size: .86rem; }
+.gm-attend th { text-align: left; font-weight: 600; color: var(--muted); padding: 6px 8px; border-bottom: 1px solid var(--line); }
+.gm-attend td { padding: 8px; border-bottom: 1px solid var(--line); }
+@media (max-width: 700px) {
+  .gm-mrow { grid-template-columns: minmax(0, 1fr); }
+  .gm-mrow-icon { display: none; }
+  .gm-mrow-actions { flex-wrap: wrap; }
+}
+
+/* ---- lobby: title, asking to join */
+.gm-lobby-title { margin: 0; padding: 4px 12px; border-radius: 999px; background: color-mix(in srgb, var(--gm-blue) 12%, transparent);
+  color: var(--gm-blue); font-weight: 600; font-size: .88rem; }
+.gm-spinner { width: 36px; height: 36px; border-radius: 50%; border: 3px solid color-mix(in srgb, var(--gm-blue) 25%, transparent);
+  border-top-color: var(--gm-blue); animation: gm-spin .9s linear infinite; }
+@keyframes gm-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .gm-spinner { animation-duration: 3s; } }
+
+/* ---- host: someone is asking to join, people controls, host controls panel */
+.gm-knock { position: absolute; right: 16px; bottom: 92px; z-index: 7; width: min(380px, calc(100% - 32px)); display: flex; gap: 12px;
+  padding: 16px; border-radius: 12px; background: #fff; color: #202124; box-shadow: 0 4px 18px #0006; }
+.gm-knock b { font-weight: 500; }
+.gm-knock-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+.gm-section { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.gm-text-btn.small { padding: 4px 8px; font-size: .82rem; text-transform: none; letter-spacing: 0; }
+.gm-person { flex: 1; display: grid; min-width: 0; }
+.gm-person small { color: #5f6368; font-size: .74rem; }
+.gm-icon-btn.light.on { color: var(--gm-blue); }
+.gm-icon-btn.light.danger { color: #d93025; }
+.gm-host { display: grid; gap: 6px; overflow-y: auto; }
+.gm-host .gm-switch { padding: 8px 4px; }
+.gm-host-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.gm-danger { display: inline-flex; align-items: center; justify-content: center; gap: 8px; margin-top: 14px; height: 40px; border: 0;
+  border-radius: 999px; background: #d93025; color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+.gm-danger:hover { background: #b3261e; }
+.gm-round:disabled { opacity: .4; cursor: not-allowed; }

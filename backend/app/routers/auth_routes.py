@@ -9,7 +9,9 @@ from sqlalchemy.orm import Session
 from app.auth import create_access_token, get_current_user, hash_password, verify_password
 from app.config import settings
 from app.database import get_db
-from app.models import FocusSnapshot, Message, OtpCode, Room, RoutineCheck, RoutinePlan, SpeechSession, User
+from app.models import (FocusSnapshot, MeetingAttendance, MeetingRoom, Message, OtpCode, Recording, Room,
+                        RoutineCheck, RoutinePlan, SpeechSession, User)
+from app.routers.recording_routes import remove_files
 from app.schemas import (AccountDelete, GuestIn, OtpLoginIn, OtpRequestIn, OtpSentOut, PasswordResetIn, RegisterOut, ResendIn, Token,
                              PasswordChange, ProfileUpdate, UserCreate, UserLogin, UserOut, VerifyIn, VerifyOut,
                          password_problem)
@@ -210,7 +212,11 @@ def delete_me(data: AccountDelete, user: User = Depends(get_current_user), db: S
     own_rooms = select(Room.id).where(Room.created_by == user.id)
     db.execute(delete(Message).where((Message.user_id == user.id) | Message.room_id.in_(own_rooms)))
     db.execute(delete(Room).where(Room.created_by == user.id))
-    for model in (SpeechSession, FocusSnapshot, OtpCode, RoutinePlan, RoutineCheck):
+    hosted = select(MeetingRoom.id).where(MeetingRoom.host_id == user.id)
+    db.execute(delete(MeetingAttendance).where(MeetingAttendance.room_id.in_(hosted)))
+    db.execute(delete(MeetingRoom).where(MeetingRoom.host_id == user.id))
+    remove_files(list(db.scalars(select(Recording).where(Recording.user_id == user.id))))
+    for model in (SpeechSession, FocusSnapshot, OtpCode, RoutinePlan, RoutineCheck, MeetingAttendance, Recording):
         db.execute(delete(model).where(model.user_id == user.id))
     db.delete(user)  # focus sessions go with it (cascade)
     db.commit()
