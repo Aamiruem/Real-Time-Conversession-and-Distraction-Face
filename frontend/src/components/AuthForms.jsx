@@ -39,8 +39,29 @@ function RedirectIfSignedIn() {
   return null;
 }
 
+/** Opened a meeting link while signed out: join in one click as a guest (or sign in below). */
+function MeetingInvite() {
+  const next = useSearchParams().get("next") ?? "";
+  const code = next.startsWith("/app/meet") ? new URLSearchParams(next.split("?")[1] ?? "").get("code") : null;
+  if (!code) return null;
+  return (
+    <div className="invite">
+      <div className="invite-icon" aria-hidden="true">
+        📹
+      </div>
+      <div>
+        <b>You&apos;re invited to a meeting</b>
+        <p className="muted small">
+          Meeting <code>{code}</code> — join right away as a guest, no account needed. Or sign in below.
+        </p>
+        <GuestButton label="Join as guest" compact />
+      </div>
+    </div>
+  );
+}
+
 /** Try everything without an account (a fresh guest user; you can create a real account later). */
-export function GuestButton({ label = "👤 Continue as guest" }) {
+export function GuestButton({ label = "👤 Continue as guest", compact = false }) {
   const finish = useFinish();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -54,6 +75,16 @@ export function GuestButton({ label = "👤 Continue as guest" }) {
       setBusy(false);
     }
   };
+  if (compact) {
+    return (
+      <>
+        <button type="button" className="btn" onClick={go} disabled={busy}>
+          {busy ? "Joining…" : label}
+        </button>
+        {err && <div className="alert error">{err}</div>}
+      </>
+    );
+  }
   return (
     <div className="guest">
       <div className="or" aria-hidden="true">
@@ -229,6 +260,7 @@ export function LoginForm() {
   return (
     <div>
       <RedirectIfSignedIn />
+      <MeetingInvite />
       <div className="tabs" role="tablist">
         {[
           ["password", "🔐 Password"],

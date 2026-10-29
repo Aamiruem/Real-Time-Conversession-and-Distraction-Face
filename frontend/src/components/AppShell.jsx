@@ -33,6 +33,7 @@ const NAV = [
     "Insights",
     [
       ["/app/analytics", "📊", "Analytics", "#60a5fa", "History, trends and leaderboard"],
+      ["/app/vision", "👁️", "Vision Studio", "#14b8a6", "Every CV model live: objects by name, hands, pose"],
       ["/app/lab", "🧪", "AI Lab", "#c084fc", "Try each AI model on its own"],
     ],
   ],

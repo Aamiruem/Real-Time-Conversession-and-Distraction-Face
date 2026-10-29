@@ -654,3 +654,26 @@ video.hidden { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-
 .guest .or { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: .8rem; }
 .guest .or::before, .guest .or::after { content: ""; flex: 1; height: 1px; background: var(--line); }
 .guest p { margin: 0; text-align: center; }
+
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* meeting invite on the sign-in page */
+.invite { display: flex; gap: 14px; align-items: flex-start; padding: 16px; margin-bottom: 18px; border-radius: 14px;
+  background: color-mix(in srgb, #1a73e8 10%, var(--surface)); border: 1px solid color-mix(in srgb, #1a73e8 35%, var(--line)); }
+.invite-icon { font-size: 1.8rem; line-height: 1; }
+.invite p { margin: 4px 0 10px; }
+
+/* Vision Studio */
+.vs-models { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.vs-chip { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface2);
+  color: var(--muted); font: inherit; font-size: .86rem; font-weight: 600; cursor: pointer; }
+.vs-chip.on { color: var(--text); border-color: var(--c); background: color-mix(in srgb, var(--c) 14%, var(--surface2)); }
+.vs-chip small { color: var(--c); font-weight: 700; }
+.vs-panels { display: grid; gap: 12px; align-content: start; }
+.vs-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.vs-list li { display: flex; gap: 8px; align-items: center; }
+.vs-score { margin-left: auto; font-weight: 700; color: var(--accent); }
+.vs-bar { display: grid; grid-template-columns: minmax(0, 1fr) 90px 44px; gap: 8px; align-items: center; font-size: .88rem; margin-bottom: 6px; }
+.vs-bar span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vs-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.vs-line { margin: 4px 0; font-size: .9rem; }

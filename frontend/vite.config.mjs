@@ -24,7 +24,8 @@ export default defineConfig(({ command, mode, isSsrBuild }) => {
   };
   return {
     root: "src",
-    publicDir: "../public",
+    // the SSR build only feeds scripts/prerender.mjs: don't copy public/ (≈100 MB of AI models) into dist-ssr
+    publicDir: isSsrBuild ? false : "../public",
     envDir: "..",
     plugins: [react()],
     resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },

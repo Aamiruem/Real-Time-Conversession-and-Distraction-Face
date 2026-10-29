@@ -1,6 +1,7 @@
 // Video meetings over WebRTC. The backend only introduces people (/ws/meet/{code}); audio and video flow
 // directly between browsers, encrypted end to end by them (DTLS-SRTP). Everyone connects to everyone (mesh).
 import { getToken, wsBase } from "./api";
+import { applyEffect } from "./backgroundEffects";
 
 export const QUALITY = {
   hd: { label: "HD 720p", video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } }, bitrate: 1_800_000 },
@@ -48,7 +49,7 @@ export const inviteLink = (code) => `${window.location.origin}/app/meet?code=${c
 
 export class Meeting {
   /** @param {string} code  @param {{stream: MediaStream, quality: string, onChange: (s) => void}} opts */
-  constructor(code, { stream, quality = "hd", onChange }) {
+  constructor(code, { stream, quality = "hd", effect = { id: "none" }, onChange }) {
     this.code = code;
     this.stream = stream;
     this.quality = quality;
@@ -56,6 +57,8 @@ export class Meeting {
     this.pcs = new Map(); // peer id -> { pc, polite, makingOffer, ignoreOffer, stream, lastStats }
     this.iceServers = [{ urls: "stun:stun.l.google.com:19302" }];
     this.screen = null;
+    this.effect = effect; // { id, image }: background blur / replacement
+    this.fx = null; // { track, stop } while an effect runs
     this.retries = 0;
     this.state = { status: "connecting", you: null, peers: {}, chat: [], reactions: [], started: null };
   }
@@ -151,7 +154,26 @@ export class Meeting {
   localTrack(kind) {
     if (kind === "audio") return this.stream?.getAudioTracks()[0] ?? null;
     const cam = this.stream?.getVideoTracks()[0];
-    return this.screen ?? (cam?.readyState === "live" ? cam : null);
+    return this.screen ?? (cam?.readyState === "live" ? (this.fx?.track ?? cam) : null);
+  }
+
+  /** Your own preview: the camera with its effect (a stable object while nothing changes). */
+  get displayStream() {
+    if (this.screen) return this.screenStream;
+    const v = this.localTrack("video");
+    if (this._display?.getVideoTracks()[0] !== v) this._display = v ? new MediaStream([v]) : this.stream;
+    return this._display;
+  }
+
+  /** Background blur / replacement (see backgroundEffects.js); applies to the live camera and survives camera off/on. */
+  async setEffect(effect) {
+    this.effect = effect;
+    this.fx?.stop();
+    this.fx = null;
+    const cam = this.stream?.getVideoTracks()[0];
+    if (cam?.readyState === "live" && effect.id !== "none") this.fx = await applyEffect(cam, effect.id, effect.image);
+    if (!this.screen) await this.replace("video", this.localTrack("video"));
+    this.emit({});
   }
 
   /**
@@ -275,6 +297,8 @@ export class Meeting {
   async setCam(on, videoId) {
     const old = this.stream.getVideoTracks()[0];
     if (!on) {
+      this.fx?.stop();
+      this.fx = null;
       old?.stop();
       if (!this.screen) await this.replace("video", null);
     } else {
@@ -282,7 +306,8 @@ export class Meeting {
       if (old) this.stream.removeTrack(old);
       this.stream.addTrack(fresh);
       this.stream = new MediaStream(this.stream.getTracks()); // a new object, so previews pick up the new camera
-      if (!this.screen) await this.replace("video", fresh);
+      if (this.effect.id !== "none") this.fx = await applyEffect(fresh, this.effect.id, this.effect.image);
+      if (!this.screen) await this.replace("video", this.localTrack("video"));
     }
     this.send({ type: "state", cam: on });
   }
@@ -328,8 +353,7 @@ export class Meeting {
     this.screen.stop();
     this.screen = null;
     this.screenStream = null;
-    const cam = this.stream.getVideoTracks()[0];
-    await this.replace("video", cam?.readyState === "live" ? cam : null);
+    await this.replace("video", this.localTrack("video")); // back to the camera, with its background effect
     this.applyBitrates();
     this.send({ type: "state", screen: false });
   }
@@ -384,6 +408,7 @@ export class Meeting {
   }
 
   leave() {
+    this.fx?.stop();
     this.emit({ status: "left" });
     this.ws?.close();
     this.closeAll();
