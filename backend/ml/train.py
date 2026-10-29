@@ -96,16 +96,16 @@ def train(with_db: bool = False, quiet: bool = False) -> dict:
         "features": FEATURES,
         "labels": LABELS,
         "data": {"rows": len(df), "synthetic": int((df["source"] == "synthetic").sum()),
-                 "user_labelled": int((df["source"] == "user").sum())},
+            "user_labelled": int((df["source"] == "user").sum())},
         "limitations": "Bootstrapped on simulated sessions; predictions become personal only as users "
-                       "label real sessions. Not a medical assessment.",
+                    "label real sessions. Not a medical assessment.",
     }
     ARTIFACTS.mkdir(exist_ok=True)
     joblib.dump(model, MODEL_PATH)
     CARD_PATH.write_text(json.dumps(card, indent=2))
     if not quiet:
         print(f"best={best}  cv_f1={scores}  test_acc={card['test']['accuracy']}  "
-              f"test_f1={card['test']['f1_macro']}  rows={card['data']}")
+            f"test_f1={card['test']['f1_macro']}  rows={card['data']}")
     return card
 
 

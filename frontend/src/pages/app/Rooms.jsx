@@ -4,6 +4,8 @@ import { api, getToken, toDate, wsBase } from "@/lib/api";
 import { livePayload, STATE_COLORS, STATE_EMOJI } from "@/lib/attention";
 import { useAuth } from "@/lib/auth";
 import { useFaceTracker } from "@/lib/useFaceTracker";
+import { CameraPoster } from "@/components/CameraPoster";
+import { SECTIONS } from "@/lib/sections";
 
 const SENTIMENT = { positive: "😊", negative: "😟", neutral: "😐" };
 
@@ -168,7 +170,17 @@ export default function Rooms() {
           <div className="video-wrap">
             <video ref={cam.videoRef} playsInline muted />
             <canvas ref={cam.canvasRef} />
-            {cam.status !== "running" && <div className="placeholder small">Share your live focus with the room</div>}
+            {cam.status !== "running" && (
+              <CameraPoster
+                kind="rooms"
+                small
+                color={SECTIONS["/app/rooms"].color}
+                title="Focus Rooms"
+                hint="Share your live focus with the room"
+                loading={cam.status === "loading"}
+                onStart={cam.start}
+              />
+            )}
           </div>
           {cam.status === "running" ? (
             <>

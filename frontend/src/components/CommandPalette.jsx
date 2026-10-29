@@ -14,6 +14,7 @@ const COMMANDS = [
   ["💬", "Focus Rooms", "/app/rooms", "chat room messages"],
   ["📊", "Analytics", "/app/analytics", "history leaderboard progress"],
   ["🧪", "AI Lab", "/app/lab", "nlp ml model computer vision"],
+  ["🕒", "Daily routine", "/app/routine", "schedule day plan namaz prayer salah sleep gym yoga coding reading timetable"],
   ["⚙️", "Account settings", "/app/settings", "profile name password delete account"],
   ["🌐", "Website home", "/", "landing seo features"],
 ];

@@ -9,6 +9,8 @@ import { answerFeedback, framingCue, headCue, pictureCue, TiltBaseline, useVoice
 import { loadFaceLandmarker, useFaceTracker } from "@/lib/useFaceTracker";
 import { useVoiceCommands } from "@/lib/useVoiceCommands";
 import { levelPct, useVoiceRecorder } from "@/lib/useVoiceRecorder";
+import { CameraPoster } from "@/components/CameraPoster";
+import { SECTIONS } from "@/lib/sections";
 
 const TABS = [
   ["mock", "🎬 Mock interview"],
@@ -368,9 +370,14 @@ export default function InterviewPrep() {
                     </div>
                   )}
                   {!camOn && (
-                    <div className="placeholder">
-                      {cam.status === "loading" ? "Starting camera…" : "Start the camera check, then record your answer"}
-                    </div>
+                    <CameraPoster
+                      kind="interview"
+                      color={SECTIONS["/app/interview"].color}
+                      title="Interview Prep"
+                      hint="Press play for the camera check, then record your answer"
+                      loading={cam.status === "loading"}
+                      onStart={busy ? undefined : () => cam.start()}
+                    />
                   )}
                 </div>
               </div>

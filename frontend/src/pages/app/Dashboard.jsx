@@ -29,7 +29,7 @@ import { useAuth } from "@/lib/auth";
 import { SECTIONS } from "@/lib/sections";
 import { Icon } from "@/components/Icons";
 
-const FEATURES = ["/app/focus", "/app/speech", "/app/conversation", "/app/interview", "/app/meet", "/app/rooms", "/app/vision", "/app/lab"];
+const FEATURES = ["/app/routine", "/app/focus", "/app/speech", "/app/conversation", "/app/interview", "/app/meet", "/app/rooms", "/app/vision", "/app/lab"];
 
 // time-of-day advice ("you focus best in the evening") uses the viewer's own clock
 const TZ = -new Date().getTimezoneOffset();
@@ -130,6 +130,9 @@ export default function Dashboard() {
           <div className="row" style={{ marginTop: 16, flexWrap: "wrap", flex: "none" }}>
             <Link href="/app/focus" className="btn" style={{ flex: "none" }}>
               <Icon name="play" size={16} /> Start focus session
+            </Link>
+            <Link href="/app/routine" className="btn ghost" style={{ flex: "none" }}>
+              <Icon name="clock" size={16} /> Daily routine
             </Link>
             <Link href="/app/interview" className="btn ghost" style={{ flex: "none" }}>
               <Icon name="briefcase" size={16} /> Mock interview

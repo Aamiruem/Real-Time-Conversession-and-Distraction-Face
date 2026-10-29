@@ -2,6 +2,7 @@
 // section looks the same everywhere. Colours are the 600 steps: white icons on them stay readable in both themes.
 export const SECTIONS = {
   "/app": { icon: "dashboard", label: "Dashboard", color: "#2563eb", desc: "Your progress at a glance" },
+  "/app/routine": { icon: "clock", label: "Daily Routine", color: "#0f766e", desc: "Your day: deep work, speaking, exercise, fun, sleep and namaz" },
   "/app/focus": { icon: "focus", label: "Focus Monitor", color: "#16a34a", desc: "Live focus, distraction and drowsiness" },
   "/app/speech": { icon: "mic", label: "Speech Coach", color: "#7c3aed", desc: "Confidence, pace and pronunciation" },
   "/app/conversation": { icon: "chat", label: "Conversation Coach", color: "#db2777", desc: "Fluency, tone and interaction" },
@@ -15,7 +16,7 @@ export const SECTIONS = {
 };
 
 export const NAV_GROUPS = [
-  ["Home", ["/app"]],
+  ["Home", ["/app", "/app/routine"]],
   ["Practice", ["/app/focus", "/app/speech", "/app/conversation", "/app/interview"]],
   ["Community", ["/app/meet", "/app/rooms"]],
   ["Insights", ["/app/analytics", "/app/vision", "/app/lab"]],

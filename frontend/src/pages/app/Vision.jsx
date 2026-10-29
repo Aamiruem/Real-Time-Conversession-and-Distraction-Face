@@ -1,11 +1,28 @@
 // Vision Studio: every computer-vision model live on your camera — objects by name, fine names, scene, hands +
-// gestures, body pose, face mesh + expressions, person segmentation. Runs entirely in the browser.
+// gestures, body pose, face mesh + expressions, person segmentation — plus a skin check. Runs entirely in the browser.
 import { useCallback, useEffect, useRef, useState } from "react";
+import { SkinCheck } from "@/components/SkinCheck";
 import { PageHead } from "@/components/ui";
+import { skinZones } from "@/lib/skin";
 import { describe, loadVisionModels, MODELS, VisionEngine } from "@/lib/vision";
 import { voiceCoach } from "@/lib/voiceCoach";
+import { CameraPoster } from "@/components/CameraPoster";
+import { SECTIONS } from "@/lib/sections";
 
 const pct = (x) => `${Math.round(x * 100)}%`;
+
+/** During a skin scan: outline the zones being measured on the live overlay. */
+function drawSkinZones(canvas, video, landmarks) {
+  if (!landmarks || !canvas) return;
+  const { zones } = skinZones(landmarks, video.videoWidth, video.videoHeight);
+  const ctx = canvas.getContext("2d");
+  ctx.save();
+  ctx.strokeStyle = "#f472b6";
+  ctx.lineWidth = Math.max(2, video.videoWidth / 400);
+  ctx.setLineDash([6, 4]);
+  for (const z of Object.values(zones)) ctx.strokeRect(z.x, z.y, z.w, z.h);
+  ctx.restore();
+}
 
 export default function Vision() {
   const videoRef = useRef(null);
@@ -21,6 +38,8 @@ export default function Vision() {
   const [s, setS] = useState(null);
   const [fps, setFps] = useState(0);
   const [said, setSaid] = useState("");
+  const showZones = useRef(false);
+  const faceLandmarks = () => engine.current?.results.face?.faceLandmarks?.[0];
 
   const stop = useCallback(() => {
     cancelAnimationFrame(raf.current);
@@ -54,6 +73,7 @@ export default function Vision() {
           lastTime = video.currentTime;
           engine.current.step(video, enabledRef.current);
           engine.current.draw(canvasRef.current, video, enabledRef.current);
+          if (showZones.current) drawSkinZones(canvasRef.current, video, engine.current.results.face?.faceLandmarks?.[0]);
           frames += 1;
           const now = performance.now();
           if (now - lastUi > 300) {
@@ -135,15 +155,14 @@ export default function Vision() {
               <video ref={videoRef} playsInline muted />
               <canvas ref={canvasRef} />
               {!running && (
-                <div className="placeholder">
-                  {status === "loading" ? (
-                    <span>
-                      <span className="spinner" style={{ display: "inline-block" }} /> Loading 7 vision models (first time ~60 MB, then cached)…
-                    </span>
-                  ) : (
-                    "Press Start and allow camera access"
-                  )}
-                </div>
+                <CameraPoster
+                  kind="vision"
+                  color={SECTIONS["/app/vision"].color}
+                  title="Vision Studio"
+                  hint={status === "loading" ? "Loading 7 vision models (first time ~60 MB, then cached)…" : "Press play — objects, hands, pose, face and skin, live"}
+                  loading={status === "loading"}
+                  onStart={start}
+                />
               )}
             </div>
           </div>
@@ -238,6 +257,12 @@ export default function Vision() {
           </div>
         </div>
       </div>
+      <SkinCheck
+        running={running}
+        faceOn={enabled.face}
+        getFrame={() => ({ video: videoRef.current, landmarks: faceLandmarks() })}
+        onZones={(on) => (showZones.current = on)}
+      />
     </>
   );
 }

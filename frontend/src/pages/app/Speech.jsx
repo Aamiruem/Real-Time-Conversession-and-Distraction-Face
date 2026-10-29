@@ -3,6 +3,8 @@ import { PageHead, SpeechResult, StateBadge } from "@/components/ui";
 import { api, toDate } from "@/lib/api";
 import { useFaceTracker } from "@/lib/useFaceTracker";
 import { levelPct, useVoiceRecorder } from "@/lib/useVoiceRecorder";
+import { CameraPoster } from "@/components/CameraPoster";
+import { SECTIONS } from "@/lib/sections";
 
 const TOPICS = [
   "Introduce yourself as if you were starting a job interview.",
@@ -86,9 +88,14 @@ export default function SpeechCoach() {
             <video ref={videoRef} playsInline muted />
             <canvas ref={canvasRef} />
             {!running && (
-              <div className="placeholder">
-                {status === "loading" ? "Loading…" : "Press Record and allow camera + microphone"}
-              </div>
+              <CameraPoster
+                kind="speech"
+                color={SECTIONS["/app/speech"].color}
+                title="Speech Coach"
+                hint="Press play to record — allow camera + microphone"
+                loading={status === "loading"}
+                onStart={busy ? undefined : onStart}
+              />
             )}
           </div>
           <div className="row" style={{ marginTop: 12 }}>

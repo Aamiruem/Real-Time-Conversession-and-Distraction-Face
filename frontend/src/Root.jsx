@@ -25,6 +25,7 @@ const PAGES = {
   Analytics: () => import("./pages/app/Analytics"),
   Lab: () => import("./pages/app/Lab"),
   Settings: () => import("./pages/app/Settings"),
+  Routine: () => import("./pages/app/Routine"),
   MeetLink: () => import("./pages/app/MeetLink"),
 };
 const Dashboard = lazy(PAGES.Dashboard);
@@ -38,6 +39,7 @@ const Vision = lazy(PAGES.Vision);
 const Analytics = lazy(PAGES.Analytics);
 const Lab = lazy(PAGES.Lab);
 const Settings = lazy(PAGES.Settings);
+const Routine = lazy(PAGES.Routine);
 const MeetLink = lazy(PAGES.MeetLink);
 
 function usePrefetchPages() {
@@ -92,6 +94,7 @@ export default function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/app" element={<AppLayout />}>
           <Route index element={<Dashboard />} />
+          <Route path="routine" element={<Routine />} />
           <Route path="focus" element={<Focus />} />
           <Route path="speech" element={<Speech />} />
           <Route path="conversation" element={<Conversation />} />

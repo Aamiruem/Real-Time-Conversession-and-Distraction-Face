@@ -25,7 +25,7 @@ from app.database import describe, engine, init_db, ping
 from app.mcp_server import http_app as mcp_http_app
 from app.mcp_server import mcp
 from app.routers import (ai_routes, analytics_routes, attention_routes, auth_routes, chat_routes, coach_routes,
-                    interview_routes, meet_routes, speech_routes)
+                    interview_routes, meet_routes, routine_routes, speech_routes)
 
 
 mcp_app = mcp_http_app()  # None unless MCP_API_KEY is set
@@ -57,6 +57,7 @@ app.include_router(ai_routes.router)
 app.include_router(interview_routes.router)
 app.include_router(coach_routes.router)
 app.include_router(meet_routes.router)
+app.include_router(routine_routes.router)
 
 
 @app.get("/", include_in_schema=False)
@@ -66,9 +67,9 @@ def root():
 
 # Bump when the frontend starts relying on new endpoints; the React app compares it with what it needs and shows
 # "backend out of date — restart it" instead of failing with 404s.
-API_VERSION = 5
+API_VERSION = 6
 FEATURES = ["dashboard", "conversation", "interview", "body-language", "crud", "recommendations", "ai-coach",
-            "meet", "guest"]
+            "meet", "guest", "routine"]
 
 
 @app.get("/health")

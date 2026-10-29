@@ -5,6 +5,8 @@ import { api, toDate } from "@/lib/api";
 import { STATE_COLORS } from "@/lib/attention";
 import { useFaceTracker } from "@/lib/useFaceTracker";
 import { levelPct, useVoiceRecorder } from "@/lib/useVoiceRecorder";
+import { CameraPoster } from "@/components/CameraPoster";
+import { SECTIONS } from "@/lib/sections";
 
 const fmt = (s) => new Date(s * 1000).toISOString().slice(14, 19);
 
@@ -139,9 +141,14 @@ export default function ConversationCoach() {
                 <video ref={cam.videoRef} playsInline muted />
                 <canvas ref={cam.canvasRef} />
                 {cam.status !== "running" && (
-                  <div className="placeholder">
-                    {cam.status === "loading" ? "Starting camera…" : "Press Record and allow camera + microphone"}
-                  </div>
+                  <CameraPoster
+                    kind="conversation"
+                    color={SECTIONS["/app/conversation"].color}
+                    title="Conversation Coach"
+                    hint="Press play to record — allow camera + microphone"
+                    loading={cam.status === "loading"}
+                    onStart={busy || !current ? undefined : onStart}
+                  />
                 )}
               </div>
             ) : (

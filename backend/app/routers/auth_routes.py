@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from app.auth import create_access_token, get_current_user, hash_password, verify_password
 from app.config import settings
 from app.database import get_db
-from app.models import FocusSnapshot, Message, OtpCode, Room, SpeechSession, User
+from app.models import FocusSnapshot, Message, OtpCode, Room, RoutineCheck, RoutinePlan, SpeechSession, User
 from app.schemas import (AccountDelete, GuestIn, OtpLoginIn, OtpRequestIn, OtpSentOut, PasswordResetIn, RegisterOut, ResendIn, Token,
                              PasswordChange, ProfileUpdate, UserCreate, UserLogin, UserOut, VerifyIn, VerifyOut,
                          password_problem)
@@ -204,13 +204,13 @@ def change_password(data: PasswordChange, user: User = Depends(get_current_user)
 
 @router.delete("/me")
 def delete_me(data: AccountDelete, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Delete your account and everything stored about you (sessions, recordings' results, messages, rooms)."""
+    """Delete your account and everything stored about you (sessions, recordings' results, messages, rooms, routine)."""
     if not verify_password(data.password, user.password_hash):
         raise HTTPException(400, "Password is incorrect")
     own_rooms = select(Room.id).where(Room.created_by == user.id)
     db.execute(delete(Message).where((Message.user_id == user.id) | Message.room_id.in_(own_rooms)))
     db.execute(delete(Room).where(Room.created_by == user.id))
-    for model in (SpeechSession, FocusSnapshot, OtpCode):
+    for model in (SpeechSession, FocusSnapshot, OtpCode, RoutinePlan, RoutineCheck):
         db.execute(delete(model).where(model.user_id == user.id))
     db.delete(user)  # focus sessions go with it (cascade)
     db.commit()

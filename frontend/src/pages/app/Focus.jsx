@@ -5,6 +5,8 @@ import { api, toDate } from "@/lib/api";
 import { livePayload, sessionPayload, STATE_COLORS, STATE_EMOJI, THRESHOLDS } from "@/lib/attention";
 import { useFaceTracker } from "@/lib/useFaceTracker";
 import { focusCue, TiltBaseline, useVoiceCoachLifecycle } from "@/lib/voiceCoach";
+import { CameraPoster } from "@/components/CameraPoster";
+import { SECTIONS } from "@/lib/sections";
 
 // how long before the same spoken reminder may repeat (others: 15 s)
 const COOLDOWN = { drowsy: 20_000, yawn: 60_000, noface: 20_000 };
@@ -148,15 +150,14 @@ export default function FocusMonitor() {
                 </div>
               )}
               {!running && (
-                <div className="placeholder">
-                  {status === "loading" ? (
-                    <span>
-                      <span className="spinner" style={{ display: "inline-block" }} /> Loading face model…
-                    </span>
-                  ) : (
-                    "Press Start and allow camera access"
-                  )}
-                </div>
+                <CameraPoster
+                  kind="focus"
+                  color={SECTIONS["/app/focus"].color}
+                  title="Focus Monitor"
+                  hint={status === "loading" ? "Loading the face model…" : "Press play and allow camera access — focus, distraction and drowsiness, live"}
+                  loading={status === "loading"}
+                  onStart={onStart}
+                />
               )}
             </div>
           </div>

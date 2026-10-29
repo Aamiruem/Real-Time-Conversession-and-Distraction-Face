@@ -11,7 +11,7 @@ if __name__ == "__main__":  # started as a script: hand over to the real `app.mo
     print("Tables ready: " + ", ".join(sorted(Base.metadata.tables)))
     sys.exit()
 
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -149,3 +149,27 @@ class Message(Base):
 
     room = relationship("Room", back_populates="messages")
     user = relationship("User")
+
+
+class RoutinePlan(Base):
+    """Your daily routine (blocks, prayer settings) as JSON — one per user."""
+
+    __tablename__ = "routine_plans"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), unique=True, index=True)
+    data: Mapped[str] = mapped_column(Text, default="{}")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+
+class RoutineCheck(Base):
+    """One routine block ticked off on one day (the user's local date, YYYY-MM-DD)."""
+
+    __tablename__ = "routine_checks"
+    __table_args__ = (UniqueConstraint("user_id", "day", "block_id"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    day: Mapped[str] = mapped_column(String(10), index=True)
+    block_id: Mapped[str] = mapped_column(String(40))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
