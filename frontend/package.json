@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --mode lan",
+    "dev:lan": "vite --mode lan",
+    "dev:http": "vite",
     "build": "vite build && vite build --ssr && node scripts/prerender.mjs",
     "preview": "vite preview",
     "start": "vite preview",
@@ -18,6 +20,7 @@
   },
   "type": "module",
   "devDependencies": {
+    "@vitejs/plugin-basic-ssl": "^1.2.0",
     "@vitejs/plugin-react": "4.7.0",
     "vite": "6.4.4"
   }

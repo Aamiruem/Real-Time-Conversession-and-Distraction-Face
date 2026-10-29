@@ -25,16 +25,10 @@ import { useBackendStatus } from "@/lib/backend";
 import { buildDashboardFallback } from "@/lib/dashboardFallback";
 import { STATE_COLORS } from "@/lib/attention";
 import { useAuth } from "@/lib/auth";
+import { SECTIONS } from "@/lib/sections";
+import { Icon } from "@/components/Icons";
 
-const FEATURES = [
-  ["/app/focus", "🎥", "Focus Monitor", "Live focus & drowsiness"],
-  ["/app/speech", "🗣️", "Speech Coach", "Confidence & pronunciation"],
-  ["/app/conversation", "🗨️", "Conversation Coach", "Fluency, tone, interaction"],
-  ["/app/interview", "💼", "Interview Prep", "Mock interviews, any field"],
-  ["/app/rooms", "💬", "Focus Rooms", "Chat with live focus"],
-  ["/app/analytics", "📊", "Analytics", "History & leaderboard"],
-  ["/app/lab", "🧪", "AI Lab", "Try each AI model"],
-];
+const FEATURES = ["/app/focus", "/app/speech", "/app/conversation", "/app/interview", "/app/meet", "/app/rooms", "/app/vision", "/app/lab"];
 
 const greeting = () => {
   const h = new Date().getHours();
@@ -129,15 +123,17 @@ export default function Dashboard() {
           </p>
           <div className="row" style={{ marginTop: 16, flexWrap: "wrap", flex: "none" }}>
             <Link href="/app/focus" className="btn" style={{ flex: "none" }}>
-              ▶ Start focus session
+              <Icon name="play" size={16} /> Start focus session
             </Link>
             <Link href="/app/interview" className="btn ghost" style={{ flex: "none" }}>
-              💼 Mock interview
+              <Icon name="briefcase" size={16} /> Mock interview
             </Link>
           </div>
         </div>
         <div className="goals">
-          <div className="card-title">Today's goals</div>
+          <div className="card-title goals-title">
+            <Icon name="goal" size={15} /> Today's goals
+          </div>
           <div style={{ display: "flex", gap: 18, flexWrap: "wrap" }}>
             <GoalRing value={Math.round(d.today.focus_minutes)} goal={d.today.goal_focus_minutes} unit="min" label="Focus time" />
             <GoalRing value={d.today.practice} goal={d.today.goal_practice} unit="" label="Speaking practice" color={SERIES[2]} />
@@ -148,8 +144,8 @@ export default function Dashboard() {
       {/* ---------------------------------------------------------------- AI coach insight */}
       {insight && (
         <section className="card insight">
-          <span className="nav-ico" style={{ "--c": "#a78bfa" }}>
-            ✨
+          <span className="nav-ico lg">
+            <Icon name="sparkles" size={21} />
           </span>
           <div>
             <div className="card-title" style={{ marginBottom: 4 }}>
@@ -172,24 +168,27 @@ export default function Dashboard() {
 
       {/* ---------------------------------------------------------------- KPIs */}
       <div className="kpi-grid">
-        <Kpi icon="🎯" value={`${k.avg_focus_pct}%`} label="Average focus" sub={`${k.focus_sessions} sessions`} />
+        <Kpi icon="target" color="#16a34a" value={`${k.avg_focus_pct}%`} label="Average focus" sub={`${k.focus_sessions} sessions`} />
         <Kpi
-          icon="⏱️"
+          icon="timer"
+          color="#0284c7"
           value={`${Math.round(k.week_minutes)} min`}
           label="Focus this week"
           sub={`${weekDelta >= 0 ? "↑" : "↓"} ${Math.abs(Math.round(weekDelta))} min vs last week`}
           trend={weekDelta >= 0 ? "up" : "down"}
         />
-        <Kpi icon="🗣️" value={`${k.avg_confidence}%`} label="Speaking confidence" sub={`${k.practice_sessions} practices`} />
+        <Kpi icon="mic" color="#7c3aed" value={`${k.avg_confidence}%`} label="Speaking confidence" sub={`${k.practice_sessions} practices`} />
         <Kpi
-          icon="💼"
+          icon="briefcase"
+          color="#d97706"
           value={k.latest_readiness == null ? "—" : `${Math.round(k.latest_readiness)}%`}
           label="Interview readiness"
           sub={k.best_readiness == null ? "no mock interview yet" : `best ${Math.round(k.best_readiness)}% · ${k.interview_answers} answer${k.interview_answers === 1 ? "" : "s"}`}
         />
-        <Kpi icon="🔥" value={k.streak_days} label="Day streak" sub={`${k.messages_sent} room messages`} />
+        <Kpi icon="flame" color="#ea580c" value={k.streak_days} label="Day streak" sub={`${k.messages_sent} room messages`} />
         <Kpi
-          icon="🏆"
+          icon="trophy"
+          color="#ca8a04"
           value={k.rank ? `#${k.rank}` : "—"}
           label="Focus leaderboard"
           sub={k.rank ? `of ${k.ranked_users} people` : "do a focus session to rank"}
@@ -198,7 +197,8 @@ export default function Dashboard() {
 
       {/* ---------------------------------------------------------------- activity + next steps */}
       <div className="grid split-2-1 dash-top">
-        <ChartCard title="Focus minutes per day" sub="Last 14 days · hover a bar for practice and messages">
+        <div className="dash-col">
+        <ChartCard icon="chart" color="#2563eb" title="Focus minutes per day" sub="Last 14 days · hover a bar for practice and messages">
           <div className="chart-box" style={{ height: 240 }}>
             <ResponsiveContainer>
               <BarChart data={d.activity} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
@@ -216,9 +216,17 @@ export default function Dashboard() {
             </ResponsiveContainer>
           </div>
         </ChartCard>
-        <div style={{ display: "grid", gap: 16, alignContent: "start" }}>
+        {d.fatigue ? (
+          <RiskCard f={d.fatigue} />
+        ) : (
+          <ChartCard icon="pulse" color="#e11d48" title="Fatigue risk">
+            <p className="small">Finish a focus session to get your machine-learning fatigue prediction.</p>
+          </ChartCard>
+        )}
+        </div>
+        <div className="dash-col">
           {recs?.length ? (
-            <ChartCard title="🎯 Recommended for you" sub="Ranked by how much each should help — from your own data">
+            <ChartCard icon="bulb" color="#7c3aed" title="Recommended for you" sub="Ranked by how much each should help — from your own data">
               <ul className="recs">
                 {recs.map((r) => (
                   <li key={r.id}>
@@ -234,8 +242,9 @@ export default function Dashboard() {
                 ))}
               </ul>
             </ChartCard>
-          ) : (
-          <ChartCard title="✨ Next steps" sub="Picked from your own data">
+          ) : null}
+          {d.next_steps?.length > 0 && (
+          <ChartCard icon="zap" color="#d97706" title={recs?.length ? "Quick actions" : "Next steps"} sub="Picked from your own data">
             <div className="next-steps">
               {d.next_steps.map((s) => (
                 <Link key={s.text} href={s.href}>
@@ -247,19 +256,12 @@ export default function Dashboard() {
             </div>
           </ChartCard>
           )}
-          {d.fatigue ? (
-            <RiskCard f={d.fatigue} />
-          ) : (
-            <ChartCard title="🧠 Fatigue risk">
-              <p className="small">Finish a focus session to get your machine-learning fatigue prediction.</p>
-            </ChartCard>
-          )}
         </div>
       </div>
 
       {/* ---------------------------------------------------------------- focus */}
       <div className="grid g3 dash-row">
-        <ChartCard title="Focus by session" sub="Focus % in your last sessions">
+        <ChartCard icon="focus" color="#16a34a" title="Focus by session" sub="Focus % in your last sessions">
           {d.focus_trend.length ? (
             <div className="chart-box" style={{ height: 220 }}>
               <ResponsiveContainer>
@@ -276,7 +278,7 @@ export default function Dashboard() {
             <EmptyChart icon="🎥" text="No focus sessions yet." href="/app/focus" cta="Start one" />
           )}
         </ChartCard>
-        <ChartCard title="Where your time goes" sub="Average across all focus sessions">
+        <ChartCard icon="pie" color="#0d9488" title="Where your time goes" sub="Average across all focus sessions">
           {k.focus_sessions ? (
             <div className="split-donut">
               <Donut segments={split} size={150} label={`Focused ${k.avg_focus_pct}%`} />
@@ -294,7 +296,7 @@ export default function Dashboard() {
             <EmptyChart icon="🍩" text="Your focus / distracted / drowsy split appears here." />
           )}
         </ChartCard>
-        <ChartCard title="Speaking skills" sub="Average across your recordings">
+        <ChartCard icon="award" color="#7c3aed" title="Speaking skills" sub="Average across your recordings">
           {d.skills.length ? (
             <div className="chart-box" style={{ height: 220 }}>
               <ResponsiveContainer>
@@ -315,7 +317,7 @@ export default function Dashboard() {
 
       {/* ---------------------------------------------------------------- speaking + interview */}
       <div className="grid g2 dash-row">
-        <ChartCard title="Speaking confidence" sub="Each Speech, Conversation or Interview recording">
+        <ChartCard icon="trend" color="#db2777" title="Speaking confidence" sub="Each Speech, Conversation or Interview recording">
           {d.speech_trend.length ? (
             <div className="chart-box" style={{ height: 220 }}>
               <ResponsiveContainer>
@@ -334,6 +336,8 @@ export default function Dashboard() {
           )}
         </ChartCard>
         <ChartCard
+          icon="briefcase"
+          color="#d97706"
           title="Interview readiness"
           sub="Each mock-interview answer · hover for content, delivery and presence"
           action={
@@ -369,7 +373,7 @@ export default function Dashboard() {
 
       {/* ---------------------------------------------------------------- recent + explore */}
       <div className="grid split-2-1 dash-row">
-        <ChartCard title="Recent activity">
+        <ChartCard icon="clock" color="#0284c7" title="Recent activity">
           {d.recent.length ? (
             <ul className="feed">
               {d.recent.map((r) => (
@@ -394,15 +398,20 @@ export default function Dashboard() {
             <EmptyChart icon="📭" text="Nothing yet — your sessions and practice show up here." />
           )}
         </ChartCard>
-        <ChartCard title="Explore">
+        <ChartCard icon="compass" color="#4f46e5" title="Explore">
           <div className="explore">
-            {FEATURES.map(([href, icon, title, text]) => (
-              <Link key={href} href={href}>
-                <span>{icon}</span>
-                <b>{title}</b>
-                <small>{text}</small>
-              </Link>
-            ))}
+            {FEATURES.map((href) => {
+              const f = SECTIONS[href];
+              return (
+                <Link key={href} href={href} style={{ "--c": f.color }}>
+                  <span className="nav-ico">
+                    <Icon name={f.icon} size={17} />
+                  </span>
+                  <b>{f.label}</b>
+                  <small>{f.desc}</small>
+                </Link>
+              );
+            })}
           </div>
         </ChartCard>
       </div>

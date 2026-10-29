@@ -3,13 +3,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@/components/MeetIcons";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { applyEffect, EFFECTS } from "@/lib/backgroundEffects";
-import { inviteLink, LevelMeter, listDevices, Meeting, openMedia, QUALITY } from "@/lib/meet";
+import { applyEffect, EFFECTS, effectActive, FILTERS, sceneSwatch } from "@/lib/backgroundEffects";
+import { invite, inviteLink, LevelMeter, listDevices, MEET_CODE as CODE_RE, Meeting, openMedia, QUALITY } from "@/lib/meet";
 import { useRouter, useSearchParams } from "@/lib/navigation";
 import "@/styles/meet.css";
 
 const REACTIONS = ["💖", "👍", "🎉", "👏", "😂", "😮", "🙌", "🤔"];
-const CODE_RE = /^[a-z]{3}-[a-z]{4}-[a-z]{3}$/;
 const AVATAR_COLORS = ["#1a73e8", "#e8710a", "#188038", "#d93025", "#9334e6", "#e52592", "#12b5cb", "#f29900"];
 const colorFor = (name = "") => AVATAR_COLORS[[...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % AVATAR_COLORS.length];
 const initials = (name = "?") =>
@@ -20,7 +19,8 @@ const initials = (name = "?") =>
     .slice(0, 2)
     .toUpperCase();
 const timeNow = () => new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-const parseCode = (text) => text.trim().toLowerCase().split("code=").pop().split(/[&#\s]/)[0];
+// a code, or any link with one in it (…/abc-defg-hij, or an old …/app/meet?code=abc-defg-hij)
+const parseCode = (text) => text.toLowerCase().match(/[a-z]{3}-[a-z]{4}-[a-z]{3}/)?.[0] ?? text.trim();
 
 /** A <video> bound to a MediaStream (and to the chosen speaker, where the browser allows it). */
 function StreamVideo({ stream, muted, mirror, speakerId, className }) {
@@ -60,12 +60,32 @@ function CopyLink({ code, label = "Copy joining info", className = "gm-text-btn"
   );
 }
 
+/** Who can open this link, and what to do when it's not everyone. */
+function LinkReach({ code }) {
+  const { scope, https } = invite(code);
+  const text = {
+    public: "Anyone with this link can join from any browser — no account needed.",
+    lan: https
+      ? "Works for people on the same Wi-Fi. The first time, their browser warns about the certificate — they choose Advanced → Continue."
+      : "Works for people on the same Wi-Fi, but their camera and mic stay off over http. Start the app with npm run dev:lan (HTTPS), or deploy it to share with anyone.",
+    local: "This link only works on this computer. To invite others, start the app with npm run dev:lan (same Wi-Fi) or deploy it (anyone, anywhere).",
+  }[scope];
+  return (
+    <p className={`gm-note ${scope === "public" || (scope === "lan" && https) ? "" : "warn"}`}>
+      <Icon name="info" size={16} /> {text}
+    </p>
+  );
+}
+
 function LinkBox({ code }) {
   return (
-    <div className="gm-linkbox">
-      <span>{inviteLink(code).replace(/^https?:\/\//, "")}</span>
-      <CopyLink code={code} label="" className="gm-icon-btn light" />
-    </div>
+    <>
+      <div className="gm-linkbox">
+        <span>{inviteLink(code).replace(/^https?:\/\//, "")}</span>
+        <CopyLink code={code} label="" className="gm-icon-btn light" />
+      </div>
+      <LinkReach code={code} />
+    </>
   );
 }
 
@@ -80,7 +100,7 @@ function Home() {
     setMenu(false);
     try {
       const m = await api("/meet", { method: "POST" });
-      if (start) router.push(`/app/meet?code=${m.code}`);
+      if (start) router.push(`/${m.code}`);
       else setLater(m.code);
     } catch (e) {
       setErr(e.message);
@@ -90,7 +110,7 @@ function Home() {
     e.preventDefault();
     const c = parseCode(code);
     if (!CODE_RE.test(c)) return setErr("Check the code — it looks like abc-defg-hij (or paste the whole link).");
-    router.push(`/app/meet?code=${c}`);
+    router.push(`/${c}`);
   };
   return (
     <div className="gm-home">
@@ -143,7 +163,7 @@ function Home() {
             </div>
             <p>Send this to people that you want to meet with. Be sure to save it so that you can use it later, too.</p>
             <LinkBox code={later} />
-            <button className="gm-primary" style={{ marginTop: 16 }} onClick={() => router.push(`/app/meet?code=${later}`)}>
+            <button className="gm-primary" style={{ marginTop: 16 }} onClick={() => router.push(`/${later}`)}>
               Join now
             </button>
           </div>
@@ -153,17 +173,27 @@ function Home() {
   );
 }
 
-export default function Meet() {
-  const code = useSearchParams().get("code") ?? "";
-  return CODE_RE.test(code) ? <Room key={code} code={code} /> : <Home />;
+/** /app/meet is the home screen; each meeting lives at its own link, /<code> (pages/MeetLink.jsx renders it). */
+export default function Meet({ code }) {
+  const router = useRouter();
+  const old = useSearchParams().get("code") ?? "";
+  useEffect(() => {
+    if (!code && CODE_RE.test(old)) router.replace(`/${old}`); // an old /app/meet?code=… link
+  }, [code, old, router]);
+  if (code) return <Room key={code} code={code} />;
+  return CODE_RE.test(old) ? null : <Home />;
 }
 
 // ------------------------------------------------------------------ effects picker (lobby + call)
+/** Backgrounds · Filters · Appearance (like Meet). `value` = { id, image, filter, lowLight }. */
 function EffectsPanel({ value, onChange, onClose }) {
   const file = useRef(null);
+  const [tab, setTab] = useState("backgrounds");
+  const swatches = useMemo(() => Object.fromEntries(EFFECTS.filter((e) => e.scene).map((e) => [e.id, sceneSwatch(e)])), []);
+  const set = (patch) => onChange({ ...value, ...patch });
   const upload = async (e) => {
     const f = e.target.files?.[0];
-    if (f) onChange({ id: "image", image: await createImageBitmap(f), label: f.name });
+    if (f) set({ id: "image", image: await createImageBitmap(f) });
   };
   return (
     <div className="gm-effects">
@@ -173,26 +203,65 @@ function EffectsPanel({ value, onChange, onClose }) {
           <Icon name="close" />
         </button>
       </div>
-      <div className="gm-effect-grid">
-        {EFFECTS.map((e) => (
-          <button
-            key={e.id}
-            className={`gm-effect ${value.id === e.id ? "on" : ""}`}
-            style={{ background: e.swatch }}
-            onClick={() => onChange({ id: e.id })}
-            title={e.label}
-            aria-pressed={value.id === e.id}
-          >
-            {e.id === "none" ? "⊘" : e.id.startsWith("blur") ? <span className={e.id}>👤</span> : ""}
-            <small>{e.label}</small>
+      <div className="gm-tabs" role="tablist">
+        {[
+          ["backgrounds", "Backgrounds"],
+          ["filters", "Filters"],
+          ["appearance", "Appearance"],
+        ].map(([k, label]) => (
+          <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>
+            {label}
           </button>
         ))}
-        <button className={`gm-effect ${value.id === "image" ? "on" : ""}`} onClick={() => file.current?.click()} title="Your own image">
-          <Icon name="upload" />
-          <small>Upload</small>
-        </button>
-        <input ref={file} type="file" accept="image/*" hidden onChange={upload} />
       </div>
+      {tab === "backgrounds" && (
+        <div className="gm-effect-grid">
+          {EFFECTS.map((e) => (
+            <button
+              key={e.id}
+              className={`gm-effect ${value.id === e.id ? "on" : ""}`}
+              style={{ background: swatches[e.id] ?? e.swatch }}
+              onClick={() => set({ id: e.id, image: null })}
+              title={e.label}
+              aria-pressed={value.id === e.id}
+            >
+              {e.id === "none" ? "⊘" : e.id.startsWith("blur") ? <span className={e.id}>👤</span> : ""}
+              <small>{e.label}</small>
+            </button>
+          ))}
+          <button className={`gm-effect ${value.id === "image" ? "on" : ""}`} onClick={() => file.current?.click()} title="Your own image">
+            <Icon name="upload" />
+            <small>Upload</small>
+          </button>
+          <input ref={file} type="file" accept="image/*" hidden onChange={upload} />
+        </div>
+      )}
+      {tab === "filters" && (
+        <div className="gm-effect-grid">
+          {FILTERS.map((f) => (
+            <button
+              key={f.id}
+              className={`gm-effect filter ${(value.filter ?? "none") === f.id ? "on" : ""}`}
+              onClick={() => set({ filter: f.id })}
+              title={f.label}
+              aria-pressed={(value.filter ?? "none") === f.id}
+            >
+              <span className="gm-filter-swatch" style={{ filter: f.css || "none" }} />
+              <small>{f.label}</small>
+            </button>
+          ))}
+        </div>
+      )}
+      {tab === "appearance" && (
+        <label className="gm-switch">
+          <span>
+            <b>Adjust for low light</b>
+            <br />
+            <span className="gm-time">Brightens your video when your room is dim</span>
+          </span>
+          <input type="checkbox" checked={!!value.lowLight} onChange={(e) => set({ lowLight: e.target.checked })} />
+        </label>
+      )}
       <p className="gm-note">Runs on your device with AI segmentation — your real background never leaves it.</p>
     </div>
   );
@@ -220,6 +289,13 @@ function Room({ code }) {
   const [clock, setClock] = useState(timeNow());
   const [toasts, setToasts] = useState([]);
   const [readyCard, setReadyCard] = useState(true);
+  const [layout, setLayout] = useState("auto"); // auto | tiled | spotlight | sidebar (Meet's "Adjust view")
+  const [pinned, setPinned] = useState(null);
+  const [captionsOn, setCaptionsOn] = useState(false);
+  const [myCaption, setMyCaption] = useState(null);
+  const [menu, setMenu] = useState(""); // more | mic | cam
+  const roomRef = useRef(null);
+  const lastSpeaker = useRef(null);
   const meeting = useRef(null);
   const meter = useRef(null);
   const lobbyFx = useRef(null);
@@ -269,11 +345,11 @@ function Room({ code }) {
     const v = stream.getVideoTracks()[0];
     lobbyFx.current?.stop();
     lobbyFx.current = null;
-    if (!cam || !v || v.readyState !== "live" || effect.id === "none") {
+    if (!cam || !v || v.readyState !== "live" || !effectActive(effect)) {
       setPreview(stream);
       return;
     }
-    applyEffect(v, effect.id, effect.image)
+    applyEffect(v, effect)
       .then((fx) => {
         if (cancelled) return fx.stop();
         lobbyFx.current = fx;
@@ -295,7 +371,7 @@ function Room({ code }) {
     const m = new Meeting(code, { stream: local, quality, onChange: setState });
     meeting.current = m;
     setPanel("");
-    if (effect.id !== "none" && cam) await m.setEffect(effect).catch(() => {});
+    if (effectActive(effect) && cam) await m.setEffect(effect).catch(() => {});
     m.connect();
   }, [stream, mic, cam, code, quality, effect]);
 
@@ -396,10 +472,57 @@ function Room({ code }) {
   }, [toggleMic, toggleCam]);
 
   const leave = () => {
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
     m?.leave();
     m?.stream?.getTracks().forEach((t) => t.stop());
     meeting.current = null;
     router.push("/app/meet");
+  };
+
+  // live captions: your own speech -> text (the browser's speech recognition), shared with the meeting.
+  // Only while you have captions on AND your mic is on — muting really means nothing is heard.
+  const micOn = !!m?.localState().mic;
+  useEffect(() => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!captionsOn || !micOn || state?.status !== "joined" || !SR) return;
+    let alive = true;
+    const rec = new SR();
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.lang = navigator.language || "en-US";
+    rec.onresult = (e) => {
+      const r = e.results[e.results.length - 1];
+      const text = r[0].transcript;
+      meeting.current?.caption(text, r.isFinal);
+      setMyCaption({ text, at: Date.now() });
+    };
+    rec.onend = () => alive && setTimeout(() => alive && rec.start(), 250); // Chrome stops after silence: keep going
+    rec.onerror = (e) => e.error === "not-allowed" && setErr("Captions need microphone permission.");
+    rec.start();
+    return () => {
+      alive = false;
+      rec.onend = null;
+      rec.abort();
+    };
+  }, [captionsOn, micOn, state?.status]);
+
+  const fullscreen = () => (document.fullscreenElement ? document.exitFullscreen() : roomRef.current?.requestFullscreen())?.catch(() => {});
+  const pictureInPicture = async (id) => {
+    const video = document.querySelector(`.gm-tile[data-peer="${id}"] video`) ?? document.querySelector(".gm-tile:not([data-peer='me']) video");
+    try {
+      if (document.pictureInPictureElement) await document.exitPictureInPicture();
+      else await video?.requestPictureInPicture();
+    } catch {
+      setErr("Picture-in-picture needs someone's video on screen.");
+    }
+  };
+  const chooseCam = async (id) => {
+    setDev((d) => ({ ...d, videoId: id }));
+    if (cam) await m?.setCam(true, id);
+  };
+  const chooseMic = async (id) => {
+    setDev((d) => ({ ...d, audioId: id }));
+    await m?.switchMic(id);
   };
 
   // ---------------------------------------------------------------- lobby
@@ -475,35 +598,84 @@ function Room({ code }) {
   const meState = { id: "me", name, ...(m?.localState() ?? {}) };
   const loudest = Object.entries(levels).sort((a, b) => b[1] - a[1])[0];
   const speakingId = loudest && loudest[1] > 0.08 ? loudest[0] : null;
+  if (speakingId && speakingId !== "me") lastSpeaker.current = speakingId;
   const presenter = peers.find((p) => p.screen) ?? (meState.screen ? meState : null);
+  const peerIds = new Set(peers.map((p) => p.id));
+  const pinnedId = pinned === "me" || peerIds.has(pinned) ? pinned : null;
+  // who gets the big tile: the presenter, then whoever you pinned, then (spotlight / sidebar) the last speaker
+  const featuredId =
+    presenter?.id ??
+    pinnedId ??
+    (layout === "spotlight" || layout === "sidebar" ? (peerIds.has(lastSpeaker.current) ? lastSpeaker.current : peers[0]?.id ?? "me") : null);
+  const bigLayout = !!featuredId && layout !== "tiled";
   const reactionsFor = (id) => state.reactions.filter((r) => r.id === (id === "me" ? state.you : id));
-  const tiles = [{ p: meState, stream: m?.displayStream, me: true }, ...peers.map((p) => ({ p, stream: p.stream, me: false }))];
-  const sidePanel = ["chat", "people", "info", "settings", "effects"].includes(panel);
+  const allTiles = [{ p: meState, stream: m?.displayStream, me: true }, ...peers.map((p) => ({ p, stream: p.stream, me: false }))];
+  const tiles = layout === "spotlight" && featuredId ? allTiles.filter((t) => t.p.id === featuredId) : allTiles;
+  const sidePanel = ["chat", "people", "info", "settings", "effects", "layout", "trouble"].includes(panel);
+  const captionsSupported = typeof window !== "undefined" && !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+  const now = Date.now();
+  const captionLines = captionsOn
+    ? [
+        ...Object.entries(state.captions)
+          .filter(([, c]) => now - c.at < 6000)
+          .map(([id, c]) => ({ id, name: c.name, text: c.text })),
+        ...(myCaption && now - myCaption.at < 6000 ? [{ id: "me", name: "You", text: myCaption.text }] : []),
+      ].slice(-3)
+    : [];
   const sendChat = (e) => {
     e.preventDefault();
     const input = e.currentTarget.elements.text;
     m?.chat(input.value);
     input.value = "";
   };
-  const togglePanel = (p) => setPanel(panel === p ? "" : p);
+  const togglePanel = (p) => {
+    setPanel(panel === p ? "" : p);
+    setMenu("");
+  };
+  const toggleMenu = (k) => setMenu(menu === k ? "" : k);
+  const MenuItem = ({ icon, label, onClick, disabled, sub }) => (
+    <button
+      role="menuitem"
+      disabled={disabled}
+      onClick={() => {
+        setMenu("");
+        onClick?.();
+      }}
+    >
+      <Icon name={icon} />
+      <span>
+        {label}
+        {sub && <small>{sub}</small>}
+      </span>
+    </button>
+  );
 
   return (
-    <div className={`gm-room ${sidePanel ? "with-panel" : ""}`}>
-      <div className={`gm-stage ${presenter ? "presenting" : ""}`} data-count={tiles.length}>
+    <div ref={roomRef} className={`gm-room ${sidePanel ? "with-panel" : ""}`} onClick={() => menu && setMenu("")}>
+      <div className={`gm-stage ${bigLayout ? "presenting" : ""} layout-${layout}`} data-count={tiles.length}>
         {tiles.map(({ p, stream: s, me }) => {
           const showVideo = (p.cam || p.screen) && s?.getVideoTracks().length > 0;
           const speaking = speakingId === p.id && p.mic;
+          const big = bigLayout && featuredId === p.id;
           return (
             <div
               key={p.id}
-              className={`mt-tile gm-tile ${speaking ? "speaking" : ""} ${presenter?.id === p.id ? "big" : ""}`}
+              className={`mt-tile gm-tile ${speaking ? "speaking" : ""} ${big ? "big" : ""}`}
+              data-peer={p.id}
               data-cam={p.cam ? 1 : 0}
               data-mic={p.mic ? 1 : 0}
               data-tracks={`${s?.getAudioTracks().length ?? 0}a${s?.getVideoTracks().length ?? 0}v`}
+              onDoubleClick={() => setPinned(pinnedId === p.id ? null : p.id)}
+              title={pinnedId === p.id ? "Double-click to unpin" : "Double-click to pin"}
             >
               <StreamVideo stream={s} muted={me} mirror={me && !p.screen} speakerId={dev.speakerId} className={showVideo ? "" : "hidden"} />
-              {!showVideo && <Avatar name={p.name} size={presenter?.id === p.id ? 120 : 88} />}
+              {!showVideo && <Avatar name={p.name} size={big ? 120 : 88} />}
               <div className="gm-badges">
+                {pinnedId === p.id && (
+                  <span className="gm-badge" title="Pinned">
+                    <Icon name="pin" size={16} />
+                  </span>
+                )}
                 {p.hand && (
                   <span className="gm-badge hand" title="Hand raised">
                     <Icon name="hand" size={16} />
@@ -548,24 +720,32 @@ function Room({ code }) {
                 <Icon name="close" />
               </button>
             </div>
-            <p>Share this meeting link with others that you want in the meeting — they can join from any browser, even as a guest.</p>
+            <p>Share this meeting link with others that you want in the meeting.</p>
             <LinkBox code={code} />
-            <p className="gm-note">
-              <Icon name="info" size={16} /> People who use this link don&apos;t need an account to join.
-            </p>
+          </div>
+        )}
+        {captionLines.length > 0 && (
+          <div className="gm-captions" aria-live="polite">
+            {captionLines.map((c) => (
+              <p key={c.id}>
+                <b>{c.name}</b> {c.text}
+              </p>
+            ))}
           </div>
         )}
         {state.status === "reconnecting" && <div className="gm-banner">Trying to reconnect…</div>}
       </div>
 
       {sidePanel && (
-        <aside className="gm-panel">
+        <aside className="gm-panel" onClick={(e) => e.stopPropagation()}>
           {panel === "effects" ? (
             <EffectsPanel value={effect} onChange={chooseEffect} onClose={() => setPanel("")} />
           ) : (
             <>
               <div className="gm-panel-head">
-                <b>{{ chat: "In-call messages", people: "People", info: "Meeting details", settings: "Settings" }[panel]}</b>
+                <b>
+                  {{ chat: "In-call messages", people: "People", info: "Meeting details", settings: "Settings", layout: "Adjust view", trouble: "Troubleshooting and help" }[panel]}
+                </b>
                 <button className="gm-icon-btn light" onClick={() => setPanel("")} aria-label="Close panel">
                   <Icon name="close" />
                 </button>
@@ -602,6 +782,9 @@ function Room({ code }) {
                         <span style={{ flex: 1 }}>{p.id === "me" ? `${p.name} (You)` : p.name}</span>
                         {p.hand && <Icon name="hand" size={18} />}
                         {p.screen && <Icon name="present" size={18} />}
+                        <button className="gm-icon-btn light" title={pinnedId === p.id ? "Unpin" : "Pin to the main screen"} onClick={() => setPinned(pinnedId === p.id ? null : p.id)}>
+                          <Icon name="pin" size={18} />
+                        </button>
                         <Icon name={p.mic ? "mic" : "micOff"} size={18} />
                       </li>
                     ))}
@@ -615,18 +798,68 @@ function Room({ code }) {
                   <p className="gm-note">Video and audio go directly between participants, encrypted end to end. Up to {QUALITY[quality].label} video.</p>
                 </>
               )}
+              {panel === "layout" && (
+                <div className="gm-radios" role="radiogroup" aria-label="Layout">
+                  {[
+                    ["auto", "Auto (dynamic)", "Let Presence Meet choose the layout"],
+                    ["tiled", "Tiled", "Everyone in an equal grid"],
+                    ["spotlight", "Spotlight", "Only the active speaker or the pinned person"],
+                    ["sidebar", "Sidebar", "Active speaker big, everyone else on the side"],
+                  ].map(([k, label, hint]) => (
+                    <label key={k} className={layout === k ? "on" : ""}>
+                      <input type="radio" name="layout" checked={layout === k} onChange={() => setLayout(k)} />
+                      <span>
+                        <b>{label}</b>
+                        <small>{hint}</small>
+                      </span>
+                    </label>
+                  ))}
+                  <p className="gm-note">Tip: double-click anyone&apos;s tile to pin them.</p>
+                </div>
+              )}
+              {panel === "trouble" && (
+                <div className="gm-trouble">
+                  <p className="gm-section">Connections</p>
+                  {peers.length === 0 && <p className="gm-note">Connection checks appear when someone joins.</p>}
+                  {peers.map((p) => (
+                    <div key={p.id} className="gm-trouble-row">
+                      <i className={`mt-q ${p.quality ?? "unknown"}`} />
+                      <span style={{ flex: 1 }}>{p.name}</span>
+                      <span className="gm-time">
+                        {p.connection ?? "connecting"}
+                        {p.rtt != null && ` · ${Math.round(p.rtt * 1000)} ms`}
+                      </span>
+                    </div>
+                  ))}
+                  <p className="gm-section">You are sending</p>
+                  <p className="gm-note">
+                    {(() => {
+                      const s = m?.localTrack("video")?.getSettings?.();
+                      return s?.width ? `${s.width}×${s.height} at ${Math.round(s.frameRate ?? 30)} fps` : "No video (camera off)";
+                    })()}
+                    {" · "}noise suppression, echo cancellation and auto gain on
+                  </p>
+                  <p className="gm-section">If something doesn&apos;t work</p>
+                  <ul className="gm-tips">
+                    <li>Someone can&apos;t join from another device: open the app with <b>npm run dev:lan</b> (same Wi-Fi) or deploy it — a localhost link only works on this computer.</li>
+                    <li>Stuck on “Connecting…”: strict office or mobile networks need a TURN relay (TURN_URLS in backend/.env).</li>
+                    <li>Choppy video: switch to Data saver in Settings, or turn off background effects.</li>
+                    <li>Echo: use headphones, or mute when you&apos;re not speaking (Ctrl+D).</li>
+                  </ul>
+                </div>
+              )}
               {panel === "settings" && (
                 <div className="gm-settings">
                   <label>
                     Camera
-                    <select value={dev.videoId} onChange={async (e) => { setDev({ ...dev, videoId: e.target.value }); if (cam) await m?.setCam(true, e.target.value); }}>
+                    <select value={dev.videoId} onChange={(e) => chooseCam(e.target.value)}>
                       <option value="">Default</option>
                       {devices.cameras.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
                     </select>
                   </label>
                   <label>
                     Microphone
-                    <select value={dev.audioId} onChange={async (e) => { setDev({ ...dev, audioId: e.target.value }); await m?.switchMic(e.target.value); }}>
+                    <select value={dev.audioId} onChange={(e) => chooseMic(e.target.value)}>
                       <option value="">Default</option>
                       {devices.mics.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
                     </select>
@@ -662,30 +895,58 @@ function Room({ code }) {
         ))}
       </div>
 
-      <footer className="gm-bar" role="toolbar" aria-label="Meeting controls">
+      <footer className="gm-bar" role="toolbar" aria-label="Meeting controls" onClick={(e) => e.stopPropagation()}>
         <div className="gm-bar-left">
           <span>{clock}</span>
           <span className="gm-sep">|</span>
           <span>{code}</span>
+          <button className="gm-icon-btn small" title="Meeting details" onClick={() => togglePanel("info")}>
+            <Icon name="info" size={20} />
+          </button>
         </div>
         <div className="gm-bar-center">
-          <button className={`gm-round ${meState.mic ? "" : "off"}`} onClick={toggleMic} title="Microphone (Ctrl+D)" aria-pressed={!meState.mic}>
-            <Icon name={meState.mic ? "mic" : "micOff"} />
-          </button>
-          <button className={`gm-round ${cam ? "" : "off"}`} onClick={toggleCam} title="Camera (Ctrl+E)" aria-pressed={!cam}>
-            <Icon name={cam ? "cam" : "camOff"} />
-          </button>
-          <div className="gm-menu-wrap">
-            <button className={`gm-round ${panel === "react" ? "on" : ""}`} title="Send a reaction" onClick={() => togglePanel("react")}>
-              <Icon name="emoji" />
+          <div className="gm-pill gm-menu-wrap">
+            <button className="gm-arrow" title="Audio settings" onClick={() => toggleMenu("mic")} aria-expanded={menu === "mic"}>
+              <Icon name="up" size={18} />
             </button>
-            {panel === "react" && (
-              <div className="gm-react-pop">
-                {REACTIONS.map((e) => (
-                  <button key={e} onClick={() => m.react(e)} aria-label={`React ${e}`}>
-                    {e}
+            <button className={`gm-round ${meState.mic ? "" : "off"}`} onClick={toggleMic} title="Microphone (Ctrl+D)" aria-pressed={!meState.mic}>
+              <Icon name={meState.mic ? "mic" : "micOff"} />
+            </button>
+            {menu === "mic" && (
+              <div className="gm-pop" role="menu">
+                <p className="gm-pop-title">Microphone</p>
+                {(devices.mics.length ? devices.mics : [{ id: "", label: "Default microphone" }]).map((d) => (
+                  <button key={d.id || "default"} role="menuitemradio" aria-checked={dev.audioId === d.id} onClick={() => { chooseMic(d.id); setMenu(""); }}>
+                    <Icon name="mic" size={18} /> {d.label} {dev.audioId === d.id && "✓"}
                   </button>
                 ))}
+                {devices.speakers.length > 0 && <p className="gm-pop-title">Speaker</p>}
+                {devices.speakers.map((d) => (
+                  <button key={d.id} role="menuitemradio" aria-checked={dev.speakerId === d.id} onClick={() => { setDev({ ...dev, speakerId: d.id }); setMenu(""); }}>
+                    <Icon name="speaker" size={18} /> {d.label} {dev.speakerId === d.id && "✓"}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="gm-pill gm-menu-wrap">
+            <button className="gm-arrow" title="Video settings" onClick={() => toggleMenu("cam")} aria-expanded={menu === "cam"}>
+              <Icon name="up" size={18} />
+            </button>
+            <button className={`gm-round ${cam ? "" : "off"}`} onClick={toggleCam} title="Camera (Ctrl+E)" aria-pressed={!cam}>
+              <Icon name={cam ? "cam" : "camOff"} />
+            </button>
+            {menu === "cam" && (
+              <div className="gm-pop" role="menu">
+                <p className="gm-pop-title">Camera</p>
+                {(devices.cameras.length ? devices.cameras : [{ id: "", label: "Default camera" }]).map((d) => (
+                  <button key={d.id || "default"} role="menuitemradio" aria-checked={dev.videoId === d.id} onClick={() => { chooseCam(d.id); setMenu(""); }}>
+                    <Icon name="cam" size={18} /> {d.label} {dev.videoId === d.id && "✓"}
+                  </button>
+                ))}
+                <button onClick={() => togglePanel("effects")}>
+                  <Icon name="effects" size={18} /> Backgrounds and effects
+                </button>
               </div>
             )}
           </div>
@@ -706,23 +967,56 @@ function Room({ code }) {
               <Icon name="present" />
             </button>
           )}
+          <div className="gm-menu-wrap">
+            <button className={`gm-round ${panel === "react" ? "on" : ""}`} title="Send a reaction" onClick={() => togglePanel("react")}>
+              <Icon name="emoji" />
+            </button>
+            {panel === "react" && (
+              <div className="gm-react-pop">
+                {REACTIONS.map((e) => (
+                  <button key={e} onClick={() => m.react(e)} aria-label={`React ${e}`}>
+                    {e}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <button
+            className={`gm-round ${captionsOn ? "on" : ""}`}
+            title={captionsSupported ? (captionsOn ? "Turn off captions" : "Turn on captions") : "Captions need Chrome or Edge"}
+            disabled={!captionsSupported}
+            aria-pressed={captionsOn}
+            onClick={() => setCaptionsOn((c) => !c)}
+          >
+            <Icon name="captions" />
+          </button>
           <button className={`gm-round ${meState.hand ? "on" : ""}`} title="Raise hand" onClick={() => { m.setHand(!m.hand); setState({ ...m.state }); }}>
             <Icon name="hand" />
           </button>
-          <button className={`gm-round ${panel === "effects" ? "on" : ""}`} title="Backgrounds and effects" onClick={() => togglePanel("effects")}>
-            <Icon name="effects" />
-          </button>
-          <button className={`gm-round ${panel === "settings" ? "on" : ""}`} title="Settings" onClick={() => togglePanel("settings")}>
-            <Icon name="settings" />
-          </button>
+          <div className="gm-menu-wrap">
+            <button className={`gm-round ${menu === "more" ? "on" : ""}`} title="More options" onClick={() => toggleMenu("more")} aria-expanded={menu === "more"}>
+              <Icon name="more" />
+            </button>
+            {menu === "more" && (
+              <div className="gm-pop gm-more" role="menu">
+                <MenuItem icon="record" label="Recording unavailable" sub="Recording isn't available in this meeting" disabled />
+                <hr />
+                <MenuItem icon="layout" label="Adjust view" onClick={() => togglePanel("layout")} />
+                <MenuItem icon="fullscreen" label={document.fullscreenElement ? "Exit full screen" : "Full screen"} onClick={fullscreen} />
+                <MenuItem icon="pip" label="Open picture-in-picture" onClick={() => pictureInPicture(featuredId ?? peers[0]?.id)} />
+                <MenuItem icon="effects" label="Backgrounds and effects" onClick={() => togglePanel("effects")} />
+                <MenuItem icon="captions" label={captionsOn ? "Turn off captions" : "Turn on captions"} onClick={() => setCaptionsOn((c) => !c)} disabled={!captionsSupported} />
+                <hr />
+                <MenuItem icon="wrench" label="Troubleshooting and help" onClick={() => togglePanel("trouble")} />
+                <MenuItem icon="settings" label="Settings" onClick={() => togglePanel("settings")} />
+              </div>
+            )}
+          </div>
           <button className="gm-leave" title="Leave call" onClick={leave}>
             <Icon name="callEnd" />
           </button>
         </div>
         <div className="gm-bar-right">
-          <button className={`gm-icon-btn ${panel === "info" ? "on" : ""}`} title="Meeting details" onClick={() => togglePanel("info")}>
-            <Icon name="info" />
-          </button>
           <button className={`gm-icon-btn ${panel === "people" ? "on" : ""}`} title="People" onClick={() => togglePanel("people")}>
             <Icon name="people" />
             <span className="gm-count">{peers.length + 1}</span>
@@ -731,9 +1025,16 @@ function Room({ code }) {
             <Icon name="chat" />
             {unread > 0 && <span className="mt-badge">{unread}</span>}
           </button>
+          <button className={`gm-icon-btn ${panel === "effects" ? "on" : ""}`} title="Backgrounds and effects" onClick={() => togglePanel("effects")}>
+            <Icon name="effects" />
+          </button>
         </div>
       </footer>
-      {err && <div className="gm-error">{err}</div>}
+      {err && (
+        <div className="gm-error" onClick={() => setErr("")}>
+          {err}
+        </div>
+      )}
     </div>
   );
 }

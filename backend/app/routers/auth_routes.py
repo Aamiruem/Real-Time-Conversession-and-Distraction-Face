@@ -10,7 +10,7 @@ from app.auth import create_access_token, get_current_user, hash_password, verif
 from app.config import settings
 from app.database import get_db
 from app.models import FocusSnapshot, Message, OtpCode, Room, SpeechSession, User
-from app.schemas import (AccountDelete, OtpLoginIn, OtpRequestIn, OtpSentOut, PasswordResetIn, RegisterOut, ResendIn, Token,
+from app.schemas import (AccountDelete, GuestIn, OtpLoginIn, OtpRequestIn, OtpSentOut, PasswordResetIn, RegisterOut, ResendIn, Token,
                              PasswordChange, ProfileUpdate, UserCreate, UserLogin, UserOut, VerifyIn, VerifyOut,
                          password_problem)
 from app.services import otp_service
@@ -113,15 +113,17 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
 
 
 @router.post("/guest", response_model=Token)
-def guest(db: Session = Depends(get_db)):
-    """Try everything without an account: a fresh, verified guest user (random name, unguessable password).
+def guest(data: GuestIn | None = None, db: Session = Depends(get_db)):
+    """Try everything without an account: a fresh, verified guest user (unguessable password).
+
+    The name is optional (people joining a meeting link give one, like Meet's "What's your name?").
 
     Guests can create a real account any time from Settings; ALLOW_GUESTS=false turns this off.
     """
     if not settings.ALLOW_GUESTS:
         raise HTTPException(403, "Guest access is turned off - please create an account")
     tag = secrets.token_hex(3)
-    user = User(username=f"{GUEST_PREFIX}{tag}", full_name=f"Guest {tag.upper()}", email=f"{GUEST_PREFIX}{tag}@guest.local",
+    user = User(username=f"{GUEST_PREFIX}{tag}", full_name=" ".join((data.name if data else "").split())[:60] or f"Guest {tag.upper()}", email=f"{GUEST_PREFIX}{tag}@guest.local",
                 password_hash=hash_password(secrets.token_urlsafe(24)), email_verified=True, phone_verified=True)
     db.add(user)
     db.commit()

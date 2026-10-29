@@ -101,7 +101,7 @@ cd frontend; npm install; cd ..
 # Terminal 1 — API on port 8010 (docs: http://localhost:8010/docs)
 .\run-backend.ps1        # stops an older backend on the port first; or: python backend\app\main.py
 
-# Terminal 2 — website + app on http://localhost:3000
+# Terminal 2 — website + app on https://localhost:3000 (self-signed: accept the warning once; npm run dev:http for plain http)
 cd frontend; npm run dev
 
 # Optional: legacy Streamlit UI on http://localhost:8501
@@ -192,6 +192,23 @@ AWS RDS via `DATABASE_URL`); reports can go to S3, email/SMS through SES/SNS.
 **Remote (HTTP):** set `MCP_API_KEY` and the API serves `POST /mcp` (Streamable HTTP). Clients send
 `Authorization: Bearer <MCP_API_KEY>`. Without the key the endpoint stays off. Set `MCP_ALLOW_FILES=false` on
 a public server so `coach_speech_file` can't read server files.
+
+## 📹 Inviting others to a meeting
+
+Every meeting has its own link, like Google Meet's `meet.google.com/abc-defg-hij`: **`<site>/abc-defg-hij`**. It opens
+the meeting full screen; people who aren't signed in just type their name and join (a guest — no account needed).
+
+A `localhost` link only works on **your** computer (on someone else's device, "localhost" is their own device), and
+browsers only allow camera and microphone on HTTPS. So:
+
+| Who should join | Start the website with | Link you share |
+|---|---|---|
+| People on the **same Wi-Fi** | `cd frontend; npm run dev` (HTTPS) | `https://<your-wifi-ip>:3000/abc-defg-hij` (Meet shows it automatically) |
+| **Anyone, anywhere** | deploy (below), or a tunnel: `npx cloudflared tunnel --url https://localhost:3000` | the deployed / tunnel address |
+
+The dev certificate is self-signed: the first time, the other person's browser shows a warning —
+they choose **Advanced → Continue**. If Windows asks whether Node.js may use the network, allow **private networks**.
+They type their name and join — no account needed.
 
 ## 🌍 Deploy free-tier style: Vercel (website) + Render (API + PostgreSQL)
 

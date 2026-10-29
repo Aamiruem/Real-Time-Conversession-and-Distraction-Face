@@ -119,6 +119,11 @@ async def handle(meeting: Meeting, me: Peer, data: dict):
             await meeting.broadcast(msg)
     elif kind == "react" and data.get("emoji") in REACTIONS:
         await meeting.broadcast({"type": "react", "id": me.id, "emoji": data["emoji"]})
+    elif kind == "caption":  # live captions: your speech as text (made by your own browser), shown to everyone
+        text = str(data.get("text", "")).strip()[:300]
+        if text:
+            await meeting.broadcast({"type": "caption", "id": me.id, "name": me.name, "text": text,
+                                     "final": bool(data.get("final"))}, skip=me.id)
 
 
 @router.websocket("/ws/meet/{code}")

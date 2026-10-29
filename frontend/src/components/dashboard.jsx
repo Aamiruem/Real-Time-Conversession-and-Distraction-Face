@@ -1,4 +1,8 @@
 import Link from "@/components/Link";
+import { ICON_NAMES, Icon } from "./Icons";
+
+// an icon name from Icons.jsx, or (older pages) an emoji
+const glyph = (icon, size) => (ICON_NAMES.includes(icon) ? <Icon name={icon} size={size} /> : icon);
 
 // Validated categorical slots for the dark surface (dataviz reference palette, dark steps):
 // single-series charts use SERIES[0]; never cycle beyond three.
@@ -6,17 +10,18 @@ export const SERIES = ["var(--series-1)", "var(--series-2)", "var(--series-3)"];
 export const GRID = "var(--line)";
 export const TICK = { fill: "var(--muted)", fontSize: 11 };
 export const TOOLTIP = {
-  contentStyle: { background: "var(--surface2)", border: "1px solid #1e2a44", borderRadius: 10, fontSize: 12 },
+  contentStyle: { background: "var(--surface2)", border: "1px solid var(--line)", boxShadow: "var(--shadow)", color: "var(--text)", borderRadius: 10, fontSize: 12 },
   labelStyle: { color: "var(--text)", fontWeight: 700 },
   itemStyle: { color: "var(--text)" },
   cursor: { stroke: "var(--muted)", strokeDasharray: "3 3" },
 };
 
-export function ChartCard({ title, sub, action, children, className = "" }) {
+export function ChartCard({ title, sub, action, children, className = "", icon, color }) {
   return (
-    <section className={`card chart-card ${className}`}>
+    <section className={`card chart-card ${color ? "tinted" : ""} ${className}`} style={color ? { "--c": color } : undefined}>
       <header className="chart-head">
-        <div>
+        {icon && <span className="nav-ico">{glyph(icon, 17)}</span>}
+        <div className="chart-head-text">
           <h3>{title}</h3>
           {sub && <p className="small muted">{sub}</p>}
         </div>
@@ -42,11 +47,11 @@ export function EmptyChart({ icon, text, href, cta }) {
 }
 
 /** Stat tile: icon, value, label and an optional delta line (↑ green / ↓ amber, always with text). */
-export function Kpi({ icon, value, label, sub, trend }) {
+export function Kpi({ icon, value, label, sub, trend, color }) {
   return (
-    <div className="kpi">
+    <div className={`kpi ${color ? "tinted" : ""}`} style={color ? { "--c": color } : undefined}>
       <div className="kpi-head">
-        <span className="kpi-icon">{icon}</span>
+        <span className="kpi-icon">{glyph(icon, 17)}</span>
         <span className="kpi-l">{label}</span>
       </div>
       <div className="kpi-v">{value}</div>

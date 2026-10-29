@@ -54,6 +54,23 @@
 .gm-home-art h3 { font-weight: 500; font-size: 1.4rem; margin: 0; }
 .gm-home-art p { color: var(--muted); max-width: 330px; margin: 0; }
 
+/* a meeting's own link (/<code>): full page, no app sidebar — like meet.google.com/abc-defg-hij */
+.gm-solo { min-height: 100dvh; display: grid; grid-template-rows: auto 1fr; }
+.gm-solo-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 24px; }
+.gm-solo-brand { display: flex; align-items: center; gap: 8px; color: var(--text); font-size: 1.3rem; }
+.gm-solo-brand svg { color: var(--gm-blue); }
+[data-theme="dark"] .gm-solo-brand svg { color: var(--gm-blue-light); }
+.gm-solo-brand b { font-weight: 500; color: var(--muted); }
+.gm-solo-clock { color: var(--muted); font-size: 1.05rem; }
+.gm-solo-main { width: min(1240px, 100%); margin: 0 auto; padding: 0 16px 24px; display: grid; align-content: center; }
+.gm-solo-main > .gm-lobby-who { text-align: center; }
+.gm-guest { display: grid; justify-items: center; gap: 14px; text-align: center; width: min(420px, 100%); margin: 0 auto; }
+.gm-guest h1 { font-size: 1.9rem; font-weight: 400; margin: 0; }
+.gm-guest .gm-art-circle.small { width: 112px; height: 112px; margin: 0; box-shadow: inset 0 0 0 8px #fff8; }
+.gm-guest-name { width: 100%; height: 52px; font-size: 1.05rem; text-align: center; }
+.gm-guest .gm-primary.big { width: 100%; }
+.gm-guest .gm-note { text-align: left; }
+
 /* ---------- dialogs and white cards (Meet's panels are white, even in a dark call) ---------- */
 .gm-dialog-backdrop { position: fixed; inset: 0; z-index: 1100; background: #0007; display: grid; place-items: center; padding: 16px; }
 .gm-dialog, .gm-ready-card, .gm-panel, .gm-effects { background: #fff; color: #202124; border-radius: 8px; box-shadow: 0 4px 24px #0005; }
@@ -77,7 +94,7 @@
 .gm-cam-off { position: absolute; inset: 0; display: grid; place-items: center; color: var(--gm-text); font-size: 1.4rem; }
 .gm-lobby-name { position: absolute; top: 14px; left: 16px; color: #fff; font-weight: 500; text-shadow: 0 1px 2px #000a; }
 .gm-lobby-controls { position: absolute; bottom: 16px; left: 0; right: 0; display: flex; gap: 22px; justify-content: center; }
-.gm-fx-btn { position: absolute; right: 16px; bottom: 16px; }
+.gm-round.gm-fx-btn { position: absolute; right: 16px; bottom: 16px; }
 .gm-lobby-video .gm-effects { position: absolute; top: 10px; right: 10px; bottom: 10px; width: min(320px, 70%); overflow-y: auto; }
 .gm-lobby-side { text-align: center; display: grid; justify-items: center; gap: 14px; }
 .gm-lobby-side h1 { font-size: 1.9rem; font-weight: 400; margin: 0; }
@@ -194,4 +211,60 @@
   .gm-bar-right { justify-content: center; }
   .gm-round { width: 44px; height: 44px; }
   .gm-toasts { bottom: 150px; left: 12px; }
+}
+
+/* ---------- Meet extras: device pills, menus, captions, view, troubleshooting, effects tabs ---------- */
+.gm-pill { display: flex; align-items: center; border-radius: 999px; background: var(--gm-btn); }
+.gm-pill .gm-round { background: transparent; }
+.gm-pill .gm-round.off { background: var(--gm-red); }
+.gm-arrow { width: 30px; height: 48px; border: 0; background: transparent; color: var(--gm-text); display: grid; place-items: center;
+  cursor: pointer; border-radius: 999px 0 0 999px; padding-left: 6px; }
+.gm-arrow:hover { background: var(--gm-btn-hover); }
+.gm-icon-btn.small { width: 32px; height: 32px; }
+.gm-pop { position: absolute; bottom: 62px; left: 50%; transform: translateX(-50%); z-index: 6; min-width: 290px; max-height: 60vh; overflow-y: auto;
+  padding: 8px 0; border-radius: 8px; background: #303134; box-shadow: 0 4px 18px #000a; text-align: left; }
+.gm-pop button { display: flex; width: 100%; align-items: center; gap: 14px; padding: 11px 18px; border: 0; background: none; color: var(--gm-text);
+  font: inherit; font-size: .92rem; cursor: pointer; text-align: left; }
+.gm-pop button:hover:not(:disabled) { background: #ffffff14; }
+.gm-pop button:disabled { color: #9aa0a6; cursor: default; }
+.gm-pop button span { display: grid; }
+.gm-pop button small { color: #9aa0a6; font-size: .78rem; }
+.gm-pop hr { border: 0; border-top: 1px solid #5f6368; margin: 6px 0; }
+.gm-pop-title { margin: 8px 18px 4px; font-size: .75rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: #9aa0a6; }
+.gm-more { left: auto; right: -40px; transform: none; }
+
+.gm-captions { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); width: min(820px, calc(100% - 32px)); z-index: 2;
+  display: grid; gap: 4px; padding: 10px 16px; border-radius: 8px; background: #000000c0; }
+.gm-captions p { margin: 0; font-size: 1.15rem; line-height: 1.4; color: #fff; }
+.gm-captions b { color: var(--gm-blue-light); font-weight: 500; margin-right: 6px; }
+
+.gm-stage.layout-spotlight { grid-template-columns: 1fr; padding: 16px 16px 0; }
+.gm-stage.layout-spotlight .gm-tile.big { grid-column: 1; grid-row: 1; }
+
+.gm-radios { display: grid; gap: 6px; }
+.gm-radios label { display: flex; gap: 12px; align-items: flex-start; padding: 10px 12px; border-radius: 8px; cursor: pointer; color: #202124; }
+.gm-radios label:hover { background: #f1f3f4; }
+.gm-radios label.on { background: #e8f0fe; }
+.gm-radios input { width: auto; margin-top: 4px; accent-color: var(--gm-blue); }
+.gm-radios span { display: grid; }
+.gm-radios small { color: #5f6368; }
+.gm-trouble { overflow-y: auto; }
+.gm-trouble-row { display: flex; gap: 10px; align-items: center; padding: 6px 0; color: #3c4043; }
+.gm-trouble .mt-q.unknown { background: #9aa0a6; }
+.gm-tips { margin: 0; padding-left: 18px; display: grid; gap: 8px; color: #3c4043; font-size: .86rem; }
+.gm-note.warn { color: #b06000; background: #fef7e0; padding: 8px 10px; border-radius: 6px; }
+
+.gm-tabs { display: flex; gap: 4px; border-bottom: 1px solid #dadce0; }
+.gm-tabs button { flex: 1; padding: 10px 6px; border: 0; background: none; font: inherit; font-size: .88rem; font-weight: 600; color: #5f6368;
+  cursor: pointer; border-bottom: 3px solid transparent; }
+.gm-tabs button.on { color: var(--gm-blue); border-bottom-color: var(--gm-blue); }
+.gm-effect.filter { padding: 0; }
+.gm-filter-swatch { position: absolute; inset: 0; background: linear-gradient(135deg, #f4a261 0%, #2a9d8f 45%, #e9c46a 70%, #264653 100%); }
+.gm-switch { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 4px; color: #202124; cursor: pointer; }
+.gm-switch input { width: 40px; height: 22px; accent-color: var(--gm-blue); flex: none; }
+
+@media (max-width: 900px) {
+  .gm-pop { position: fixed; left: 8px; right: 8px; bottom: 150px; transform: none; min-width: 0; }
+  .gm-more { right: 8px; }
+  .gm-captions p { font-size: 1rem; }
 }

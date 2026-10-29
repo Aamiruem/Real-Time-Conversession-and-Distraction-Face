@@ -13,5 +13,5 @@ if (-not $NoStreamlit) {
 }
 
 Write-Host "API        http://localhost:8010/docs"
-Write-Host "React app  http://localhost:3000"
+Write-Host "React app  https://localhost:3000  (meeting links work for others on your Wi-Fi)"
 if (-not $NoStreamlit) { Write-Host "Streamlit  http://localhost:8501" }

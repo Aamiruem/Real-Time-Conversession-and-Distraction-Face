@@ -1,4 +1,5 @@
 import { STATE_COLORS, STATE_EMOJI } from "@/lib/attention";
+import { Icon } from "./Icons";
 
 export function PageHead({ eyebrow, title, highlight, sub }) {
   const parts = highlight ? title.split(highlight) : [title];
@@ -119,24 +120,65 @@ export function Bars({ items }) {
 
 const RISK_COLOR = { low: "#22c55e", medium: "#eab308", high: "#ef4444" };
 
+/** Fatigue risk: a low/medium/high meter, the advice, and what drives it (each factor vs. a typical session). */
 export function RiskCard({ f }) {
   const color = RISK_COLOR[f.risk];
+  const score = Math.max(0, Math.min(100, f.risk_score));
+  // how far each factor is from typical (relative), capped so one extreme value doesn't flatten the rest
+  const rows = f.factors.map((x) => {
+    const typical = Number(x.typical) || 0;
+    const rel = typical ? (Number(x.value) - typical) / Math.abs(typical) : 0;
+    return { ...x, width: Math.min(100, Math.abs(rel) * 100), raises: x.effect > 0 };
+  });
   return (
-    <div className="card">
-      <span className="pill" style={{ color, borderColor: color, background: `${color}22` }}>
-        {f.risk.toUpperCase()} RISK · {f.risk_score.toFixed(0)}/100
-      </span>
-      <p style={{ marginTop: 10, color: "var(--text)" }}>{f.advice}</p>
-      {f.factors.length > 0 && (
-        <ul className="small muted" style={{ paddingLeft: 18, margin: "10px 0 0" }}>
-          {f.factors.map((x) => (
-            <li key={x.feature}>
-              {x.label}: <b>{x.value}</b> (typical {x.typical}) — {x.effect > 0 ? "⬆️ raises" : "⬇️ lowers"} risk
-            </li>
-          ))}
-        </ul>
+    <div className="card risk-card tinted" style={{ "--c": "#e11d48" }}>
+      <div className="risk-head">
+        <div className="chart-head" style={{ margin: 0 }}>
+          <span className="nav-ico">
+            <Icon name="pulse" size={17} />
+          </span>
+          <h3>Fatigue risk</h3>
+        </div>
+        <span className="pill" style={{ color, borderColor: color, background: `${color}22` }}>
+          {f.risk.toUpperCase()} · {score.toFixed(0)}/100
+        </span>
+      </div>
+      <div className="risk-meter" role="img" aria-label={`Fatigue risk ${score.toFixed(0)} out of 100: ${f.risk}`}>
+        <div className="risk-zones">
+          <span>Low</span>
+          <span>Medium</span>
+          <span>High</span>
+        </div>
+        <i style={{ left: `${score}%`, borderColor: color }} />
+      </div>
+      <p className="risk-advice">{f.advice}</p>
+      {rows.length > 0 && (
+        <>
+          <div className="risk-legend small muted">
+            <span>
+              <i className="lower" /> lowers risk
+            </span>
+            <span>What drives it — vs. a typical session</span>
+            <span>
+              raises risk <i className="raise" />
+            </span>
+          </div>
+          <ul className="risk-factors">
+            {rows.map((x) => (
+              <li key={x.feature}>
+                <span className="rf-label">{x.label}</span>
+                <span className="rf-track" title={`${x.value} (typical ${x.typical})`}>
+                  <span className={`rf-bar ${x.raises ? "raise" : "lower"}`} style={{ width: `${x.width / 2}%` }} />
+                </span>
+                <span className="rf-value">
+                  <b>{x.value}</b> <span className="muted">vs {x.typical}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
-      <p className="small" style={{ marginTop: 8 }}>
+      <p className="small muted" style={{ margin: "10px 0 0" }}>
         {f.model.algorithm.replace(/_/g, " ")} model · test F1 {f.model.test_f1_macro}
       </p>
     </div>

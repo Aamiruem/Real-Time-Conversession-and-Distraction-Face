@@ -5,21 +5,24 @@ import { InstallButton } from "@/lib/pwa";
 import { themeLabel, useTheme } from "@/lib/theme";
 
 /** Presence AI mark: a focus ring with an attention dot (being present) and two voice waves (having presence). */
+/** App icon: a rounded tile in the brand gradient with a white "presence" mark (an eye-like dot sending signal waves). */
 export function Logo({ size = 30 }) {
   const id = useId(); // unique gradient id: several logos can be on one page
-  const paint = `url(#${id})`;
   return (
-    <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true">
+    <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true" className="logo">
       <defs>
         <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#38bdf8" />
-          <stop offset="1" stopColor="#a78bfa" />
+          <stop offset="0" stopColor="#0ea5e9" />
+          <stop offset=".55" stopColor="#2563eb" />
+          <stop offset="1" stopColor="#7c3aed" />
         </linearGradient>
       </defs>
-      <circle cx="25" cy="32" r="13" fill="none" stroke={paint} strokeWidth="5.5" />
-      <circle cx="25" cy="32" r="5" fill={paint} />
-      <path d="M43 23.5a12 12 0 0 1 0 17" fill="none" stroke={paint} strokeWidth="4.5" strokeLinecap="round" />
-      <path d="M50 17a21 21 0 0 1 0 30" fill="none" stroke={paint} strokeWidth="4.5" strokeLinecap="round" opacity=".65" />
+      <rect width="64" height="64" rx="16" fill={`url(#${id})`} />
+      <rect x="1" y="1" width="62" height="62" rx="15" fill="none" stroke="#fff" strokeOpacity=".18" strokeWidth="2" />
+      <circle cx="25" cy="32" r="11" fill="none" stroke="#fff" strokeWidth="5" />
+      <circle cx="25" cy="32" r="4.2" fill="#fff" />
+      <path d="M41.5 24.5a11 11 0 0 1 0 15" fill="none" stroke="#fff" strokeWidth="4.5" strokeLinecap="round" />
+      <path d="M48.5 18.5a20 20 0 0 1 0 27" fill="none" stroke="#fff" strokeWidth="4.5" strokeLinecap="round" opacity=".6" />
     </svg>
   );
 }

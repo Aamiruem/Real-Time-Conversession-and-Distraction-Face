@@ -19,6 +19,12 @@ def test_guest_gets_a_working_account(client):
     assert other["user"]["id"] != tok["user"]["id"]  # every visitor gets their own guest
 
 
+def test_guest_can_give_a_name(client):
+    tok = client.post("/auth/guest", json={"name": "  Priya   Sharma "}).json()
+    assert tok["user"]["full_name"] == "Priya Sharma" and tok["user"]["username"].startswith("guest-")
+    assert client.post("/auth/guest", json={"name": "x" * 61}).status_code == 422
+
+
 def test_guest_names_are_reserved(client):
     r = client.post("/auth/register", json={"username": "guest-abc123", "full_name": "x", "email": "g@example.com",
                                             "phone": "+919876500999", "password": "secret123"})
@@ -70,6 +76,9 @@ def test_two_people_meet_signal_chat_and_leave(client, make_user):
             b.send_json({"type": "react", "emoji": "💣"})  # not an allowed reaction: dropped
             b.send_json({"type": "react", "emoji": "👏"})
             assert a.receive_json() == {"type": "react", "id": wb["you"], "emoji": "👏"}
+            b.send_json({"type": "caption", "text": "  hello everyone  ", "final": True})
+            assert a.receive_json() == {"type": "caption", "id": wb["you"], "name": joined["name"], "text": "hello everyone",
+                                        "final": True}
             b.send_json({"type": "nonsense"})
             b.send_text("not json")
         assert a.receive_json() == {"type": "left", "id": wb["you"]}

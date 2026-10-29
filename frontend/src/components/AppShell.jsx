@@ -1,5 +1,5 @@
 import Link from "@/components/Link";
-import { usePathname, useRouter } from "@/lib/navigation";
+import { usePathname, useRouter, useSearchParams } from "@/lib/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { useBackendStatus } from "@/lib/backend";
@@ -9,36 +9,8 @@ import { CoachPanel, openCoach } from "./CoachPanel";
 import { CommandPalette } from "./CommandPalette";
 import { Logo } from "./SiteChrome";
 import { InstallButton } from "@/lib/pwa";
-
-// Grouped navigation; each page has its own colour so it is easy to find again (sidebar tile + top bar).
-const NAV = [
-  ["Home", [["/app", "🏠", "Dashboard", "#38bdf8", "Your progress at a glance"]]],
-  [
-    "Practice",
-    [
-      ["/app/focus", "🎥", "Focus Monitor", "#22c55e", "Live focus, distraction and drowsiness"],
-      ["/app/speech", "🗣️", "Speech Coach", "#a78bfa", "Confidence, pace and pronunciation"],
-      ["/app/conversation", "🗨️", "Conversation Coach", "#f472b6", "Fluency, tone and interaction"],
-      ["/app/interview", "💼", "Interview Prep", "#f59e0b", "Mock interviews, any field"],
-    ],
-  ],
-  [
-    "Community",
-    [
-      ["/app/meet", "📹", "Meet", "#ef4444", "HD video meetings, screen share, chat"],
-      ["/app/rooms", "💬", "Focus Rooms", "#2dd4bf", "Chat with live focus"],
-    ],
-  ],
-  [
-    "Insights",
-    [
-      ["/app/analytics", "📊", "Analytics", "#60a5fa", "History, trends and leaderboard"],
-      ["/app/vision", "👁️", "Vision Studio", "#14b8a6", "Every CV model live: objects by name, hands, pose"],
-      ["/app/lab", "🧪", "AI Lab", "#c084fc", "Try each AI model on its own"],
-    ],
-  ],
-];
-const PAGES = [...NAV.flatMap(([, items]) => items), ["/app/settings", "⚙️", "Account settings", "#94a3b8", "Profile, password and data"]];
+import { NAV_GROUPS, SECTIONS } from "@/lib/sections";
+import { Icon } from "./Icons";
 
 const STATUS = {
   ok: ["ok", "Live"],
@@ -97,10 +69,14 @@ export function AppShell({ children }) {
   const { theme, toggle } = useTheme();
   const [palette, setPalette] = useState(false);
 
+  const query = useSearchParams().toString();
   useEffect(() => {
-    // keep the query too, so an invite link (/app/meet?code=…) still opens the meeting after signing in
-    if (ready && !user && !offline) router.replace(`/login?next=${encodeURIComponent(path + window.location.search)}`);
-  }, [ready, user, offline, path, router]);
+    // an old invite link (/app/meet?code=…): meetings now live at their own link, /<code>, which guests can open too
+    const code = path === "/app/meet" && new URLSearchParams(query).get("code");
+    if (code && /^[a-z]{3}-[a-z]{4}-[a-z]{3}$/.test(code)) return router.replace(`/${code}`);
+    // keep the query too, so links into the app still open the right page after signing in
+    if (ready && !user && !offline) router.replace(`/login?next=${encodeURIComponent(path + (query ? `?${query}` : ""))}`);
+  }, [ready, user, offline, path, query, router]);
 
   useEffect(() => {
     const onKey = (e) => {
@@ -139,45 +115,58 @@ export function AppShell({ children }) {
     );
   }
 
-  const page = PAGES.find(([href]) => href === path) ?? PAGES[0];
+  const page = SECTIONS[path] ?? SECTIONS["/app"];
   const [tone, label] = STATUS[backend.status] ?? STATUS.checking;
 
   return (
     <div className="shell">
       <aside className="side">
-        <Link href="/app" className="brand" style={{ padding: "4px 10px 16px" }}>
-          <Logo /> Presence AI
+        <Link href="/app" className="brand side-brand" aria-label="Presence AI — dashboard">
+          <Logo size={38} />
+          <span className="brand-text">
+            <span className="brand-name">
+              Presence <span className="brand-ai">AI</span>
+            </span>
+            <span className="brand-tag">Focus · Speak · Meet</span>
+          </span>
         </Link>
         <nav className="side-nav" aria-label="App">
-          {NAV.map(([group, items]) => (
+          {NAV_GROUPS.map(([group, hrefs]) => (
             <div key={group} className="nav-group">
               <div className="nav-label">{group}</div>
-              {items.map(([href, icon, text, color]) => (
-                <Link
-                  key={href}
-                  href={href}
-                  className={`nav-item ${path === href ? "on" : ""}`}
-                  style={{ "--c": color }}
-                  aria-current={path === href ? "page" : undefined}
-                >
-                  <span className="nav-ico">{icon}</span>
-                  {text}
-                </Link>
-              ))}
+              {hrefs.map((href) => {
+                const sec = SECTIONS[href];
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={`nav-item ${path === href ? "on" : ""}`}
+                    style={{ "--c": sec.color }}
+                    aria-current={path === href ? "page" : undefined}
+                  >
+                    <span className="nav-ico">
+                      <Icon name={sec.icon} size={17} />
+                    </span>
+                    {sec.label}
+                  </Link>
+                );
+              })}
             </div>
           ))}
         </nav>
         <div className="side-spacer" />
-        <p className="side-foot small muted">Video never leaves your device.</p>
+        <p className="side-foot small muted">🔒 Video never leaves your device.</p>
       </aside>
 
       <div className="workspace">
-        <header className="topbar">
-          <div className="topbar-title" style={{ "--c": page[3] }}>
-            <span className="nav-ico">{page[1]}</span>
+        <header className="topbar" style={{ "--c": page.color }}>
+          <div className="topbar-title">
+            <span className="nav-ico lg">
+              <Icon name={page.icon} size={21} />
+            </span>
             <div>
-              <b>{page[2]}</b>
-              <span className="small muted">{page[4]}</span>
+              <b>{page.label}</b>
+              <span className="small muted">{page.desc}</span>
             </div>
           </div>
           <div className="topbar-actions">
@@ -185,15 +174,15 @@ export function AppShell({ children }) {
               <span className="dot" /> {label}
             </span>
             <button className="coach-btn" onClick={() => openCoach()} aria-label="Open the AI coach">
-              ✨ <span>Coach</span>
+              <Icon name="sparkles" size={17} /> <span>Coach</span>
             </button>
             <button className="topbar-search" onClick={() => setPalette(true)} aria-label="Search pages and actions">
-              🔎 <span>Search…</span>
+              <Icon name="search" size={16} /> <span>Search…</span>
               <kbd>Ctrl K</kbd>
             </button>
             <InstallButton />
             <button className="icon-btn" onClick={toggle} aria-label={themeLabel(theme)} title={themeLabel(theme)}>
-              {theme === "dark" ? "☀️" : "🌙"}
+              <Icon name={theme === "dark" ? "sun" : "moon"} size={18} />
             </button>
             <UserMenu user={user} onLogout={logout} />
           </div>

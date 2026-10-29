@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from "react";
-import { Outlet, Route, Routes, useLocation } from "react-router";
+import { Outlet, Route, Routes, useLocation, useParams } from "react-router";
 import { AppShell } from "@/components/AppShell";
 import { SeoSync } from "@/components/Seo";
 import { AuthProvider } from "@/lib/auth";
@@ -23,6 +23,7 @@ const Vision = lazy(() => import("./pages/app/Vision"));
 const Analytics = lazy(() => import("./pages/app/Analytics"));
 const Lab = lazy(() => import("./pages/app/Lab"));
 const Settings = lazy(() => import("./pages/app/Settings"));
+const MeetLink = lazy(() => import("./pages/app/MeetLink"));
 
 function AppLayout() {
   return (
@@ -31,6 +32,17 @@ function AppLayout() {
         <Outlet />
       </Suspense>
     </AppShell>
+  );
+}
+
+/** <site>/abc-defg-hij is a meeting link (like Meet's); any other unknown path is still a 404. */
+function MeetingOr404() {
+  const { code = "" } = useParams();
+  if (!/^[a-z]{3}-[a-z]{4}-[a-z]{3}$/.test(code)) return <NotFound />;
+  return (
+    <Suspense fallback={<Loading />}>
+      <MeetLink code={code} />
+    </Suspense>
   );
 }
 
@@ -65,6 +77,7 @@ export default function App() {
           <Route path="lab" element={<Lab />} />
           <Route path="settings" element={<Settings />} />
         </Route>
+        <Route path="/:code" element={<MeetingOr404 />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AuthProvider>

@@ -19,13 +19,17 @@ const COUNTRY_CODES = [
   ["+94", "🇱🇰 +94"],
 ];
 
+// where to go after signing in: a page of the app, or a meeting link (/abc-defg-hij) — never another site
+const MEETING_PATH = /^\/([a-z]{3}-[a-z]{4}-[a-z]{3})$/;
+const safeNext = (next) => (next && (next.startsWith("/app") || MEETING_PATH.test(next)) ? next : "/app");
+
 function useFinish() {
   const { signIn } = useAuth();
   const router = useRouter();
   const next = useSearchParams().get("next");
   return (t) => {
     signIn(t);
-    router.replace(next && next.startsWith("/app") ? next : "/app");
+    router.replace(safeNext(next));
   };
 }
 
@@ -34,7 +38,7 @@ function RedirectIfSignedIn() {
   const router = useRouter();
   const next = useSearchParams().get("next");
   useEffect(() => {
-    if (ready && user) router.replace(next && next.startsWith("/app") ? next : "/app");
+    if (ready && user) router.replace(safeNext(next));
   }, [ready, user, router, next]);
   return null;
 }
@@ -42,7 +46,7 @@ function RedirectIfSignedIn() {
 /** Opened a meeting link while signed out: join in one click as a guest (or sign in below). */
 function MeetingInvite() {
   const next = useSearchParams().get("next") ?? "";
-  const code = next.startsWith("/app/meet") ? new URLSearchParams(next.split("?")[1] ?? "").get("code") : null;
+  const code = next.match(MEETING_PATH)?.[1] ?? (next.startsWith("/app/meet") ? new URLSearchParams(next.split("?")[1] ?? "").get("code") : null);
   if (!code) return null;
   return (
     <div className="invite">

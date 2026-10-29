@@ -16,6 +16,10 @@ def password_problem(v: str) -> str | None:
     return None
 
 
+class GuestIn(BaseModel):
+    name: str = Field(default="", max_length=60, description="Shown to others, e.g. in a meeting (optional)")
+
+
 class UserCreate(BaseModel):
     username: str = Field(min_length=3, max_length=50, pattern=r"^[A-Za-z0-9_.-]+$")
     full_name: str = Field(default="", max_length=100)

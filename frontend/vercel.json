@@ -8,7 +8,8 @@
   "rewrites": [
     { "source": "/api/:path*", "destination": "https://presence-api.onrender.com/:path*" },
     { "source": "/app", "destination": "/app.html" },
-    { "source": "/app/:path*", "destination": "/app.html" }
+    { "source": "/app/:path*", "destination": "/app.html" },
+    { "source": "/:code([a-z]{3}-[a-z]{4}-[a-z]{3})", "destination": "/app.html" }
   ],
   "headers": [
     {

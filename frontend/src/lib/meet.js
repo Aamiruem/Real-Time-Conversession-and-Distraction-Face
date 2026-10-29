@@ -1,7 +1,7 @@
 // Video meetings over WebRTC. The backend only introduces people (/ws/meet/{code}); audio and video flow
 // directly between browsers, encrypted end to end by them (DTLS-SRTP). Everyone connects to everyone (mesh).
 import { getToken, wsBase } from "./api";
-import { applyEffect } from "./backgroundEffects";
+import { applyEffect, effectActive } from "./backgroundEffects";
 
 export const QUALITY = {
   hd: { label: "HD 720p", video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } }, bitrate: 1_800_000 },
@@ -45,7 +45,26 @@ export function rate(rtt, loss) {
   return "poor";
 }
 
-export const inviteLink = (code) => `${window.location.origin}/app/meet?code=${code}`;
+const LOCAL = /^(localhost$|127\.|\[::1\]$|0\.0\.0\.0$)/;
+const PRIVATE = /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/;
+/** A meeting code, like Meet's: abc-defg-hij. The meeting link is just <site>/<code>. */
+export const MEET_CODE = /^[a-z]{3}-[a-z]{4}-[a-z]{3}$/;
+
+/**
+ * The meeting link (like meet.google.com/abc-defg-hij), and who can open it:
+ *   public — a real domain (deployed, or a tunnel): anyone, anywhere
+ *   lan    — this computer's Wi-Fi address: people on the same network
+ *   local  — localhost: nobody else (localhost on their device is their own device)
+ * Opened on localhost in development, the link uses this computer's Wi-Fi address instead, so it works for others.
+ */
+export function invite(code) {
+  const { protocol, hostname, port } = window.location;
+  const lanIp = import.meta.env.VITE_LAN_IP;
+  const host = LOCAL.test(hostname) && lanIp ? lanIp : hostname;
+  const scope = LOCAL.test(host) ? "local" : PRIVATE.test(host) ? "lan" : "public";
+  return { url: `${protocol}//${host}${port ? `:${port}` : ""}/${code}`, scope, https: protocol === "https:" };
+}
+export const inviteLink = (code) => invite(code).url;
 
 export class Meeting {
   /** @param {string} code  @param {{stream: MediaStream, quality: string, onChange: (s) => void}} opts */
@@ -60,7 +79,7 @@ export class Meeting {
     this.effect = effect; // { id, image }: background blur / replacement
     this.fx = null; // { track, stop } while an effect runs
     this.retries = 0;
-    this.state = { status: "connecting", you: null, peers: {}, chat: [], reactions: [], started: null };
+    this.state = { status: "connecting", you: null, peers: {}, chat: [], reactions: [], captions: {}, started: null };
   }
 
   emit(patch) {
@@ -136,6 +155,9 @@ export class Meeting {
         setTimeout(() => this.emit({ reactions: this.state.reactions.filter((x) => x.key !== r.key) }), 4000);
         break;
       }
+      case "caption": // someone's speech as text: the latest line per person
+        this.emit({ captions: { ...this.state.captions, [m.id]: { name: m.name, text: m.text, at: Date.now() } } });
+        break;
       case "full":
         this.emit({ status: "full", maxPeople: m.max_people });
         break;
@@ -171,7 +193,7 @@ export class Meeting {
     this.fx?.stop();
     this.fx = null;
     const cam = this.stream?.getVideoTracks()[0];
-    if (cam?.readyState === "live" && effect.id !== "none") this.fx = await applyEffect(cam, effect.id, effect.image);
+    if (cam?.readyState === "live" && effectActive(effect)) this.fx = await applyEffect(cam, effect);
     if (!this.screen) await this.replace("video", this.localTrack("video"));
     this.emit({});
   }
@@ -306,7 +328,7 @@ export class Meeting {
       if (old) this.stream.removeTrack(old);
       this.stream.addTrack(fresh);
       this.stream = new MediaStream(this.stream.getTracks()); // a new object, so previews pick up the new camera
-      if (this.effect.id !== "none") this.fx = await applyEffect(fresh, this.effect.id, this.effect.image);
+      if (effectActive(this.effect)) this.fx = await applyEffect(fresh, this.effect);
       if (!this.screen) await this.replace("video", this.localTrack("video"));
     }
     this.send({ type: "state", cam: on });
@@ -369,6 +391,11 @@ export class Meeting {
 
   react(emoji) {
     this.send({ type: "react", emoji });
+  }
+
+  /** Share your own speech as a caption line (interim results update the same line). */
+  caption(text, final) {
+    if (text.trim()) this.send({ type: "caption", text: text.trim().slice(-300), final });
   }
 
   /** Live connection quality per person (round-trip time + packet loss of what they send you). */
