@@ -56,6 +56,7 @@ class Settings:
 
     # "Continue as guest": try the app without an account (a fresh guest user per visit)
     ALLOW_GUESTS: bool = _bool("ALLOW_GUESTS", "true")
+    GUEST_TOKEN_DAYS: int = int(os.getenv("GUEST_TOKEN_DAYS", "365"))
 
     # Video meetings: browsers connect directly (WebRTC); STUN finds the public address. Behind strict
     # firewalls / mobile networks a TURN relay is needed too - set TURN_URL(S) + credentials (e.g. Twilio,

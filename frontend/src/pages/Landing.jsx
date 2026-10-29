@@ -1,31 +1,6 @@
 import Link from "@/components/Link";
 import { SiteFooter, SiteHeader } from "@/components/SiteChrome";
 import { DESCRIPTION, FEATURES, HOME_FAQ, jsonLd, SITE_NAME, SITE_URL } from "@/lib/site";
-import { useState } from "react";
-import { api } from "@/lib/api";
-import { useAuth } from "@/lib/auth";
-import { useRouter } from "@/lib/navigation";
-
-/** One click into the app with a guest account (kept tiny: this page is the SEO landing page). */
-function TryAsGuest() {
-  const [busy, setBusy] = useState(false);
-  const { signIn } = useAuth();
-  const router = useRouter();
-  const go = async () => {
-    setBusy(true);
-    try {
-      signIn(await api("/auth/guest", { method: "POST" }));
-      router.push("/app"); // no page reload: straight into the app
-    } catch {
-      router.push("/login"); // guests turned off or backend offline: the normal sign-in page
-    }
-  };
-  return (
-    <button className="btn ghost" onClick={go} disabled={busy}>
-      {busy ? "Starting…" : "👤 Try it now — no sign-up"}
-    </button>
-  );
-}
 
 // Pre-rendered to static HTML at build time (scripts/prerender.mjs), so crawlers get complete HTML instantly.
 const structuredData = {
@@ -88,10 +63,13 @@ export default function Home() {
             fatigue before it hits and lets you work alongside others in focus-aware rooms.
           </p>
           <div className="cta">
-            <Link className="btn" href="/signup">
-              Start free — create account
+            {/* the app signs you in as a guest by itself (and reuses this device's login) */}
+            <Link className="btn" href="/app">
+              Open the app — no login
             </Link>
-            <TryAsGuest />
+            <Link className="btn ghost" href="/signup">
+              Create account
+            </Link>
             <Link className="btn ghost" href="#how">
               See how it works
             </Link>

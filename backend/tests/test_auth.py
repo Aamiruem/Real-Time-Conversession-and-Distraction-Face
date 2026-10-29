@@ -78,3 +78,15 @@ def test_easy_signup_without_verification(client, monkeypatch):
 def test_phone_required_when_verifying(client):
     r = client.post("/auth/register", json={"username": "nophone", "email": "np@example.com", "password": "abc12345"})
     assert r.status_code == 422
+
+
+def test_guest_login_lasts_long_enough_to_keep_the_device(client):
+    import time
+
+    import jwt
+
+    from app.config import settings
+
+    token = client.post("/auth/guest").json()["access_token"]
+    days = (jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])["exp"] - time.time()) / 86400
+    assert days > settings.GUEST_TOKEN_DAYS - 1

@@ -1,6 +1,7 @@
 import Link from "@/components/Link";
 import { usePathname, useRouter, useSearchParams } from "@/lib/navigation";
 import { useEffect, useRef, useState } from "react";
+import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useBackendStatus } from "@/lib/backend";
 import { themeLabel, useTheme } from "@/lib/theme";
@@ -62,7 +63,8 @@ function UserMenu({ user, onLogout }) {
 }
 
 export function AppShell({ children }) {
-  const { user, ready, offline, signOut } = useAuth();
+  const { user, ready, offline, signIn, signOut } = useAuth();
+  const guesting = useRef(false);
   const path = usePathname();
   const router = useRouter();
   const backend = useBackendStatus();
@@ -74,9 +76,16 @@ export function AppShell({ children }) {
     // an old invite link (/app/meet?code=…): meetings now live at their own link, /<code>, which guests can open too
     const code = path === "/app/meet" && new URLSearchParams(query).get("code");
     if (code && /^[a-z]{3}-[a-z]{4}-[a-z]{3}$/.test(code)) return router.replace(`/${code}`);
-    // keep the query too, so links into the app still open the right page after signing in
-    if (ready && !user && !offline) router.replace(`/login?next=${encodeURIComponent(path + (query ? `?${query}` : ""))}`);
-  }, [ready, user, offline, path, query, router]);
+    if (!ready || user || offline || guesting.current) return;
+    // no login on this device: open the app straight away as a guest (kept on this device; make a real account
+    // any time in Settings). Only when guests are turned off (ALLOW_GUESTS=false) does it go to the login page,
+    // keeping the query too, so links into the app still open the right page after signing in.
+    guesting.current = true;
+    api("/auth/guest", { method: "POST" })
+      .then(signIn)
+      .catch(() => router.replace(`/login?next=${encodeURIComponent(path + (query ? `?${query}` : ""))}`))
+      .finally(() => (guesting.current = false));
+  }, [ready, user, offline, path, query, router, signIn]);
 
   useEffect(() => {
     const onKey = (e) => {

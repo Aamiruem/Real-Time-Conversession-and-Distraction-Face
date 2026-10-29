@@ -36,7 +36,9 @@ def find_user(db: Session, identifier: str) -> tuple[User | None, str]:
 
 
 def token_for(user: User) -> Token:
-    return Token(access_token=create_access_token(user.id), user=UserOut.model_validate(user))
+    # a guest has no password to sign in again with, so its login lasts long enough to keep the device's data
+    minutes = settings.GUEST_TOKEN_DAYS * 24 * 60 if user.username.startswith(GUEST_PREFIX) else None
+    return Token(access_token=create_access_token(user.id, minutes), user=UserOut.model_validate(user))
 
 
 def unverified_error(user: User) -> HTTPException:
