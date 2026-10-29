@@ -1,6 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot, hydrateRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router";
+import { registerServiceWorker } from "./lib/pwa";
 import App from "./Root";
 import "./styles/globals.css";
 
@@ -12,6 +13,8 @@ const app = (
     </BrowserRouter>
   </StrictMode>
 );
+
+registerServiceWorker(); // installable app + instant repeat visits (production only)
 
 // Pre-rendered pages (scripts/prerender.mjs) carry their path; hydrate those, render everything else fresh.
 const norm = (p) => p.replace(/\/+$/, "") || "/";

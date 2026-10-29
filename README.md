@@ -28,6 +28,10 @@ assistants such as Claude use Presence AI's engines and data as tools.
 | Machine learning | Fatigue-risk classifier: CV model selection, model card, per-prediction explanations, retraining from users' own ratings | scikit-learn |
 | NLP | Sentiment (VADER or **Amazon Comprehend**), toxicity, keywords, wording confidence, conversation summaries | vaderSentiment |
 | Real-time rooms | WebSocket chat, presence, typing, everyone's live focus, drowsy alerts | FastAPI WebSockets |
+| Meet (video calls) | Zoom/Meet-style meetings by link: HD 720p / Full HD 1080p / data-saver video, echo-cancelled noise-suppressed 48 kHz audio, screen share, chat, reactions, raised hands, active speaker, per-person connection quality, device picker, Ctrl+D / Ctrl+E — up to 8 people, browser to browser (end-to-end encrypted media) | WebRTC, `backend/app/routers/meet_routes.py`, `frontend/src/lib/meet.js` |
+| Voice coach | A female voice guides focus sessions and interview practice: which way to move or turn, light, posture, reads questions aloud and speaks feedback after each answer ("don't say *I think*, say *I'm confident*") | Web Speech API, `frontend/src/lib/voiceCoach.js` |
+| Object detection | Every object the camera sees is boxed and named (80 everyday types: phone, laptop, cup, book, chair…) with confidence; phones and other people count against interview focus | MediaPipe EfficientDet-Lite2 |
+| Guest access & app install | "Continue as guest" / "Try it now" — use everything without an account; **Install app** button (PWA) with offline shell and shortcuts | `POST /auth/guest`, `public/sw.js` |
 | Auth | Sign up and log in with username / email / mobile + password, OTP login, password reset. **Easy mode** (default locally): accounts work instantly. **Verified mode**: email + mobile OTP via **AWS SES / SNS** | JWT, bcrypt |
 | SEO | Static HTML landing + keyword-targeted feature pages, metadata API, Open Graph/Twitter, JSON-LD (SoftwareApplication, Organization, FAQPage, BreadcrumbList), sitemap.xml, robots.txt, manifest; the private app is `noindex` | Vite build-time pre-rendering |
 | MCP server | 18 tools (NLP, speech coaching, fatigue ML, model card, users, sessions, rooms, insights, leaderboard, recommendations, AI coach, interview questions + guide), 2 prompts, 1 resource — over stdio or HTTP `/mcp` | Model Context Protocol (`mcp` SDK) |
@@ -156,6 +160,8 @@ AWS RDS via `DATABASE_URL`); reports can go to S3, email/SMS through SES/SNS.
 | Rooms | `POST /rooms` | `GET /rooms` | `PATCH /rooms/{id}` (creator) | `DELETE /rooms/{id}` (creator) |
 | Messages | `POST /rooms/{id}/messages`, WebSocket | `GET /rooms/{id}/messages` | `PATCH …/messages/{mid}` (author) | `DELETE …/messages/{mid}` (author) |
 | Coaching | `POST /coach/ask` | `GET /recommendations`, `/coach/insight`, `/analytics/dashboard` | — | — |
+| Meetings | `POST /meet` | `GET /meet/{code}` | WebSocket `/ws/meet/{code}` (signaling, chat, state) | ends when everyone leaves |
+| Guest | `POST /auth/guest` | — | — | — |
 
 ## 🤖 MCP server (use Presence AI from Claude and other AI assistants)
 
@@ -186,6 +192,23 @@ AWS RDS via `DATABASE_URL`); reports can go to S3, email/SMS through SES/SNS.
 **Remote (HTTP):** set `MCP_API_KEY` and the API serves `POST /mcp` (Streamable HTTP). Clients send
 `Authorization: Bearer <MCP_API_KEY>`. Without the key the endpoint stays off. Set `MCP_ALLOW_FILES=false` on
 a public server so `coach_speech_file` can't read server files.
+
+## 🌍 Deploy free-tier style: Vercel (website) + Render (API + PostgreSQL)
+
+1. **Backend on Render** — Dashboard → *New → Blueprint* → choose this repo. [render.yaml](render.yaml) creates the
+   Docker API and a managed PostgreSQL and connects them. Fill in `SITE_URL` (your Vercel URL) and any optional keys
+   (MongoDB Atlas `MONGODB_URI`, `ANTHROPIC_API_KEY`, AWS, TURN). Check `https://<your-api>.onrender.com/health`.
+2. **Frontend on Vercel** — *Add New → Project* → this repo, **Root Directory `frontend`** ([vercel.json](frontend/vercel.json)
+   does the rest). Environment variables: `VITE_SITE_URL=https://<your-app>.vercel.app` and
+   `VITE_WS_URL=wss://<your-api>.onrender.com` (Vercel can't proxy WebSockets, so meetings and room chat connect to
+   Render directly). If Render gave your API a different URL than `presence-api.onrender.com`, change it in the
+   `/api` rewrite in `frontend/vercel.json`.
+3. Open the Vercel URL in any browser → **Try it now — no sign-up**, or **Install app**. HTTPS is automatic on both,
+   which camera, microphone and screen sharing require.
+
+Meetings connect people directly; across strict office firewalls or some mobile networks a **TURN relay** is needed
+(`TURN_URLS`, `TURN_USERNAME`, `TURN_CREDENTIAL` — e.g. Metered, Twilio, Cloudflare Calls or your own coturn).
+Meetings are kept in the API's memory, so run a single API instance (the default).
 
 ## 🐳 Docker (PostgreSQL + Nginx included)
 

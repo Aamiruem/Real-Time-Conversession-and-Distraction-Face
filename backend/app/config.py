@@ -34,6 +34,8 @@ def aws_database_url() -> str:
 def database_url() -> str:
     """Where data is stored. DATABASE_URL (docker compose, custom setups) wins; otherwise DATABASE=local|aws."""
     url = os.getenv("DATABASE_URL", "").strip()
+    if url.startswith("postgres://"):  # Heroku / older Render style; SQLAlchemy needs postgresql://
+        url = "postgresql://" + url[len("postgres://"):]
     if url:
         prefix = "sqlite:///./"  # relative SQLite paths are anchored to backend/, not the cwd
         return f"sqlite:///{(BACKEND_DIR / url[len(prefix):]).as_posix()}" if url.startswith(prefix) else url
@@ -51,6 +53,18 @@ class Settings:
     # the server certificate (download global-bundle.pem from AWS). Empty = driver default.
     DB_SSLMODE: str = os.getenv("DB_SSLMODE", "require" if ".rds.amazonaws.com" in DATABASE_URL else "")
     DB_SSLROOTCERT: str = os.getenv("DB_SSLROOTCERT", "")
+
+    # "Continue as guest": try the app without an account (a fresh guest user per visit)
+    ALLOW_GUESTS: bool = _bool("ALLOW_GUESTS", "true")
+
+    # Video meetings: browsers connect directly (WebRTC); STUN finds the public address. Behind strict
+    # firewalls / mobile networks a TURN relay is needed too - set TURN_URL(S) + credentials (e.g. Twilio,
+    # Metered, Cloudflare or your own coturn).
+    STUN_URLS: str = os.getenv("STUN_URLS", "stun:stun.l.google.com:19302,stun:stun1.l.google.com:19302")
+    TURN_URLS: str = os.getenv("TURN_URLS", "")
+    TURN_USERNAME: str = os.getenv("TURN_USERNAME", "")
+    TURN_CREDENTIAL: str = os.getenv("TURN_CREDENTIAL", "")
+    MEET_MAX_PEOPLE: int = int(os.getenv("MEET_MAX_PEOPLE", "8"))
 
     # MongoDB mirror: every saved record is also kept in MongoDB (one collection per table). Empty = off.
     MONGODB_URI: str = os.getenv("MONGODB_URI", "").strip()

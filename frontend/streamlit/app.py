@@ -5,10 +5,25 @@ Run (from frontend/streamlit/): streamlit run app.py
 This file only decides *which* pages exist (sign-in only when signed out, everything when signed in); each page
 draws itself and calls `setup()` (st.set_page_config) first, so nothing may be rendered here before `pg.run()`.
 """
+import threading
+
 import streamlit as st
 
 from utils.ui import restore_login
 
+
+@st.cache_resource(show_spinner=False)
+def _preload_camera_stack():
+    """Import the video/CV libraries (WebRTC, OpenCV, MediaPipe: ~20 s the first time) in the background once per
+    server process, so the first visit to a camera page doesn't wait for them."""
+    def load():
+        import streamlit_webrtc  # noqa: F401
+        import utils.video  # noqa: F401
+
+    threading.Thread(target=load, name="preload-camera", daemon=True).start()
+
+
+_preload_camera_stack()
 restore_login()
 
 home = st.Page("views/home.py", title="Dashboard", icon="🏠", default=True)

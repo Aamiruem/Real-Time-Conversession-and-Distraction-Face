@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AttentionEngine, LEFT_EYE, LEFT_IRIS, RIGHT_EYE, RIGHT_IRIS, STATE_COLORS } from "./attention";
 import { BodyTracker } from "./body";
 import { PresenceTracker } from "./presence";
+import { faceFrame } from "./voiceCoach";
 
 let landmarkerPromise = null;
 
@@ -68,7 +69,7 @@ export function useFaceTracker({ audio = false, presence: withPresence = false, 
         const now = performance.now();
         if (now - lastUi > 200) {
           lastUi = now;
-          setMetrics(engine.current.metrics());
+          setMetrics({ ...engine.current.metrics(), frame: faceFrame(lm) }); // where the face is (voice coach)
         }
       }
       raf.current = requestAnimationFrame(tick);

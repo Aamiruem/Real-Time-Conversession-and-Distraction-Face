@@ -10,4 +10,5 @@ export { ConversationFeedback } from "./ConversationFeedback";
 export { ChartCard, EmptyChart, GoalRing, GRID, Kpi, SERIES, TICK, TOOLTIP, timeAgo } from "./dashboard";
 export { InterviewFeedback } from "./InterviewFeedback";
 export { Logo, SiteFooter, SiteHeader } from "./SiteChrome";
+export { VoiceCaption, VoiceCoachControl } from "./VoiceCoachControl";
 export { Bars, Donut, Gauge, Metric, PageHead, RiskCard, SpeechResult, StateBadge } from "./ui";

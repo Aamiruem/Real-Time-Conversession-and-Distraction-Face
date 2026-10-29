@@ -98,3 +98,12 @@ export async function api(path, init = {}) {
 
 /** Backend timestamps are UTC; SQLite returns them without an offset. */
 export const toDate = (s) => new Date(/(Z|[+-]\d\d:\d\d)$/.test(s) ? s : `${s}Z`);
+
+/** WebSocket origin of the backend: VITE_WS_URL when the API is hosted elsewhere (Vercel + Render), else same host. */
+export function wsBase() {
+  const env = import.meta.env.VITE_WS_URL;
+  if (env) return env.replace(/\/$/, "");
+  const { protocol, host } = window.location;
+  // same origin: the Vite dev/preview server and Nginx both forward /ws/* to the backend
+  return `${protocol === "https:" ? "wss" : "ws"}://${host}`;
+}

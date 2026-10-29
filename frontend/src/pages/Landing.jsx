@@ -1,6 +1,27 @@
 import Link from "@/components/Link";
 import { SiteFooter, SiteHeader } from "@/components/SiteChrome";
 import { DESCRIPTION, FEATURES, HOME_FAQ, jsonLd, SITE_NAME, SITE_URL } from "@/lib/site";
+import { useState } from "react";
+import { api, setToken } from "@/lib/api";
+
+/** One click into the app with a guest account (kept tiny: this page is the SEO landing page). */
+function TryAsGuest() {
+  const [busy, setBusy] = useState(false);
+  const go = async () => {
+    setBusy(true);
+    try {
+      setToken((await api("/auth/guest", { method: "POST" })).access_token);
+      window.location.assign("/app");
+    } catch {
+      window.location.assign("/login"); // guests turned off or backend offline: the normal sign-in page
+    }
+  };
+  return (
+    <button className="btn ghost" onClick={go} disabled={busy}>
+      {busy ? "Starting…" : "👤 Try it now — no sign-up"}
+    </button>
+  );
+}
 
 // Pre-rendered to static HTML at build time (scripts/prerender.mjs), so crawlers get complete HTML instantly.
 const structuredData = {
@@ -66,6 +87,7 @@ export default function Home() {
             <Link className="btn" href="/signup">
               Start free — create account
             </Link>
+            <TryAsGuest />
             <Link className="btn ghost" href="#how">
               See how it works
             </Link>

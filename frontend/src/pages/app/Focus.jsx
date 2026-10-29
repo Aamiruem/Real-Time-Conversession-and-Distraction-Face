@@ -1,8 +1,22 @@
 import { useEffect, useRef, useState } from "react";
+import { VoiceCaption, VoiceCoachControl } from "@/components/VoiceCoachControl";
 import { Donut, Gauge, Metric, PageHead, RiskCard } from "@/components/ui";
 import { api, toDate } from "@/lib/api";
 import { livePayload, sessionPayload, STATE_COLORS, STATE_EMOJI, THRESHOLDS } from "@/lib/attention";
 import { useFaceTracker } from "@/lib/useFaceTracker";
+import { focusCue, TiltBaseline, useVoiceCoachLifecycle } from "@/lib/voiceCoach";
+
+// how long before the same spoken reminder may repeat (others: 15 s)
+const COOLDOWN = { drowsy: 20_000, yawn: 60_000, noface: 20_000 };
+
+function sessionSummary(f) {
+  const lines = [`Session saved. You were focused ${Math.round(f.focusPct)} percent of the time.`];
+  if (f.drowsyPct > 10) lines.push("You looked tired. Take a short break and some fresh air before the next session.");
+  else if (f.focusPct >= 80) lines.push("Excellent concentration. Well done!");
+  else if (f.distractedPct > 25) lines.push("You looked away quite often. Next time, put your phone away and close extra tabs.");
+  else lines.push("Good session. Keep building the habit.");
+  return lines;
+}
 
 function beep() {
   const ctx = new AudioContext();
@@ -29,6 +43,8 @@ export default function FocusMonitor() {
   const startedAt = useRef("");
   const lastPush = useRef(0);
   const wasDrowsy = useRef(false);
+  const coach = useVoiceCoachLifecycle();
+  const tilt = useRef(new TiltBaseline());
 
   useEffect(() => {
     api("/attention/sessions")
@@ -46,7 +62,12 @@ export default function FocusMonitor() {
       lastPush.current = now;
       api("/attention/update", { method: "POST", json: livePayload(m) }).catch(() => {});
     }
-  }, [m, status, alarmOn]);
+    // spoken guidance: which way to turn back, wake-up reminders, praise for long focused stretches
+    tilt.current.add(m.frame);
+    const cue = focusCue(m, m.frame, tilt.current.value);
+    coach.cue(cue, { cooldown: COOLDOWN[cue?.[0]] ?? 15_000 });
+    if (m.state === "Focused" && m.elapsedSec > 300) coach.once("praise", "Great focus. Keep going!", 600_000);
+  }, [m, status, alarmOn, coach]);
 
   async function onStart() {
     setSaved(null);
@@ -54,12 +75,15 @@ export default function FocusMonitor() {
     setFatigue(null);
     setErr("");
     startedAt.current = new Date().toISOString();
-    await start();
+    coach.reset();
+    tilt.current.reset();
+    if (await start()) coach.say("Focus session started. I'll gently remind you if you drift away.");
   }
 
   async function onStop() {
     const f = stop();
     setFinal(f);
+    if (f.elapsedSec >= 3) coach.sayAll(sessionSummary(f));
     if (f.elapsedSec < 3) return setErr("Session too short to save.");
     try {
       const s = await api("/attention/sessions", { method: "POST", json: sessionPayload(f, startedAt.current) });
@@ -151,6 +175,10 @@ export default function FocusMonitor() {
               alarm
             </label>
           </div>
+          <div style={{ marginTop: 10 }}>
+            <VoiceCoachControl greeting="Hi! I'll tell you if you look away or get sleepy, and which way to turn back." />
+          </div>
+          <VoiceCaption />
           {error && <div className="alert error">{error}</div>}
           {err && <div className="alert error">{err}</div>}
         </div>

@@ -18,6 +18,7 @@ const Speech = lazy(() => import("./pages/app/Speech"));
 const Conversation = lazy(() => import("./pages/app/Conversation"));
 const Interview = lazy(() => import("./pages/app/Interview"));
 const Rooms = lazy(() => import("./pages/app/Rooms"));
+const Meet = lazy(() => import("./pages/app/Meet"));
 const Analytics = lazy(() => import("./pages/app/Analytics"));
 const Lab = lazy(() => import("./pages/app/Lab"));
 const Settings = lazy(() => import("./pages/app/Settings"));
@@ -56,6 +57,7 @@ export default function App() {
           <Route path="speech" element={<Speech />} />
           <Route path="conversation" element={<Conversation />} />
           <Route path="interview" element={<Interview />} />
+          <Route path="meet" element={<Meet />} />
           <Route path="rooms" element={<Rooms />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="lab" element={<Lab />} />

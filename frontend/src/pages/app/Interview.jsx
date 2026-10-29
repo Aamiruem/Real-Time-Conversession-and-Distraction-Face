@@ -3,7 +3,9 @@ import { InterviewFeedback } from "@/components/InterviewFeedback";
 import { PageHead } from "@/components/ui";
 import { api, cachedApi, toDate } from "@/lib/api";
 import { loadBodyModels } from "@/lib/body";
+import { VoiceCaption, VoiceCoachControl } from "@/components/VoiceCoachControl";
 import { cameraCheck } from "@/lib/presence";
+import { answerFeedback, framingCue, headCue, pictureCue, TiltBaseline, useVoiceCoachLifecycle } from "@/lib/voiceCoach";
 import { loadFaceLandmarker, useFaceTracker } from "@/lib/useFaceTracker";
 import { useVoiceCommands } from "@/lib/useVoiceCommands";
 import { levelPct, useVoiceRecorder } from "@/lib/useVoiceRecorder";
@@ -96,8 +98,11 @@ export default function InterviewPrep() {
     window.addEventListener("presence:tab", onTab);
     cachedApi("/interview/fields", 600_000).then(setFields).catch((e) => setErr(e.message));
     cachedApi("/interview/guide", 600_000).then(setGuide).catch(() => {});
-    // warm up the camera AI while you read the question, so "Camera check" starts almost instantly
-    const warm = () => loadFaceLandmarker().then(() => loadBodyModels()).catch(() => {});
+    // warm up the camera AI (~25 MB, cached afterwards) while you read the question, so "Camera check" starts
+    // almost instantly — but not on Data Saver or slow mobile data, where it loads when the camera starts instead
+    const net = navigator.connection;
+    const metered = net?.saveData || /(^|-)(2g|3g)$/.test(net?.effectiveType ?? "");
+    const warm = () => !metered && loadFaceLandmarker().then(() => loadBodyModels()).catch(() => {});
     const idle = window.requestIdleCallback ? window.requestIdleCallback(warm) : window.setTimeout(warm, 1500);
     api("/speech/sessions/latest")
       .then((r) => r?.report?.interview && setResult((cur) => cur ?? { report: r.report, when: r.created_at }))
@@ -124,6 +129,23 @@ export default function InterviewPrep() {
   const live = cam.presence.current?.live;
   const bodyLive = cam.body.current?.live;
   const categories = useMemo(() => [...new Set(questions.map((x) => x.category))], [questions]);
+  const coach = useVoiceCoachLifecycle();
+  const tilt = useRef(new TiltBaseline());
+
+  // spoken camera coaching before you answer: position, light, head direction — then a "ready" cue.
+  // Quiet while you answer (the microphone would record the coach), feedback is spoken afterwards.
+  useEffect(() => {
+    if (!camOn || recording || busy) return;
+    tilt.current.add(m.frame);
+    const cue = framingCue(m.frame) ?? pictureCue(live) ?? headCue(m.frame, tilt.current.value);
+    coach.cue(cue);
+    if (!cue && m.elapsedSec > 3) {
+      coach.once("ready", "Perfect. You're well framed and the light is good. Look at the camera lens, smile, and press Record when you're ready.", 120_000);
+    }
+  }, [m, camOn, recording, busy, live, coach]);
+  useEffect(() => {
+    if (!camOn) tilt.current.reset();
+  }, [camOn]);
 
   function practise(id) {
     setQid(id);
@@ -132,8 +154,10 @@ export default function InterviewPrep() {
   }
   function nextQuestion() {
     const i = questions.findIndex((x) => x.id === qid);
-    setQid(questions[(i + 1) % questions.length].id);
+    const next = questions[(i + 1) % questions.length];
+    setQid(next.id);
     setHints(false);
+    coach.say(next.q); // read the question aloud, like a real interviewer
   }
 
   async function onRecord() {
@@ -142,6 +166,8 @@ export default function InterviewPrep() {
     if (!camOn) media = await cam.start();
     if (!media) return;
     // measure only this answer: restart the attention + presence statistics
+    await coach.say("Go ahead, I'm listening.", 2500); // finishes before the microphone starts recording
+    coach.setMuted(true);
     cam.engine.current.reset();
     cam.presence.current.reset();
     cam.body.current.reset();
@@ -150,10 +176,15 @@ export default function InterviewPrep() {
 
   async function onStop() {
     const take = await mic.finish();
+    coach.setMuted(false);
     if (!take) return;
     const eye = cam.engine.current.metrics().focusPct;
     const presence = { ...cam.presence.current.summary(eye), ...cam.body.current.summary() };
-    if (take.seconds < 8) return setErr("Answer too short — speak for at least 8 seconds (aim for 45–120).");
+    if (take.seconds < 8) {
+      coach.say("That was too short. Try to speak for about one minute.");
+      return setErr("Answer too short — speak for at least 8 seconds (aim for 45–120).");
+    }
+    coach.say("Thank you. Let me analyse your answer.");
     const form = new FormData();
     form.append("audio", take.blob, take.filename);
     form.append("question_id", qid);
@@ -164,6 +195,7 @@ export default function InterviewPrep() {
     try {
       const r = await api("/interview/answer", { method: "POST", body: form });
       setResult({ report: r.report, audioUrl: take.url, id: r.session_id });
+      coach.sayAll(answerFeedback(r.report));
     } catch (e) {
       setErr(e.message);
     } finally {
@@ -172,7 +204,11 @@ export default function InterviewPrep() {
   }
 
   function randomQuestion() {
-    if (questions.length) setQid(questions[Math.floor(Math.random() * questions.length)].id);
+    if (questions.length) {
+      const pick = questions[Math.floor(Math.random() * questions.length)];
+      setQid(pick.id);
+      coach.say(pick.q);
+    }
     setHints(false);
   }
 
@@ -268,6 +304,10 @@ export default function InterviewPrep() {
         <button className={`cmd ${showKeys ? "on" : ""}`} onClick={() => setShowKeys((v) => !v)} title="Keyboard shortcuts (?)">
           ⌨️ <span>Shortcuts</span>
         </button>
+      </div>
+      <div style={{ margin: "-4px 0 14px" }}>
+        <VoiceCoachControl greeting="Hi! I'm your interview coach. I'll read each question, help you sit well in the frame, and tell you what to improve after every answer." />
+        <VoiceCaption />
       </div>
       {(showKeys || voice.enabled) && (
         <div className="cmd-help">
@@ -463,7 +503,7 @@ export default function InterviewPrep() {
                       [
                         "📱",
                         "In frame",
-                        [...bodyLive.objects, bodyLive.people > 1 ? `${bodyLive.people} people` : ""].filter(Boolean).join(", ") || "clear",
+                        [...(bodyLive.named ?? bodyLive.objects), bodyLive.people > 1 ? `${bodyLive.people} people` : ""].filter(Boolean).join(", ") || "clear",
                         !bodyLive.objects.includes("cell phone") && bodyLive.people <= 1,
                       ],
                     ].map(([icon, label, value, ok]) => (

@@ -1,17 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Gauge, PageHead } from "@/components/ui";
-import { api, getToken, toDate } from "@/lib/api";
+import { api, getToken, toDate, wsBase } from "@/lib/api";
 import { livePayload, STATE_COLORS, STATE_EMOJI } from "@/lib/attention";
 import { useAuth } from "@/lib/auth";
 import { useFaceTracker } from "@/lib/useFaceTracker";
-
-function wsBase() {
-  const env = import.meta.env.VITE_WS_URL;
-  if (env) return env.replace(/\/$/, "");
-  const { protocol, hostname, host, port } = window.location;
-  if (import.meta.env.DEV) return `ws://${hostname}:8010`; // dev server: the backend runs separately
-  return `${protocol === "https:" ? "wss" : "ws"}://${host}`; // production: same origin via Nginx
-}
 
 const SENTIMENT = { positive: "😊", negative: "😟", neutral: "😐" };
 

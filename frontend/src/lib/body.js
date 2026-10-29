@@ -31,8 +31,8 @@ export function loadBodyModels() {
         ObjectDetector.createFromOptions(files, {
           baseOptions: { modelAssetPath: "/mediapipe/efficientdet_lite2.tflite", delegate },
           runningMode: "VIDEO",
-          scoreThreshold: 0.45,
-          maxResults: 6,
+          scoreThreshold: 0.4,
+          maxResults: 10, // up to 10 things at once, any of the 80 everyday COCO object types
         }),
       ),
     ]);
@@ -42,7 +42,10 @@ export function loadBodyModels() {
   return modelsPromise;
 }
 
-// COCO labels worth commenting on in an interview
+/** "cell phone" -> "Cell phone" for on-screen labels. */
+export const prettyLabel = (l) => l.charAt(0).toUpperCase() + l.slice(1);
+
+// COCO labels worth commenting on in an interview (the rest are named on screen but not scored)
 const NOTABLE = ["cell phone", "person", "cup", "bottle", "book", "laptop", "tv", "remote", "keyboard", "mouse", "dog", "cat"];
 const P = { nose: 0, lSh: 11, rSh: 12, lEl: 13, rEl: 14, lWr: 15, rWr: 16 };
 const vis = (p) => p && (p.visibility ?? 1) > 0.5 && p.x > 0 && p.x < 1 && p.y > 0 && p.y < 1.05;
@@ -73,7 +76,7 @@ export class BodyTracker {
     this.lastObjects = 0;
     this.lastPose = null;
     this.detections = [];
-    this.live = { posture: "—", tilt: 0, hands: "—", gesture: "—", objects: [], people: 0, touching: false };
+    this.live = { posture: "—", tilt: 0, hands: "—", gesture: "—", objects: [], named: [], people: 0, touching: false };
   }
 
   async load() {
@@ -85,7 +88,7 @@ export class BodyTracker {
     if (!this.models || !video.videoWidth) return;
     this.frames += 1;
     if (this.frames % 3 === 0) this.pose(this.models.pose.detectForVideo(video, now).landmarks?.[0]);
-    if (now - this.lastObjects > 1000) {
+    if (now - this.lastObjects > 500) { // twice a second: boxes follow moving objects
       this.lastObjects = now;
       this.objects(this.models.objects.detectForVideo(video, now).detections ?? []);
     }
@@ -150,14 +153,19 @@ export class BodyTracker {
   objects(dets) {
     this.objectChecks += 1;
     this.detections = dets;
-    const labels = dets.map((d) => d.categories[0]?.categoryName).filter((l) => NOTABLE.includes(l));
+    const all = dets.map((d) => d.categories[0]?.categoryName).filter(Boolean);
+    const counts = {};
+    for (const l of all) if (l !== "person") counts[l] = (counts[l] ?? 0) + 1;
+    // every object in view, by name: "Laptop", "Cup ×2"…
+    this.live.named = Object.entries(counts).map(([l, n]) => (n > 1 ? `${prettyLabel(l)} ×${n}` : prettyLabel(l)));
+    const labels = all.filter((l) => NOTABLE.includes(l));
     const people = labels.filter((l) => l === "person").length;
     this.peopleMax = Math.max(this.peopleMax, people);
     for (const l of new Set(labels)) this.objectSeen[l] = (this.objectSeen[l] ?? 0) + 1;
     Object.assign(this.live, { objects: [...new Set(labels.filter((l) => l !== "person"))], people });
   }
 
-  /** Draw the upper-body skeleton and object boxes (not people — no box over your face). */
+  /** Draw the upper-body skeleton and a named box for every object (not people — no box over your face). */
   draw(canvas, video) {
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
@@ -193,9 +201,9 @@ export class BodyTracker {
     ctx.font = "600 15px system-ui, sans-serif";
     for (const d of this.detections) {
       const label = d.categories[0]?.categoryName;
-      if (!d.boundingBox || !label || label === "person" || !NOTABLE.includes(label)) continue;
+      if (!d.boundingBox || !label || label === "person") continue;
       const { originX, originY, width, height } = d.boundingBox;
-      const color = label === "cell phone" ? "#f97316" : "#38bdf8";
+      const color = label === "cell phone" ? "#f97316" : NOTABLE.includes(label) ? "#38bdf8" : "#4ade80";
       ctx.strokeStyle = color;
       ctx.lineWidth = 2;
       ctx.strokeRect(originX * sx, originY * sy, width * sx, height * sy);
@@ -205,7 +213,7 @@ export class BodyTracker {
       ctx.scale(-1, 1);
       const tx = w - (originX + width) * sx,
         ty = Math.max(18, originY * sy - 6);
-      const text = `${label} ${Math.round(d.categories[0].score * 100)}%`;
+      const text = `${prettyLabel(label)} ${Math.round(d.categories[0].score * 100)}%`;
       ctx.fillStyle = color;
       ctx.fillRect(tx, ty - 16, ctx.measureText(text).width + 10, 20);
       ctx.fillStyle = "#04121f";

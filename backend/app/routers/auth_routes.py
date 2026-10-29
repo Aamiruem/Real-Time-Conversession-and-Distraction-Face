@@ -1,5 +1,6 @@
 """Sign-up with email + mobile OTP verification, password / OTP login and password reset."""
 import re
+import secrets
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import delete, or_, select
@@ -15,6 +16,7 @@ from app.schemas import (AccountDelete, OtpLoginIn, OtpRequestIn, OtpSentOut, Pa
 from app.services import otp_service
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+GUEST_PREFIX = "guest-"  # reserved: only POST /auth/guest creates these usernames
 
 
 def normalize_phone(value: str) -> str:
@@ -46,6 +48,8 @@ def register(data: UserCreate, db: Session = Depends(get_db)):
     email, phone = data.email.lower(), normalize_phone(data.phone) if data.phone else None
     if settings.REQUIRE_VERIFICATION and not phone:
         raise HTTPException(422, "Mobile number is required")
+    if data.username.lower().startswith(GUEST_PREFIX):
+        raise HTTPException(400, f"Usernames starting with '{GUEST_PREFIX}' are reserved for guests")
     taken = [User.username == data.username, User.email == email] + ([User.phone == phone] if phone else [])
     clash = db.scalar(select(User).where(or_(*taken)))
     if clash:
@@ -105,6 +109,23 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
         raise HTTPException(401, "Invalid username/email/mobile or password")
     if not user.is_verified:
         raise unverified_error(user)
+    return token_for(user)
+
+
+@router.post("/guest", response_model=Token)
+def guest(db: Session = Depends(get_db)):
+    """Try everything without an account: a fresh, verified guest user (random name, unguessable password).
+
+    Guests can create a real account any time from Settings; ALLOW_GUESTS=false turns this off.
+    """
+    if not settings.ALLOW_GUESTS:
+        raise HTTPException(403, "Guest access is turned off - please create an account")
+    tag = secrets.token_hex(3)
+    user = User(username=f"{GUEST_PREFIX}{tag}", full_name=f"Guest {tag.upper()}", email=f"{GUEST_PREFIX}{tag}@guest.local",
+                password_hash=hash_password(secrets.token_urlsafe(24)), email_verified=True, phone_verified=True)
+    db.add(user)
+    db.commit()
+    db.refresh(user)
     return token_for(user)
 
 

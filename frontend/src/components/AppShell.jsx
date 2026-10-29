@@ -8,6 +8,7 @@ import { BackendNotice } from "./BackendNotice";
 import { CoachPanel, openCoach } from "./CoachPanel";
 import { CommandPalette } from "./CommandPalette";
 import { Logo } from "./SiteChrome";
+import { InstallButton } from "@/lib/pwa";
 
 // Grouped navigation; each page has its own colour so it is easy to find again (sidebar tile + top bar).
 const NAV = [
@@ -21,7 +22,13 @@ const NAV = [
       ["/app/interview", "💼", "Interview Prep", "#f59e0b", "Mock interviews, any field"],
     ],
   ],
-  ["Community", [["/app/rooms", "💬", "Focus Rooms", "#2dd4bf", "Chat with live focus"]]],
+  [
+    "Community",
+    [
+      ["/app/meet", "📹", "Meet", "#ef4444", "HD video meetings, screen share, chat"],
+      ["/app/rooms", "💬", "Focus Rooms", "#2dd4bf", "Chat with live focus"],
+    ],
+  ],
   [
     "Insights",
     [
@@ -90,7 +97,8 @@ export function AppShell({ children }) {
   const [palette, setPalette] = useState(false);
 
   useEffect(() => {
-    if (ready && !user && !offline) router.replace(`/login?next=${encodeURIComponent(path)}`);
+    // keep the query too, so an invite link (/app/meet?code=…) still opens the meeting after signing in
+    if (ready && !user && !offline) router.replace(`/login?next=${encodeURIComponent(path + window.location.search)}`);
   }, [ready, user, offline, path, router]);
 
   useEffect(() => {
@@ -182,6 +190,7 @@ export function AppShell({ children }) {
               🔎 <span>Search…</span>
               <kbd>Ctrl K</kbd>
             </button>
+            <InstallButton />
             <button className="icon-btn" onClick={toggle} aria-label={themeLabel(theme)} title={themeLabel(theme)}>
               {theme === "dark" ? "☀️" : "🌙"}
             </button>

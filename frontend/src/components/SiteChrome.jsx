@@ -1,6 +1,7 @@
 import { useId } from "react";
 import Link from "@/components/Link";
 import { FEATURES, SITE_NAME } from "@/lib/site";
+import { InstallButton } from "@/lib/pwa";
 import { themeLabel, useTheme } from "@/lib/theme";
 
 /** Presence AI mark: a focus ring with an attention dot (being present) and two voice waves (having presence). */
@@ -35,6 +36,7 @@ export function SiteHeader() {
           <Link href="/#features">Features</Link>
           <Link href="/#how">How it works</Link>
           <Link href="/#faq">FAQ</Link>
+          <InstallButton />
           <button className="icon-btn" onClick={toggle} aria-label={themeLabel(theme)} title={themeLabel(theme)}>
             {theme === "dark" ? "☀️" : "🌙"}
           </button>

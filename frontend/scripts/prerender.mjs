@@ -45,14 +45,29 @@ await writeFile(
   "dist/manifest.webmanifest",
   JSON.stringify(
     {
+      id: "/app",
       name: SITE_NAME,
       short_name: "Presence",
       description: DESCRIPTION,
       start_url: "/app",
+      scope: "/",
       display: "standalone",
+      display_override: ["window-controls-overlay", "standalone"],
       background_color: "#0b1120",
       theme_color: "#0b1120",
-      icons: [{ src: "/icon.svg", sizes: "any", type: "image/svg+xml" }],
+      categories: ["education", "productivity", "business"],
+      icons: [
+        { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
+        { src: "/icon-512.png", sizes: "512x512", type: "image/png" },
+        { src: "/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+        { src: "/icon.svg", sizes: "any", type: "image/svg+xml" },
+      ],
+      // long-press / right-click the app icon
+      shortcuts: [
+        { name: "New meeting", short_name: "Meet", url: "/app/meet", icons: [{ src: "/icon-192.png", sizes: "192x192" }] },
+        { name: "Interview practice", short_name: "Interview", url: "/app/interview", icons: [{ src: "/icon-192.png", sizes: "192x192" }] },
+        { name: "Focus session", short_name: "Focus", url: "/app/focus", icons: [{ src: "/icon-192.png", sizes: "192x192" }] },
+      ],
     },
     null,
     2,

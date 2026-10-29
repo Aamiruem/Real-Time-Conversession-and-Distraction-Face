@@ -20,6 +20,7 @@ export default defineConfig(({ command, mode, isSsrBuild }) => {
       timeout: 180_000, // the first speech analysis loads the Whisper model
       proxyTimeout: 180_000,
     },
+    "/ws": { target: backend, ws: true, changeOrigin: true }, // rooms chat + meeting signaling
   };
   return {
     root: "src",

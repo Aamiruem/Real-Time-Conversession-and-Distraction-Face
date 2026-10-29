@@ -33,7 +33,7 @@ def _object_detector():
         options = mp.tasks.vision.ObjectDetectorOptions(
             # pass the bytes: once mp.solutions has run, MediaPipe prefixes file paths with its package folder
             base_options=mp.tasks.BaseOptions(model_asset_buffer=MODEL_PATH.read_bytes()),
-            running_mode=mp.tasks.vision.RunningMode.IMAGE, score_threshold=0.45, max_results=6)
+            running_mode=mp.tasks.vision.RunningMode.IMAGE, score_threshold=0.4, max_results=10)
         return mp.tasks.vision.ObjectDetector.create_from_options(options)
     except Exception:  # offline / blocked download: posture still works, objects are skipped
         return None
@@ -69,7 +69,7 @@ class BodyTracker:
             self.last_objects = 0.0
             self.landmarks = None
             self.detections: list = []
-            self.live = {"posture": "—", "tilt": 0.0, "hands": "—", "gesture": "—", "objects": [], "people": 0,
+            self.live = {"posture": "—", "tilt": 0.0, "hands": "—", "gesture": "—", "objects": [], "named": [], "people": 0,
                          "touching": False}
 
     # ------------------------------------------------------------------ per frame
@@ -131,8 +131,14 @@ class BodyTracker:
     def _objects(self, dets):
         self.object_checks += 1
         self.detections = dets
-        labels = [d.categories[0].category_name for d in dets if d.categories]
-        labels = [label for label in labels if label in NOTABLE]
+        every = [d.categories[0].category_name for d in dets if d.categories]
+        counts: dict[str, int] = {}
+        for label in every:
+            if label != "person":
+                counts[label] = counts.get(label, 0) + 1
+        # every object in view, by name ("Laptop", "Cup x2"); NOTABLE ones also count for the interview score
+        self.live["named"] = [f"{k.capitalize()} x{n}" if n > 1 else k.capitalize() for k, n in sorted(counts.items())]
+        labels = [label for label in every if label in NOTABLE]
         people = labels.count("person")
         self.people_max = max(self.people_max, people)
         for label in set(labels):
@@ -153,12 +159,12 @@ class BodyTracker:
         s = w / 640
         for d in self.detections:  # boxes for objects only — never a box over the person
             label = d.categories[0].category_name if d.categories else ""
-            if label not in NOTABLE or label == "person":
+            if not label or label == "person":
                 continue
             b = d.bounding_box
-            color = (22, 115, 249) if label == "cell phone" else (248, 189, 56)
+            color = (22, 115, 249) if label == "cell phone" else (248, 189, 56) if label in NOTABLE else (128, 222, 74)
             cv2.rectangle(frame, (b.origin_x, b.origin_y), (b.origin_x + b.width, b.origin_y + b.height), color, 2)
-            cv2.putText(frame, f"{label} {d.categories[0].score:.0%}", (b.origin_x + 4, max(int(16 * s), b.origin_y - 6)),
+            cv2.putText(frame, f"{label.capitalize()} {d.categories[0].score:.0%}", (b.origin_x + 4, max(int(16 * s), b.origin_y - 6)),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5 * s, color, max(1, round(s)), cv2.LINE_AA)
 
     # ------------------------------------------------------------------ results

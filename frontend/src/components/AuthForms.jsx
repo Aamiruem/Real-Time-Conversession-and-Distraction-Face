@@ -32,10 +32,40 @@ function useFinish() {
 function RedirectIfSignedIn() {
   const { user, ready } = useAuth();
   const router = useRouter();
+  const next = useSearchParams().get("next");
   useEffect(() => {
-    if (ready && user) router.replace("/app");
-  }, [ready, user, router]);
+    if (ready && user) router.replace(next && next.startsWith("/app") ? next : "/app");
+  }, [ready, user, router, next]);
   return null;
+}
+
+/** Try everything without an account (a fresh guest user; you can create a real account later). */
+export function GuestButton({ label = "👤 Continue as guest" }) {
+  const finish = useFinish();
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const go = async () => {
+    setBusy(true);
+    setErr("");
+    try {
+      finish(await api("/auth/guest", { method: "POST" }));
+    } catch (e) {
+      setErr(e.message);
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="guest">
+      <div className="or" aria-hidden="true">
+        <span>or</span>
+      </div>
+      <button type="button" className="btn ghost block" onClick={go} disabled={busy}>
+        {busy ? "Starting…" : label}
+      </button>
+      <p className="muted small">No sign-up needed — try every feature instantly.</p>
+      {err && <div className="alert error">{err}</div>}
+    </div>
+  );
 }
 
 function DevCodes({ codes }) {
@@ -346,6 +376,7 @@ export function LoginForm() {
 
       {err && <div className="alert error">{err}</div>}
       {ok && <div className="alert ok">{ok}</div>}
+      <GuestButton />
       <p className="muted small" style={{ marginTop: 18 }}>
         New here? <Link href="/signup">Create a free account</Link>
       </p>
@@ -500,6 +531,7 @@ export function SignupForm() {
         <p className="muted small">You&apos;ll confirm your email and mobile with one-time codes next.</p>
       )}
       {err && <div className="alert error">{err}</div>}
+      <GuestButton label="👤 Skip sign-up — continue as guest" />
       <p className="muted small" style={{ marginTop: 18 }}>
         Already have an account? <Link href="/login">Sign in</Link>
       </p>
