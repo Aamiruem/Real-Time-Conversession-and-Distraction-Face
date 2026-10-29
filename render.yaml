@@ -12,7 +12,14 @@ services:
     plan: starter
     healthCheckPath: /health
     autoDeploy: true
+    # camera recordings when S3 is off: Render's own filesystem is wiped on every deploy, a disk is kept
+    disk:
+      name: recordings
+      mountPath: /data/recordings
+      sizeGB: 5
     envVars:
+      - key: RECORDINGS_DIR
+        value: /data/recordings
       - key: DATABASE_URL
         fromDatabase:
           name: presence-db

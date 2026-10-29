@@ -94,6 +94,22 @@ export async function api(path, init = {}) {
   return res.status === 204 ? undefined : await res.json();
 }
 
+/** GET a file (e.g. a recording) with the login token, as a Blob. */
+export async function apiBlob(path) {
+  const token = getToken();
+  let res;
+  try {
+    res = await fetch(`/api${path}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+  } catch {
+    throw new ApiError("Cannot reach the server. Is the backend running?", 0, null);
+  }
+  if (!res.ok) {
+    const detail = await res.json().then((j) => j.detail, () => res.statusText);
+    throw new ApiError(message(detail), res.status, detail);
+  }
+  return res.blob();
+}
+
 // ---------------------------------------------------------------- types used across pages
 
 /** Backend timestamps are UTC; SQLite returns them without an offset. */

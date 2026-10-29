@@ -76,7 +76,7 @@ class Settings:
     USE_COMPREHEND: bool = _bool("USE_COMPREHEND")
 
     # Camera recordings: video files go to S3_BUCKET when AWS is on, otherwise to this folder
-    RECORDINGS_DIR: Path = Path(os.getenv("RECORDINGS_DIR", str(BACKEND_DIR / "recordings")))
+    RECORDINGS_DIR: Path = Path(os.getenv("RECORDINGS_DIR", "").strip() or BACKEND_DIR / "recordings")
     RECORDING_MAX_MB: int = int(os.getenv("RECORDING_MAX_MB", "500"))
 
     # One-time passwords: email via Amazon SES, SMS via Amazon SNS
