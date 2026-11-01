@@ -127,8 +127,10 @@ def guest(data: GuestIn | None = None, db: Session = Depends(get_db)):
     if not settings.ALLOW_GUESTS:
         raise HTTPException(403, "Guest access is turned off - please create an account")
     tag = secrets.token_hex(3)
+    # the password is 192 random bits nobody ever types, so bcrypt's slowest setting adds nothing but ~0.5 s of
+    # waiting to every first visit; the lowest cost keeps opening the app instant
     user = User(username=f"{GUEST_PREFIX}{tag}", full_name=" ".join((data.name if data else "").split())[:60] or f"Guest {tag.upper()}", email=f"{GUEST_PREFIX}{tag}@guest.local",
-                password_hash=hash_password(secrets.token_urlsafe(24)), email_verified=True, phone_verified=True)
+                password_hash=hash_password(secrets.token_urlsafe(24), rounds=4), email_verified=True, phone_verified=True)
     db.add(user)
     db.commit()
     db.refresh(user)

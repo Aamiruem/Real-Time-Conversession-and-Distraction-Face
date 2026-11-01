@@ -90,6 +90,21 @@ def _after_flush(session: Session, _ctx):
             ops.append(("delete", obj.__table__.name, obj.id))
 
 
+def _do_orm_execute(state):
+    """Bulk deletes (session.execute(delete(...)), e.g. deleting an account) never reach session.deleted:
+    look up the ids they are about to remove, so the mirror drops those documents too."""
+    if not (enabled() and state.is_delete):
+        return
+    table = state.statement.table
+    if table.name in SKIP_TABLES:
+        return
+    query = select(table.c.id)
+    if state.statement.whereclause is not None:
+        query = query.where(state.statement.whereclause)
+    ids = state.session.execute(query).scalars().all()
+    state.session.info.setdefault("mongo_ops", []).extend(("delete", table.name, i) for i in ids)
+
+
 def _after_commit(session: Session):
     for op in session.info.pop("mongo_ops", []):
         _queue.put(op)
@@ -137,6 +152,7 @@ def install():
     if not enabled() or _worker is not None:
         return
     event.listen(Session, "after_flush", _after_flush)
+    event.listen(Session, "do_orm_execute", _do_orm_execute)
     event.listen(Session, "after_commit", _after_commit)
     event.listen(Session, "after_rollback", _after_rollback)
     _worker = threading.Thread(target=_work, name="mongo-mirror", daemon=True)

@@ -14,8 +14,8 @@ from app.models import User
 bearer = HTTPBearer()
 
 
-def hash_password(password: str) -> str:
-    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+def hash_password(password: str, rounds: int = 12) -> str:
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt(rounds)).decode()
 
 
 def verify_password(password: str, hashed: str) -> bool:
