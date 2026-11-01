@@ -5,6 +5,7 @@ import { InstallButton } from "@/lib/pwa";
 import { BrandIcon } from "./BrandIcons";
 import { Icon } from "./Icons";
 import { ShareButton } from "./Share";
+import { SECTIONS } from "@/lib/sections";
 import { themeLabel, useTheme } from "@/lib/theme";
 
 /** Presence AI mark: a focus ring with an attention dot (being present) and two voice waves (having presence). */
@@ -229,19 +230,50 @@ export function SiteFooter() {
   );
 }
 
-/** Slim footer under every app page: share, the developer's links, copyright. */
+/** The sections the app footer links to (colours / icons from lib/sections). */
+const APP_LINKS = ["/app", "/app/focus", "/app/speech", "/app/interview", "/app/meet", "/app/analytics"];
+
+/** Footer under every app page: quick links to the main sections, share, the developer's links, back to top. */
 export function AppFooter() {
+  const toTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
   return (
     <footer className="app-footer">
-      <span>
-        © {new Date().getFullYear()} {SITE_NAME} · Made by{" "}
-        <a href={OWNER.portfolio} target="_blank" rel="noopener noreferrer">
-          {OWNER.name}
-        </a>
-      </span>
-      <div className="app-footer-actions">
-        <ShareButton label="Share app" align="left" />
-        <ContactList />
+      <div className="af-main">
+        <Link href="/" className="af-brand" aria-label={`${SITE_NAME} home`}>
+          <Logo size={34} />
+          <span>
+            <b>{SITE_NAME}</b>
+            <small>Focus · Speak · Meet — free on any device</small>
+          </span>
+        </Link>
+        <nav className="af-links" aria-label="Sections">
+          {APP_LINKS.map((href) => {
+            const sec = SECTIONS[href];
+            return (
+              <Link key={href} href={href} className="af-link" style={{ "--c": sec.color }} title={sec.desc}>
+                <Icon name={sec.icon} size={16} /> {href === "/app" ? "Dashboard" : sec.label}
+              </Link>
+            );
+          })}
+        </nav>
+        <div className="af-actions">
+          <ShareButton label="Share app" className="btn sm af-share" align="left" />
+          <SocialLinks />
+        </div>
+      </div>
+      <div className="af-bottom">
+        <span>
+          © {new Date().getFullYear()} {SITE_NAME} · Made with <span className="heart">♥</span> by{" "}
+          <a href={OWNER.portfolio} target="_blank" rel="noopener noreferrer">
+            {OWNER.name}
+          </a>
+        </span>
+        <span className="af-meta">
+          <span>🔒 Video never leaves your device</span>
+          <button type="button" className="to-top" onClick={toTop} aria-label="Back to top">
+            ↑ Top
+          </button>
+        </span>
       </div>
     </footer>
   );

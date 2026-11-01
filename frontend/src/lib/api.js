@@ -82,9 +82,9 @@ export async function api(path, init = {}) {
   } catch {
     throw new ApiError("Cannot reach the server. Is the backend running?", 0, null);
   }
-  if (res.status === 401 && token && renewGuest && !init.renewed && !path.startsWith("/auth/")) {
+  if (res.status === 401 && token && renewGuest && (init.renewed ?? 0) < 3 && !path.startsWith("/auth/")) {
     renewing ??= renewGuest().finally(() => (renewing = null)); // one renewal for many failing requests
-    if (await renewing.catch(() => false)) return api(path, { ...init, renewed: true });
+    if (await renewing.catch(() => false)) return api(path, { ...init, renewed: (init.renewed ?? 0) + 1 });
   }
   if (!res.ok) {
     let detail = res.statusText;

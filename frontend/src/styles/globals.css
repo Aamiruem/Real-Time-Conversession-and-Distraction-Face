@@ -197,13 +197,39 @@ details.faq p { color: var(--muted); margin: 10px 0 0; }
   .footer-cta { padding: 22px 20px; }
   .footer-bottom .container { justify-content: center; text-align: center; }
 }
-/* slim footer under every app page */
-.app-footer { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px 20px; margin-top: 48px;
-  padding-top: 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: .86rem; }
-.app-footer a { color: color-mix(in srgb, var(--text) 82%, var(--muted)); font-weight: 600; }
-.app-footer a:hover { color: var(--accent); }
-.app-footer-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.app-footer .share-menu { top: auto; bottom: calc(100% + 8px); }
+/* footer under every app page */
+.app-footer { container-type: inline-size; margin-top: 56px; border: 1px solid var(--line); border-radius: 18px; overflow: hidden; color: var(--muted);
+  font-size: .86rem; background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 6%, var(--surface)), var(--surface) 55%,
+  color-mix(in srgb, var(--accent2) 6%, var(--surface))); }
+.af-main { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 18px 26px; padding: 18px 20px; }
+.af-brand { display: inline-flex; align-items: center; gap: 10px; color: var(--text); }
+.af-brand span { display: grid; line-height: 1.25; }
+.af-brand small { color: var(--muted); font-size: .76rem; }
+.af-links { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.af-link { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; font-weight: 650;
+  color: color-mix(in srgb, var(--text) 80%, var(--muted)); border: 1px solid transparent; transition: background .15s, color .15s, border-color .15s, transform .15s; }
+.af-link svg { color: var(--c); }
+.af-link:hover { color: var(--c); background: color-mix(in srgb, var(--c) 10%, transparent); border-color: color-mix(in srgb, var(--c) 30%, transparent);
+  transform: translateY(-1px); }
+.af-actions { display: flex; align-items: center; gap: 10px; }
+.af-actions .social-row { margin: 0; }
+.af-actions .social-btn { width: 36px; height: 36px; }
+.btn.af-share { background: var(--grad); color: #fff; }
+.af-bottom { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px 16px; padding: 12px 20px;
+  border-top: 1px solid var(--line); background: color-mix(in srgb, var(--surface2) 70%, transparent); }
+.af-bottom a { color: var(--text); font-weight: 650; }
+.af-bottom a:hover { color: var(--accent); }
+.af-meta { display: inline-flex; align-items: center; gap: 12px; }
+/* sized by the footer's own width (the app's sidebar takes part of the screen) */
+@container (max-width: 1240px) {
+  .af-main { grid-template-columns: 1fr auto; }
+  .af-links { grid-column: 1 / -1; order: 3; justify-content: flex-start; padding-top: 12px; border-top: 1px dashed var(--line); }
+}
+@container (max-width: 560px) {
+  .af-main { grid-template-columns: 1fr; }
+  .af-actions { flex-wrap: wrap; }
+  .af-bottom { justify-content: center; text-align: center; }
+}
 .contact-list { display: flex; flex-wrap: wrap; gap: 8px; }
 .contact-chip { display: inline-flex; align-items: center; gap: 7px; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line);
   background: var(--surface); color: var(--text); font-size: .84rem; font-weight: 600; transition: border-color .15s, transform .15s; }

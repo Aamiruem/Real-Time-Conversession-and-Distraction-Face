@@ -1,9 +1,13 @@
-"""Delivers one-time codes: email through Amazon SES, SMS through Amazon SNS.
+"""Delivers one-time codes: email through Amazon SES, SMS through Twilio (when configured) or Amazon SNS.
 
 When AWS is not configured (local development) the code is logged instead, and the caller can
 return it to the UI because OTP_DEV_MODE is on. In production a delivery failure is an error.
 """
+import base64
+import json
 import logging
+import urllib.parse
+import urllib.request
 
 from app.config import settings
 from app.services.aws_service import _client
@@ -51,14 +55,41 @@ def send_email(to: str, code: str, purpose: str) -> bool:
         return False
 
 
+def _sms_text(code: str, purpose: str) -> str:
+    return (f"{code} is your {settings.APP_NAME} code to {PURPOSE_TEXT[purpose]}. "
+            f"Valid {settings.OTP_TTL_MINUTES} min. Don't share it.")
+
+
+def send_twilio_sms(phone: str, code: str, purpose: str) -> bool:
+    """Twilio's REST API directly (no SDK): POST /Accounts/{sid}/Messages.json."""
+    sid, token, sender = settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN, settings.TWILIO_FROM
+    form = {"To": phone, "Body": _sms_text(code, purpose)}
+    form["MessagingServiceSid" if sender.startswith("MG") else "From"] = sender
+    req = urllib.request.Request(
+        f"https://api.twilio.com/2010-04-01/Accounts/{sid}/Messages.json",
+        data=urllib.parse.urlencode(form).encode(),
+        headers={"Authorization": "Basic " + base64.b64encode(f"{sid}:{token}".encode()).decode()},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=15) as res:
+            return 200 <= res.status < 300
+    except urllib.error.HTTPError as exc:  # e.g. a trial account texting an unverified number
+        detail = json.loads(exc.read() or b"{}").get("message", exc.reason)
+        log.warning("Twilio SMS to %s failed: %s", phone, detail)
+    except Exception as exc:  # noqa: BLE001 - network problems: report as not sent
+        log.warning("Twilio SMS to %s failed: %s", phone, exc)
+    return False
+
+
 def send_sms(phone: str, code: str, purpose: str) -> bool:
+    if settings.TWILIO_ACCOUNT_SID and settings.TWILIO_AUTH_TOKEN and settings.TWILIO_FROM:
+        return send_twilio_sms(phone, code, purpose)
     if not settings.AWS_ENABLED:
         return False
     try:
         _client("sns").publish(
             PhoneNumber=phone,
-            Message=f"{code} is your {settings.APP_NAME} code to {PURPOSE_TEXT[purpose]}. "
-                    f"Valid {settings.OTP_TTL_MINUTES} min. Don't share it.",
+            Message=_sms_text(code, purpose),
             MessageAttributes={
                 "AWS.SNS.SMS.SMSType": {"DataType": "String", "StringValue": "Transactional"},
                 "AWS.SNS.SMS.SenderID": {"DataType": "String", "StringValue": settings.SNS_SENDER_ID},

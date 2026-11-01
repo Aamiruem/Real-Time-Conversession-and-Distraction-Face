@@ -53,6 +53,12 @@ services:
         sync: false
       - key: AWS_SECRET_ACCESS_KEY
         sync: false
+      - key: TWILIO_ACCOUNT_SID # SMS login codes through Twilio (instead of Amazon SNS)
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_FROM # your Twilio number (+1...) or Messaging Service SID (MG...)
+        sync: false
       - key: TURN_URLS # meetings across strict firewalls / mobile data: turn:host:3478,turns:host:5349
         sync: false
       - key: TURN_USERNAME

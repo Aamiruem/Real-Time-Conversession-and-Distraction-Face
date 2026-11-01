@@ -101,3 +101,36 @@ def test_guest_accounts_are_rate_limited_per_address(client, monkeypatch):
     ip = {"X-Real-IP": "203.0.113.7"}
     assert [client.post("/auth/guest", headers=ip).status_code for _ in range(3)] == [200, 200, 429]
     assert client.post("/auth/guest", headers={"X-Real-IP": "203.0.113.8"}).status_code == 200  # others unaffected
+
+
+def test_sms_goes_through_twilio_when_configured(monkeypatch):
+    """With TWILIO_* set, codes are texted with Twilio's REST API (To, From / MessagingServiceSid, Body)."""
+    import urllib.parse
+
+    from app.config import settings
+    from app.services import notify_service
+
+    sent = {}
+
+    class Res:
+        status = 201
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    def fake_urlopen(req, timeout):
+        sent["url"], sent["form"] = req.full_url, dict(urllib.parse.parse_qsl(req.data.decode()))
+        sent["auth"] = req.headers["Authorization"]
+        return Res()
+
+    monkeypatch.setattr(settings, "TWILIO_ACCOUNT_SID", "AC123")
+    monkeypatch.setattr(settings, "TWILIO_AUTH_TOKEN", "tok")
+    monkeypatch.setattr(settings, "TWILIO_FROM", "+15550001111")
+    monkeypatch.setattr(notify_service.urllib.request, "urlopen", fake_urlopen)
+    assert notify_service.send_sms("+919876543210", "123456", "login")
+    assert sent["url"].endswith("/Accounts/AC123/Messages.json")
+    assert sent["form"]["To"] == "+919876543210" and sent["form"]["From"] == "+15550001111"
+    assert "123456" in sent["form"]["Body"] and sent["auth"].startswith("Basic ")
