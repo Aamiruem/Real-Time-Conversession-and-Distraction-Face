@@ -295,11 +295,30 @@ details.faq p { color: var(--muted); margin: 10px 0 0; }
 .rec-actions .btn.sm { padding: 4px 8px; }
 .rec-player { grid-column: 1 / -1; width: 100%; border-radius: 8px; background: #000; margin-top: 4px; }
 
-/* camera toolbar on every camera page: size Small / Mid / Full + record */
-.cam-dock { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 10px; }
-.cam-dock .seg { flex: 1 1 260px; }
-.cam-dock-status { flex-basis: 100%; margin: 0; }
-.rec-badge-inline { color: var(--bad); font-weight: 800; font-size: .8rem; animation: pulse 1s infinite; }
+/* camera toolbar on every camera page: view size + record */
+.cam-dock { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px;
+  padding: 6px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface2); }
+.cam-dock-group { display: inline-flex; align-items: center; gap: 2px; padding: 3px; border-radius: 11px; background: var(--inset);
+  border: 1px solid var(--line); }
+.cam-dock-label { padding: 0 8px 0 6px; font-size: .72rem; font-weight: 750; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--muted); }
+.cam-dock-size { display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border: 0; border-radius: 8px;
+  background: transparent; color: var(--muted); font: inherit; font-size: .84rem; font-weight: 650; cursor: pointer;
+  transition: background .15s, color .15s; }
+.cam-dock-size:hover { color: var(--text); background: var(--hover); }
+.cam-dock-size.on { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px #0f172a26, inset 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent); }
+.cam-dock-size.on svg { color: var(--accent); }
+.cam-dock-rec { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 999px; cursor: pointer;
+  border: 1.5px solid color-mix(in srgb, var(--bad) 55%, transparent); background: color-mix(in srgb, var(--bad) 8%, var(--surface));
+  color: var(--bad); font: inherit; font-size: .88rem; font-weight: 700; font-variant-numeric: tabular-nums; transition: background .15s; }
+.cam-dock-rec:hover:not(:disabled) { background: color-mix(in srgb, var(--bad) 16%, var(--surface)); }
+.cam-dock-rec:disabled { opacity: .72; cursor: not-allowed; }
+.cam-dock-rec .rec-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--bad); box-shadow: 0 0 0 3px color-mix(in srgb, var(--bad) 22%, transparent); }
+.cam-dock-rec.live { background: var(--bad); color: #fff; border-color: var(--bad); }
+.cam-dock-rec.live .rec-dot { background: #fff; animation: pulse 1s infinite; }
+.cam-dock-sep { width: 1px; height: 14px; background: #fff6; }
+.cam-dock-status { flex-basis: 100%; margin: 0 4px 2px; }
+@media (max-width: 480px) { .cam-dock-size span { display: none; } .cam-dock-size { padding: 7px 10px; } }
 .video-wrap[data-size="small"], .cam-panel.small .video-wrap { width: min(100%, 420px); margin-inline: auto; }
 .video-wrap:fullscreen { aspect-ratio: auto; width: 100vw; height: 100vh; border-radius: 0; border: 0; }
 .video-wrap:fullscreen video, .video-wrap:fullscreen canvas { object-fit: contain; }

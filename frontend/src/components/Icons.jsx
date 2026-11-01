@@ -183,6 +183,18 @@ const ICONS = {
     </>
   ),
   theater: <rect x="2" y="6" width="20" height="12" rx="2" />,
+  viewSmall: (
+    <>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <rect x="12" y="12" width="6" height="5" rx="1" />
+    </>
+  ),
+  viewMid: (
+    <>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <rect x="7" y="8" width="10" height="8" rx="1" />
+    </>
+  ),
   fullscreen: (
     <>
       {P("M8 3H5a2 2 0 0 0-2 2v3")}

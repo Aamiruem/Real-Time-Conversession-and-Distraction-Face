@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { CameraRecorder } from "@/lib/cameraRecorder";
 import { canRecord } from "@/lib/meetRecorder";
 import { downloadBlob, saveRecording } from "@/lib/recordings";
+import { Icon } from "./Icons";
 
-const SIZES = { small: "Small", mid: "Mid", full: "Full" };
+const SIZES = { small: ["viewSmall", "Small"], mid: ["viewMid", "Mid"], full: ["fullscreen", "Full screen"] };
 const clock = (s) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 
 /**
@@ -97,30 +98,37 @@ export function CameraDock({ running, source, title, metrics = null }) {
 
   return (
     <div className="cam-dock" ref={box}>
-      <div className="seg" role="radiogroup" aria-label="Camera size">
-        <span>Size</span>
-        {Object.entries(SIZES).map(([k, label]) => (
-          <button key={k} type="button" role="radio" aria-checked={size === k} className={size === k ? "on" : ""} onClick={() => setSize(k)}>
-            {label}
+      <div className="cam-dock-group" role="radiogroup" aria-label="Camera size">
+        <span className="cam-dock-label">View</span>
+        {Object.entries(SIZES).map(([k, [icon, label]]) => (
+          <button
+            key={k}
+            type="button"
+            role="radio"
+            aria-checked={size === k}
+            className={`cam-dock-size ${size === k ? "on" : ""}`}
+            onClick={() => setSize(k)}
+            title={label}
+          >
+            <Icon name={icon} size={16} /> <span>{label}</span>
           </button>
         ))}
       </div>
       {recording ? (
-        <button type="button" className="btn sm rec-stop" onClick={stop}>
-          ⏹ Stop &amp; save {clock(secs)}
+        <button type="button" className="cam-dock-rec live" onClick={stop} title="Stop and save the recording">
+          <span className="rec-dot" /> {clock(secs)} <span className="cam-dock-sep" /> Stop &amp; save
         </button>
       ) : (
         <button
           type="button"
-          className="btn sm ghost"
+          className="cam-dock-rec"
           onClick={start}
           disabled={!running || !canRecord()}
-          title={!canRecord() ? "Recording needs Chrome, Edge or Firefox" : running ? "Record video + audio" : "Start the camera first"}
+          title={!canRecord() ? "Recording needs Chrome, Edge or Firefox" : running ? "Record video + audio" : "Turn the camera on to record"}
         >
-          🔴 Record
+          <span className="rec-dot" /> Record video
         </button>
       )}
-      {recording && <span className="rec-badge-inline">● REC</span>}
       {status && <p className="small muted cam-dock-status">{status}</p>}
     </div>
   );
