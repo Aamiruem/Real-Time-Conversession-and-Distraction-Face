@@ -9,73 +9,26 @@ const W = 1280,
   H = 720,
   GAP = 8;
 
-export class MeetRecorder {
-  /** @param {HTMLElement} stage the element holding the .gm-tile elements  @param {string} title shown in the file name */
-  constructor(stage, title) {
+/** Draws the meeting stage (everyone's tile, the presenter big) onto a canvas of any size. */
+export class StageDrawer {
+  /** @param {HTMLElement} stage the element holding the .gm-tile elements */
+  constructor(stage, width = W, height = H) {
     this.stage = stage;
-    this.title = title;
-    this.canvas = Object.assign(document.createElement("canvas"), { width: W, height: H });
+    this.W = width;
+    this.H = height;
+    this.canvas = Object.assign(document.createElement("canvas"), { width, height });
     this.ctx = this.canvas.getContext("2d");
-    this.audio = new AudioContext();
-    this.dest = this.audio.createMediaStreamDestination();
-    this.sources = new Map(); // id -> { track, node }
   }
 
-  /** Mix in (or update) someone's audio. Call again whenever their stream changes. */
-  addAudio(id, stream) {
-    const track = stream?.getAudioTracks()[0];
-    const cur = this.sources.get(id);
-    if (cur?.track === track) return;
-    cur?.node.disconnect();
-    this.sources.delete(id);
-    if (!track) return;
-    const node = this.audio.createMediaStreamSource(new MediaStream([track]));
-    node.connect(this.dest);
-    this.sources.set(id, { track, node });
-  }
-
-  /** Stop mixing everyone who is no longer in the call. */
-  keepOnly(ids) {
-    for (const id of [...this.sources.keys()]) if (!ids.includes(id)) this.addAudio(id, null);
-  }
-
-  start() {
-    const mimeType = TYPES.find((t) => MediaRecorder.isTypeSupported(t));
-    const out = new MediaStream([...this.canvas.captureStream(30).getVideoTracks(), ...this.dest.stream.getAudioTracks()]);
-    this.rec = new MediaRecorder(out, { mimeType, videoBitsPerSecond: 3_000_000, audioBitsPerSecond: 128_000 });
-    const chunks = [];
-    this.rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
-    this.done = new Promise((resolve) => {
-      this.rec.onstop = () => resolve(new Blob(chunks, { type: mimeType.split(";")[0] }));
-    });
-    this.started = Date.now();
-    this.rec.start(1000);
-    this.timer = setInterval(() => this.draw(), 1000 / 30);
-  }
-
-  /** Stops, saves the file to Downloads, and resolves with its size in bytes. */
-  async stop() {
-    clearInterval(this.timer);
-    if (this.rec?.state !== "inactive") this.rec.stop();
-    const blob = await this.done;
-    this.audio.close().catch(() => {});
-    const url = URL.createObjectURL(blob);
-    const stamp = new Date(this.started).toISOString().slice(0, 16).replace("T", " ").replace(":", "-");
-    Object.assign(document.createElement("a"), { href: url, download: `${this.title} ${stamp}.${blob.type.includes("mp4") ? "mp4" : "webm"}` }).click();
-    setTimeout(() => URL.revokeObjectURL(url), 60_000);
-    return blob.size;
-  }
-
-  // ---------------------------------------------------------------- drawing
   /** Where each tile goes: a presenter / pinned person big on the left, or everyone in a grid. */
   layout(n, big) {
     if (big >= 0 && n > 1) {
-      const mainW = Math.round(W * 0.78);
-      const sideW = W - mainW - GAP * 3;
-      const sideH = Math.min((sideW * 9) / 16, (H - GAP * n) / (n - 1));
+      const mainW = Math.round(this.W * 0.78);
+      const sideW = this.W - mainW - GAP * 3;
+      const sideH = Math.min((sideW * 9) / 16, (this.H - GAP * n) / (n - 1));
       let y = GAP;
       return Array.from({ length: n }, (_, i) => {
-        if (i === big) return { x: GAP, y: GAP, w: mainW, h: H - GAP * 2 };
+        if (i === big) return { x: GAP, y: GAP, w: mainW, h: this.H - GAP * 2 };
         const r = { x: mainW + GAP * 2, y, w: sideW, h: sideH };
         y += sideH + GAP;
         return r;
@@ -83,8 +36,8 @@ export class MeetRecorder {
     }
     const cols = Math.ceil(Math.sqrt(n));
     const rows = Math.ceil(n / cols);
-    const cw = (W - GAP * (cols + 1)) / cols;
-    const ch = (H - GAP * (rows + 1)) / rows;
+    const cw = (this.W - GAP * (cols + 1)) / cols;
+    const ch = (this.H - GAP * (rows + 1)) / rows;
     return Array.from({ length: n }, (_, i) => {
       const row = Math.floor(i / cols);
       const inRow = row === rows - 1 ? n - row * cols : cols; // centre a short last row
@@ -93,30 +46,17 @@ export class MeetRecorder {
     });
   }
 
-  draw() {
+  /** Background + every tile, laid out like the meeting on screen. */
+  drawStage() {
     const ctx = this.ctx;
     ctx.fillStyle = "#202124";
-    ctx.fillRect(0, 0, W, H);
+    ctx.fillRect(0, 0, this.W, this.H);
     const tiles = [...this.stage.querySelectorAll(".gm-tile")];
     const boxes = this.layout(
       tiles.length,
       tiles.findIndex((t) => t.classList.contains("big")),
     );
     tiles.forEach((tile, i) => this.drawTile(tile, boxes[i]));
-    // a small "REC" mark and the running time
-    const secs = Math.floor((Date.now() - this.started) / 1000);
-    const label = `REC ${String(Math.floor(secs / 60)).padStart(2, "0")}:${String(secs % 60).padStart(2, "0")}`;
-    ctx.font = "600 16px Inter, system-ui, sans-serif";
-    ctx.fillStyle = "#0009";
-    ctx.beginPath();
-    ctx.roundRect?.(14, 14, ctx.measureText(label).width + 40, 30, 15);
-    ctx.fill();
-    ctx.fillStyle = "#ea4335";
-    ctx.beginPath();
-    ctx.arc(32, 29, 6, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#fff";
-    ctx.fillText(label, 44, 35);
   }
 
   drawTile(tile, { x, y, w, h }) {
@@ -168,5 +108,81 @@ export class MeetRecorder {
       ctx.fillText(name, x + 12, y + h - 10);
     }
     ctx.restore();
+  }
+}
+
+export class MeetRecorder extends StageDrawer {
+  /** @param {HTMLElement} stage the element holding the .gm-tile elements  @param {string} title shown in the file name */
+  constructor(stage, title) {
+    super(stage);
+    this.title = title;
+    this.audio = new AudioContext();
+    this.dest = this.audio.createMediaStreamDestination();
+    this.sources = new Map(); // id -> { track, node }
+  }
+
+  /** Mix in (or update) someone's audio. Call again whenever their stream changes. */
+  addAudio(id, stream) {
+    const track = stream?.getAudioTracks()[0];
+    const cur = this.sources.get(id);
+    if (cur?.track === track) return;
+    cur?.node.disconnect();
+    this.sources.delete(id);
+    if (!track) return;
+    const node = this.audio.createMediaStreamSource(new MediaStream([track]));
+    node.connect(this.dest);
+    this.sources.set(id, { track, node });
+  }
+
+  /** Stop mixing everyone who is no longer in the call. */
+  keepOnly(ids) {
+    for (const id of [...this.sources.keys()]) if (!ids.includes(id)) this.addAudio(id, null);
+  }
+
+  start() {
+    const mimeType = TYPES.find((t) => MediaRecorder.isTypeSupported(t));
+    const out = new MediaStream([...this.canvas.captureStream(30).getVideoTracks(), ...this.dest.stream.getAudioTracks()]);
+    this.rec = new MediaRecorder(out, { mimeType, videoBitsPerSecond: 3_000_000, audioBitsPerSecond: 128_000 });
+    const chunks = [];
+    this.rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
+    this.done = new Promise((resolve) => {
+      this.rec.onstop = () => resolve(new Blob(chunks, { type: mimeType.split(";")[0] }));
+    });
+    this.started = Date.now();
+    this.rec.start(1000);
+    this.timer = setInterval(() => this.draw(), 1000 / 30);
+  }
+
+  /** Stops, saves the file to Downloads, and resolves with its size in bytes. */
+  async stop() {
+    clearInterval(this.timer);
+    if (this.rec?.state !== "inactive") this.rec.stop();
+    const blob = await this.done;
+    this.audio.close().catch(() => {});
+    const url = URL.createObjectURL(blob);
+    const stamp = new Date(this.started).toISOString().slice(0, 16).replace("T", " ").replace(":", "-");
+    Object.assign(document.createElement("a"), { href: url, download: `${this.title} ${stamp}.${blob.type.includes("mp4") ? "mp4" : "webm"}` }).click();
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    return blob.size;
+  }
+
+  // ---------------------------------------------------------------- drawing
+  draw() {
+    this.drawStage();
+    const ctx = this.ctx;
+    // a small "REC" mark and the running time
+    const secs = Math.floor((Date.now() - this.started) / 1000);
+    const label = `REC ${String(Math.floor(secs / 60)).padStart(2, "0")}:${String(secs % 60).padStart(2, "0")}`;
+    ctx.font = "600 16px Inter, system-ui, sans-serif";
+    ctx.fillStyle = "#0009";
+    ctx.beginPath();
+    ctx.roundRect?.(14, 14, ctx.measureText(label).width + 40, 30, 15);
+    ctx.fill();
+    ctx.fillStyle = "#ea4335";
+    ctx.beginPath();
+    ctx.arc(32, 29, 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#fff";
+    ctx.fillText(label, 44, 35);
   }
 }

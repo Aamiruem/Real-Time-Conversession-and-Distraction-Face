@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { applyEffect, EFFECTS, effectActive, FILTERS, loadSegmenter, sceneSwatch } from "@/lib/backgroundEffects";
 import { invite, inviteLink, LevelMeter, listDevices, MEET_CODE as CODE_RE, Meeting, openMedia, QUALITY } from "@/lib/meet";
 import { canRecord, MeetRecorder } from "@/lib/meetRecorder";
+import { canPopOut, MeetPopout } from "@/lib/meetPopout";
 import { useRouter, useSearchParams } from "@/lib/navigation";
 import "@/styles/meet.css";
 
@@ -879,6 +880,7 @@ function Room({ code }) {
   }, [toggleMic, toggleCam, state?.status]);
 
   const leave = () => {
+    popout.current?.close();
     if (recorder.current) stopRecording();
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
     m?.leave();
@@ -915,15 +917,63 @@ function Room({ code }) {
   }, [captionsOn, micOn, state?.status]);
 
   const fullscreen = () => (document.fullscreenElement ? document.exitFullscreen() : roomRef.current?.requestFullscreen())?.catch(() => {});
-  const pictureInPicture = async (id) => {
-    const video = document.querySelector(`.gm-tile[data-peer="${id}"] video`) ?? document.querySelector(".gm-tile:not([data-peer='me']) video");
+  // ---------------------------------------------------------------- pop-out (Meet-style always-on-top window)
+  // The call stays visible and controllable while you present your screen or work in another tab or app.
+  const popout = useRef(null);
+  const live = useRef({}); // latest handlers / permissions for the pop-out's buttons
+  const toggleShare = async () => {
+    const mm = meeting.current;
+    if (!mm) return;
     try {
-      if (document.pictureInPictureElement) await document.exitPictureInPicture();
-      else await video?.requestPictureInPicture();
+      if (mm.screen) await mm.stopShare();
+      else {
+        await mm.shareScreen();
+        openPopout(true); // like Meet: the call floats on top while you present
+      }
+      setState({ ...mm.state });
     } catch {
-      setErr("Picture-in-picture needs someone's video on screen.");
+      /* cancelled the picker */
     }
   };
+  const openPopout = async (auto = false) => {
+    if (!stageRef.current || !canPopOut()) {
+      if (!auto) setErr("This browser can't open a pop-out window — try Chrome or Edge.");
+      return;
+    }
+    popout.current ??= new MeetPopout(stageRef.current, {
+      state: () => ({ ...(meeting.current?.localState() ?? {}), canShare: live.current.canShare }),
+      toggleMic: () => live.current.toggleMic(),
+      toggleCam: () => live.current.toggleCam(),
+      toggleShare: () => live.current.toggleShare(),
+      leave: () => live.current.leave(),
+    });
+    try {
+      await popout.current.open();
+    } catch {
+      if (auto) toast("Tip: press the pop-out button to keep the meeting on top while you present");
+      else setErr("Couldn't open the pop-out window.");
+    }
+  };
+  live.current = { ...live.current, toggleMic, toggleCam, toggleShare, leave, openPopout };
+  // Chrome opens the pop-out by itself when you switch to another tab during the call (as Google Meet does)
+  useEffect(() => {
+    if (state?.status !== "joined") return;
+    const ms = navigator.mediaSession;
+    try {
+      ms?.setActionHandler("enterpictureinpicture", () => live.current.openPopout(true));
+    } catch {
+      /* not supported */
+    }
+    return () => {
+      try {
+        ms?.setActionHandler("enterpictureinpicture", null);
+      } catch {
+        /* not supported */
+      }
+      popout.current?.close();
+    };
+  }, [state?.status]);
+
   const chooseCam = async (id) => {
     setDev((d) => ({ ...d, videoId: id }));
     if (cam) await m?.setCam(true, id);
@@ -1075,6 +1125,7 @@ function Room({ code }) {
   const rules = state.settings;
   const canChat = amHost || rules.chat;
   const canShare = amHost || rules.share;
+  live.current.canShare = canShare;
   const canReact = amHost || rules.react;
   const waiting = state.waiting ?? [];
   const host = (type, extra) => m?.hostAction(type, extra);
@@ -1604,17 +1655,14 @@ function Room({ code }) {
               className={`gm-round ${meState.screen ? "on" : ""}`}
               title={meState.screen ? "Stop presenting" : canShare ? "Present your screen" : "The host turned off screen sharing"}
               disabled={!canShare && !meState.screen}
-              onClick={async () => {
-                try {
-                  if (m.screen) await m.stopShare();
-                  else await m.shareScreen();
-                  setState({ ...m.state });
-                } catch {
-                  /* cancelled the picker */
-                }
-              }}
+              onClick={toggleShare}
             >
               <Icon name="present" />
+            </button>
+          )}
+          {canPopOut() && (
+            <button className="gm-round" title="Pop out — keep the meeting on top of other tabs and apps" onClick={() => openPopout()}>
+              <Icon name="pip" />
             </button>
           )}
           <div className="gm-menu-wrap">
@@ -1668,7 +1716,7 @@ function Room({ code }) {
                 <hr />
                 <MenuItem icon="layout" label="Adjust view" onClick={() => togglePanel("layout")} />
                 <MenuItem icon="fullscreen" label={document.fullscreenElement ? "Exit full screen" : "Full screen"} onClick={fullscreen} />
-                <MenuItem icon="pip" label="Open picture-in-picture" onClick={() => pictureInPicture(featuredId ?? peers[0]?.id)} />
+                <MenuItem icon="pip" label="Pop out the meeting" sub="Stays on top while you present or use other apps" onClick={() => openPopout()} />
                 <MenuItem icon="effects" label="Backgrounds and effects" onClick={() => togglePanel("effects")} />
                 <MenuItem icon="captions" label={captionsOn ? "Turn off captions" : "Turn on captions"} onClick={() => setCaptionsOn((c) => !c)} disabled={!captionsSupported} />
                 <hr />
