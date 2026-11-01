@@ -19,3 +19,6 @@ backend/recordings/
 # Generated models and artifacts (recreated by setup.ps1 / training)
 backend/ml/artifacts/
 backend/cv/models/
+
+# Deploy keys (Render / Vercel API tokens) - never commit
+.deploy.env

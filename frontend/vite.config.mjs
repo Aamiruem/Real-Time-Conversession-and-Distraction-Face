@@ -45,7 +45,7 @@ export default defineConfig(({ command, mode, isSsrBuild }) => {
     port: 3000,
     host: true,
     proxy,
-    allowedHosts: [".trycloudflare.com", ".ngrok-free.app", ".ngrok.io", ".loca.lt"],
+    allowedHosts: [".trycloudflare.com", ".ngrok-free.app", ".ngrok.io", ".loca.lt", ".lhr.life", ".localhost.run"],
   };
   return {
     root: "src",
