@@ -1,15 +1,16 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { CameraRecorder } from "@/lib/cameraRecorder";
 import { canRecord } from "@/lib/meetRecorder";
 import { downloadBlob, saveRecording } from "@/lib/recordings";
 import { Icon } from "./Icons";
 
-const SIZES = { small: ["viewSmall", "Small"], mid: ["viewMid", "Mid"], full: ["fullscreen", "Full screen"] };
 const clock = (s) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 
 /**
- * Toolbar under a camera (.video-wrap right before it): screen size Small / Mid / Full, and Record — the picture
- * with its overlay plus the microphone — saved to the user's account for checking results later.
+ * Player controls on a camera (the .video-wrap right before it), like a video player: Record — the picture with its
+ * overlay plus the microphone, saved to the user's account for checking results later — and the view size: mini,
+ * default or full screen. They show on hover (always on touch screens, while recording and in full screen).
  *   running   the camera is on (Record needs it)
  *   source    which section recorded it (focus, speech, interview…), shown in the recordings list
  *   metrics   optional live {focusPct, state}: adds a focus read-out and a focus timeline to the recording
@@ -25,6 +26,8 @@ export function CameraDock({ running, source, title, metrics = null }) {
   latest.current = metrics;
 
   const wrap = () => box.current?.previousElementSibling;
+  const [host, setHost] = useState(null); // the camera box the controls are drawn into
+  useEffect(() => setHost(wrap() ?? null), []);
 
   // size: a data attribute on the camera box; Full = the browser's fullscreen (Esc goes back to Mid)
   useEffect(() => {
@@ -96,39 +99,65 @@ export function CameraDock({ running, source, title, metrics = null }) {
   }, [running]);
   useEffect(() => () => void stopRef.current(), []);
 
-  return (
-    <div className="cam-dock" ref={box}>
-      <div className="cam-dock-group" role="radiogroup" aria-label="Camera size">
-        <span className="cam-dock-label">View</span>
-        {Object.entries(SIZES).map(([k, [icon, label]]) => (
+  const views = [
+    ["small", "viewSmall", "Mini view"],
+    ["mid", "viewMid", "Default view"],
+  ];
+  const controls = (running || recording) && (
+    <div className={`vid-controls ${recording || size === "full" ? "pinned" : ""}`}>
+      <div className="vid-group">
+        {recording ? (
+          <button type="button" className="vid-btn rec live" onClick={stop} title="Stop and save the recording" aria-label="Stop and save the recording">
+            <span className="stop-square" />
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="vid-btn rec"
+            onClick={start}
+            disabled={!canRecord()}
+            title={canRecord() ? "Record video + audio" : "Recording needs Chrome, Edge or Firefox"}
+            aria-label="Record video and audio"
+          >
+            <span className="rec-dot" />
+          </button>
+        )}
+        {recording && (
+          <span className="vid-time">
+            <span className="rec-dot" /> REC {clock(secs)}
+          </span>
+        )}
+      </div>
+      <div className="vid-group">
+        {views.map(([k, icon, label]) => (
           <button
             key={k}
             type="button"
-            role="radio"
-            aria-checked={size === k}
-            className={`cam-dock-size ${size === k ? "on" : ""}`}
+            className={`vid-btn ${size === k ? "on" : ""}`}
             onClick={() => setSize(k)}
             title={label}
+            aria-label={label}
+            aria-pressed={size === k}
           >
-            <Icon name={icon} size={16} /> <span>{label}</span>
+            <Icon name={icon} size={20} />
           </button>
         ))}
-      </div>
-      {recording ? (
-        <button type="button" className="cam-dock-rec live" onClick={stop} title="Stop and save the recording">
-          <span className="rec-dot" /> {clock(secs)} <span className="cam-dock-sep" /> Stop &amp; save
-        </button>
-      ) : (
         <button
           type="button"
-          className="cam-dock-rec"
-          onClick={start}
-          disabled={!running || !canRecord()}
-          title={!canRecord() ? "Recording needs Chrome, Edge or Firefox" : running ? "Record video + audio" : "Turn the camera on to record"}
+          className={`vid-btn ${size === "full" ? "on" : ""}`}
+          onClick={() => setSize(size === "full" ? "mid" : "full")}
+          title={size === "full" ? "Exit full screen (Esc)" : "Full screen"}
+          aria-label={size === "full" ? "Exit full screen" : "Full screen"}
         >
-          <span className="rec-dot" /> Record video
+          <Icon name={size === "full" ? "exitFull" : "fullscreen"} size={20} />
         </button>
-      )}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="cam-dock-anchor" ref={box}>
+      {host && controls && createPortal(controls, host)}
       {status && <p className="small muted cam-dock-status">{status}</p>}
     </div>
   );

@@ -20,7 +20,8 @@ export async function saveRecording(blob, { title, source, roomId, durationSec, 
   try {
     direct = await api("/recordings/upload-url", { method: "POST", json: { mime_type: blob.type } });
   } catch (e) {
-    if (e.status !== 409) throw e; // 409 = no S3 on this server: upload through the API below
+    // 409 = no S3 on this server; 404 / 405 = an older server without direct upload: upload through the API below
+    if (![404, 405, 409].includes(e.status)) throw e;
   }
   if (direct) {
     const put = await fetch(direct.url, { method: "PUT", body: blob, headers: direct.headers });

@@ -183,6 +183,14 @@ const ICONS = {
     </>
   ),
   theater: <rect x="2" y="6" width="20" height="12" rx="2" />,
+  exitFull: (
+    <>
+      {P("M8 3v3a2 2 0 0 1-2 2H3")}
+      {P("M21 8h-3a2 2 0 0 1-2-2V3")}
+      {P("M3 16h3a2 2 0 0 1 2 2v3")}
+      {P("M16 21v-3a2 2 0 0 1 2-2h3")}
+    </>
+  ),
   viewSmall: (
     <>
       <rect x="3" y="4" width="18" height="16" rx="2" />
