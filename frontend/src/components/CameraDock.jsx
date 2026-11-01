@@ -42,6 +42,8 @@ const clock = (s) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(Ma
 export function CameraDock({ running, source, title, metrics = null, roomId = null, onSaved }) {
   const settings = useCameraSettings();
   const [menu, setMenu] = useState(null); // null | "main" | "quality" | "speed"
+  const gear = useRef(null);
+  const [menuPos, setMenuPos] = useState(null); // where the floating menu sits (outside full screen)
   const box = useRef(null);
   const [size, setSize] = useState("mid");
   const [secs, setSecs] = useState(null); // null = not recording
@@ -136,6 +138,18 @@ export function CameraDock({ running, source, title, metrics = null, roomId = nu
 
   useEffect(() => {
     if (!menu) return;
+    const r = gear.current?.getBoundingClientRect();
+    if (r) setMenuPos({ right: Math.max(8, window.innerWidth - r.right), bottom: window.innerHeight - r.top + 10 });
+    const hide = () => setMenu(null);
+    window.addEventListener("resize", hide);
+    window.addEventListener("scroll", hide, true);
+    return () => {
+      window.removeEventListener("resize", hide);
+      window.removeEventListener("scroll", hide, true);
+    };
+  }, [menu === null]);
+  useEffect(() => {
+    if (!menu) return;
     const close = (e) => {
       if (e.type === "keydown" ? e.key === "Escape" : !e.target.closest?.(".vid-settings, .vid-btn.gear")) setMenu(null);
     };
@@ -147,8 +161,16 @@ export function CameraDock({ running, source, title, metrics = null, roomId = nu
     };
   }, [menu]);
 
+  // in full screen only the camera box is visible, so the menu stays inside it; otherwise it floats above the page,
+  // so a small camera (e.g. in a side column) never clips it
+  const inFull = size === "full";
   const settingsMenu = menu && (
-    <div className="vid-settings" role="menu" aria-label="Camera settings">
+    <div
+      className={`vid-settings ${inFull ? "" : "floating"}`}
+      role="menu"
+      aria-label="Camera settings"
+      style={inFull || !menuPos ? undefined : { right: menuPos.right, bottom: menuPos.bottom }}
+    >
       {menu === "main" ? (
         Object.entries(SETTINGS).map(([key, def]) => (
           <button key={key} type="button" role="menuitem" className="vid-settings-row" onClick={() => setMenu(key)}>
@@ -193,7 +215,7 @@ export function CameraDock({ running, source, title, metrics = null, roomId = nu
   ];
   const controls = (running || recording) && (
     <div className={`vid-controls ${recording || menu || size === "full" ? "pinned" : ""}`}>
-      {settingsMenu}
+      {inFull && settingsMenu}
       <div className="vid-group">
         {recording ? (
           <button type="button" className="vid-btn rec live" onClick={stop} title="Stop and save the recording" aria-label="Stop and save the recording">
@@ -219,6 +241,7 @@ export function CameraDock({ running, source, title, metrics = null, roomId = nu
       </div>
       <div className="vid-group">
         <button
+          ref={gear}
           type="button"
           className={`vid-btn gear ${menu ? "on" : ""}`}
           onClick={() => setMenu(menu ? null : "main")}
@@ -258,6 +281,7 @@ export function CameraDock({ running, source, title, metrics = null, roomId = nu
   return (
     <div className="cam-dock-anchor" ref={box}>
       {host && controls && createPortal(controls, host)}
+      {!inFull && settingsMenu && createPortal(settingsMenu, document.body)}
       {status && <p className="small muted cam-dock-status">{status}</p>}
     </div>
   );

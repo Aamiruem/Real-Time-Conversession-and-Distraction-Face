@@ -411,12 +411,24 @@ details.faq p { color: var(--muted); margin: 10px 0 0; }
 .vid-time { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px; background: #000a; color: #fff;
   font-size: .82rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 .vid-time .rec-dot { width: 9px; height: 9px; border-radius: 50%; background: #ea4335; animation: pulse 1s infinite; }
+/* small camera boxes (e.g. the Focus Rooms column): compact controls, sized by the box itself */
+.video-wrap { container-type: inline-size; }
+@container (max-width: 380px) {
+  .vid-controls { padding: 24px 8px 8px; gap: 4px; }
+  .vid-group { gap: 4px; }
+  .vid-btn { width: 32px; height: 32px; }
+  .vid-btn svg { width: 16px; height: 16px; }
+  .vid-btn .rec-dot { width: 12px; height: 12px; }
+  .vid-time { padding: 3px 8px; font-size: .72rem; }
+  .vid-badge { display: none; }
+}
 /* ⚙ settings menu (quality / AI speed), like a video player's */
 .vid-btn.gear { position: relative; }
 .vid-btn.gear svg { transition: transform .3s; }
 .vid-btn.gear.on svg { transform: rotate(60deg); }
 .vid-badge { position: absolute; top: -4px; right: -8px; padding: 1px 5px; border-radius: 6px; background: #ea4335; color: #fff;
   font-size: .6rem; font-weight: 800; line-height: 1.4; pointer-events: none; }
+.vid-settings.floating { position: fixed; z-index: 90; }
 .vid-settings { position: absolute; right: 14px; bottom: calc(100% - 22px); min-width: 280px; padding: 8px 0; border-radius: 14px;
   background: #1c1c1ef2; color: #fff; box-shadow: 0 16px 40px #0009; backdrop-filter: blur(10px); z-index: 4; }
 .vid-settings button { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 16px; border: 0; background: none;
