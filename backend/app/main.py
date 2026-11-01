@@ -23,6 +23,7 @@ from fastapi.responses import JSONResponse
 from app import mongo
 from app.config import SETUP_PROBLEMS, settings
 from app.database import describe, engine, init_db, ping
+from app.secret_store import ensure_secret_key
 from app.mcp_server import http_app as mcp_http_app
 from app.mcp_server import mcp
 from app.routers import (ai_routes, analytics_routes, attention_routes, auth_routes, chat_routes, coach_routes,
@@ -32,13 +33,27 @@ from app.routers import (ai_routes, analytics_routes, attention_routes, auth_rou
 mcp_app = mcp_http_app()  # None unless MCP_API_KEY is set
 
 
-@asynccontextmanager
-async def lifespan(_: FastAPI):
+_prepared = False
+
+
+def prepare():
+    """Tables + signing key, once per process. Runs at startup, and before the first request in case a serverless
+    host skips startup. A failure is reported on /health instead of crashing every request."""
+    global _prepared
+    if _prepared or SETUP_PROBLEMS:
+        return
     try:
         init_db()
-    except Exception as exc:  # noqa: BLE001 - report it on /health instead of crashing every request
+        ensure_secret_key(engine)
+        _prepared = True
+    except Exception as exc:  # noqa: BLE001
         SETUP_PROBLEMS.append(f"The database can't be reached ({exc.__class__.__name__}): DATABASE_URL must point to "
                               "an online PostgreSQL (Neon / Supabase), not localhost - fix it and redeploy")
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    prepare()
     if mongo.enabled():
         mongo.sync_in_background(engine)  # bring the MongoDB mirror up to date with SQL
     if mcp_app is None:
@@ -73,7 +88,10 @@ class SetupGuard:
         self.app = app
 
     async def __call__(self, scope, receive, send):
-        if SETUP_PROBLEMS and scope["type"] in ("http", "websocket") and scope.get("path") != "/health"                 and scope.get("method") != "OPTIONS":
+        if scope["type"] in ("http", "websocket"):
+            prepare()
+        if SETUP_PROBLEMS and scope["type"] in ("http", "websocket") and scope.get("path") != "/health" \
+                and scope.get("method") != "OPTIONS":
             if scope["type"] == "websocket":
                 await send({"type": "websocket.close", "code": 1011})
                 return
