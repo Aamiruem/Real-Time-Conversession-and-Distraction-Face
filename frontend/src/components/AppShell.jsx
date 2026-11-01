@@ -222,8 +222,11 @@ export function AppShell({ children }) {
           </div>
         </header>
         <main className="main">
-          <BackendNotice />
-          {children}
+          {/* grows to fill the screen, so the footer always sits at the bottom, even on short pages */}
+          <div className="main-body">
+            <BackendNotice />
+            {children}
+          </div>
           <AppFooter />
         </main>
       </div>

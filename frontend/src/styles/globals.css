@@ -160,7 +160,7 @@ details.faq p { color: var(--muted); margin: 10px 0 0; }
 .footer h3 { margin: 4px 0 14px; color: var(--accent); font-size: .78rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
 .footer nav { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
 .footer nav a, .footer-bottom a { color: color-mix(in srgb, var(--text) 82%, var(--muted)); transition: color .15s, transform .15s; }
-.footer nav a:hover { color: var(--accent); transform: translateX(3px); }
+.footer nav a:hover { color: var(--accent); }
 .footer-feature { display: inline-flex; align-items: center; gap: 9px; }
 .footer-feature::before { content: ""; width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--dot, var(--accent));
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--dot, var(--accent)) 20%, transparent); }
@@ -179,7 +179,7 @@ details.faq p { color: var(--muted); margin: 10px 0 0; }
 .social-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
 .social-btn { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; color: var(--text);
   background: var(--surface); border: 1px solid var(--line); transition: background .15s, color .15s, transform .15s, border-color .15s; }
-.social-btn:hover { background: var(--brand); border-color: var(--brand); color: #fff; transform: translateY(-2px); }
+.social-btn:hover { background: var(--brand); border-color: var(--brand); color: #fff; }
 .footer-portfolio { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: var(--accent); }
 .footer-portfolio:hover { text-decoration: underline; }
 .footer-bottom { margin-top: 40px; border-top: 1px solid var(--line); font-size: .86rem; color: var(--muted); }
@@ -207,6 +207,13 @@ details.faq p { color: var(--muted); margin: 10px 0 0; }
 .footer .share-menu, .footer .install-tip, .app-footer .share-menu { background: #111a2e; }
 .footer .btn.ghost, .app-footer .btn.ghost { background: #ffffff10; color: var(--text); border-color: var(--line); }
 
+/* the footer always sits at the bottom of the page, however short the page is, and never moves on hover */
+#root { min-height: 100vh; display: flex; flex-direction: column; }
+#root > main, #root > .shell { flex: 1 0 auto; }
+.main { display: flex; flex-direction: column; }
+.main-body { flex: 1 0 auto; min-width: 0; }
+.footer .btn:active, .app-footer .btn:active { transform: none; }
+
 /* footer under every app page */
 .app-footer { container-type: inline-size; margin-top: 56px; border: 1px solid #ffffff14; border-radius: 20px; overflow: hidden;
   color: var(--muted); font-size: .86rem; box-shadow: 0 18px 44px #0f172a2e;
@@ -223,8 +230,8 @@ details.faq p { color: var(--muted); margin: 10px 0 0; }
 .af-card-ico { width: 40px; height: 40px; flex: none; display: grid; place-items: center; border-radius: 12px; color: #fff;
   background: linear-gradient(135deg, var(--c), color-mix(in srgb, var(--c) 55%, #000)); box-shadow: 0 6px 16px color-mix(in srgb, var(--c) 40%, transparent); }
 .af-card-go { color: var(--muted); font-weight: 800; transition: transform .15s, color .15s; }
-.af-card:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--c) 60%, transparent); background: color-mix(in srgb, var(--c) 14%, transparent); }
-.af-card:hover .af-card-go { color: var(--c); transform: translateX(3px); }
+.af-card:hover { border-color: color-mix(in srgb, var(--c) 60%, transparent); background: color-mix(in srgb, var(--c) 14%, transparent); }
+.af-card:hover .af-card-go { color: var(--c); }
 .af-main { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 18px 26px; padding: 18px 20px; }
 .af-brand { display: inline-flex; align-items: center; gap: 10px; color: var(--text); }
 .af-brand span { display: grid; line-height: 1.25; }
@@ -233,8 +240,7 @@ details.faq p { color: var(--muted); margin: 10px 0 0; }
 .af-link { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; font-weight: 650;
   color: color-mix(in srgb, var(--text) 80%, var(--muted)); border: 1px solid transparent; transition: background .15s, color .15s, border-color .15s, transform .15s; }
 .af-link svg { color: color-mix(in srgb, var(--c) 70%, #fff); }
-.af-link:hover { color: var(--c); background: color-mix(in srgb, var(--c) 10%, transparent); border-color: color-mix(in srgb, var(--c) 30%, transparent);
-  transform: translateY(-1px); }
+.af-link:hover { color: var(--c); background: color-mix(in srgb, var(--c) 10%, transparent); border-color: color-mix(in srgb, var(--c) 30%, transparent); }
 .af-actions { display: flex; align-items: center; gap: 10px; }
 .af-actions .social-row { margin: 0; }
 .af-actions .social-btn { width: 36px; height: 36px; }
@@ -257,7 +263,7 @@ details.faq p { color: var(--muted); margin: 10px 0 0; }
 .contact-list { display: flex; flex-wrap: wrap; gap: 8px; }
 .contact-chip { display: inline-flex; align-items: center; gap: 7px; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line);
   background: var(--surface); color: var(--text); font-size: .84rem; font-weight: 600; transition: border-color .15s, transform .15s; }
-.contact-chip:hover { border-color: var(--accent); transform: translateY(-1px); }
+.contact-chip:hover { border-color: var(--accent); }
 .app-footer .contact-chip { padding: 6px 11px; color: var(--text); }
 
 /* share menu + install how-to (iPhone) */
