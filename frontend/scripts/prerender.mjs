@@ -47,7 +47,7 @@ await writeFile(
     {
       id: "/app",
       name: SITE_NAME,
-      short_name: "Presence",
+      short_name: "Presence AI",
       description: DESCRIPTION,
       start_url: "/app",
       scope: "/",
