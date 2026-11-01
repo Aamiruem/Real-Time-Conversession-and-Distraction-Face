@@ -31,6 +31,14 @@ def aws_database_url() -> str:
                       database=os.getenv("DB_NAME", "focuslink")).render_as_string(hide_password=False)
 
 
+# Managed PostgreSQL hosts that need encrypted connections (when DB_SSLMODE is not set)
+SSL_HOSTS = (".rds.amazonaws.com", ".neon.tech", ".supabase.co", ".supabase.com")
+
+
+def ssl_default(url: str) -> str:
+    return "require" if any(h in url for h in SSL_HOSTS) else ""
+
+
 def database_url() -> str:
     """Where data is stored. DATABASE_URL (docker compose, custom setups) wins; otherwise DATABASE=local|aws."""
     url = os.getenv("DATABASE_URL", "").strip()
@@ -51,7 +59,7 @@ class Settings:
     DATABASE_URL: str = database_url()
     # SSL to PostgreSQL: "require" (encrypted) by default for AWS RDS; "verify-full" + DB_SSLROOTCERT also checks
     # the server certificate (download global-bundle.pem from AWS). Empty = driver default.
-    DB_SSLMODE: str = os.getenv("DB_SSLMODE", "require" if ".rds.amazonaws.com" in DATABASE_URL else "")
+    DB_SSLMODE: str = os.getenv("DB_SSLMODE", "") or ssl_default(DATABASE_URL)
     DB_SSLROOTCERT: str = os.getenv("DB_SSLROOTCERT", "")
 
     # "Continue as guest": try the app without an account (a fresh guest user per visit)

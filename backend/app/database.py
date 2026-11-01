@@ -1,10 +1,11 @@
 """SQLAlchemy engine/session. Works with SQLite locally and PostgreSQL on AWS RDS."""
+import os
 import time
 
 from sqlalchemy import Engine, create_engine, event, inspect, make_url, text
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
-from app.config import settings
+from app.config import settings, ssl_default
 
 
 def make_engine(url: str) -> Engine:
@@ -25,8 +26,9 @@ def make_engine(url: str) -> Engine:
     # PostgreSQL (AWS RDS): SSL, fail fast when unreachable, a small warm pool, and connections recycled before
     # RDS / load balancers drop idle ones
     args = {"connect_timeout": 10}
-    if settings.DB_SSLMODE and "sslmode" not in url:
-        args["sslmode"] = settings.DB_SSLMODE
+    sslmode = os.getenv("DB_SSLMODE", "") or ssl_default(url)  # per URL: db_cli copies between databases
+    if sslmode and "sslmode" not in url:
+        args["sslmode"] = sslmode
     if settings.DB_SSLROOTCERT:
         args["sslrootcert"] = settings.DB_SSLROOTCERT
     return create_engine(url, connect_args=args, pool_pre_ping=True, pool_size=10, max_overflow=20,

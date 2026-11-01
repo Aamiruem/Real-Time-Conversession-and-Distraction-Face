@@ -204,7 +204,7 @@ browsers only allow camera and microphone on HTTPS. So:
 | Who should join | Start the website with | Link you share |
 |---|---|---|
 | People on the **same Wi-Fi** | `cd frontend; npm run dev` (HTTPS) | `https://<your-wifi-ip>:3000/abc-defg-hij` (Meet shows it automatically) |
-| **Anyone, anywhere** | deploy (below), or a tunnel: `npx cloudflared tunnel --url https://localhost:3000` | the deployed / tunnel address |
+| **Anyone, anywhere** | deploy (below), or a tunnel: `npx cloudflared tunnel --url https://localhost:3000 --no-tls-verify` (trusted HTTPS: no certificate warning) | the deployed / tunnel address |
 
 The dev certificate is self-signed: the first time, the other person's browser shows a warning —
 they choose **Advanced → Continue**. If Windows asks whether Node.js may use the network, allow **private networks**.
