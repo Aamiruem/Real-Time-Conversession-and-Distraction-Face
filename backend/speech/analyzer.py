@@ -11,6 +11,7 @@
 All of it is combined into a 0-100 confidence score with concrete coaching tips.
 """
 import difflib
+import os
 import re
 from functools import lru_cache
 
@@ -28,10 +29,13 @@ HEDGES = [
 FILLER_PROMPT = "Umm, let me think like, hmm... Okay, uh, here's what I'm, you know, thinking."
 
 # Whisper sizes the API accepts. base.en is the default (fast, ~140 MB); small.en (~480 MB download) makes clearly
-# fewer recognition errors and medium.en (~1.5 GB) is the most accurate but ~3x slower on CPU.
-# If a larger model cannot be loaded (no disk space, offline) the analysis falls back to base.en instead of failing.
-WHISPER_MODELS = ("base.en", "small.en", "medium.en")
-DEFAULT_WHISPER = "base.en"
+# fewer recognition errors and medium.en (~1.5 GB) is the most accurate but ~3x slower on CPU; tiny.en (~75 MB) is
+# for small servers (Render's free plan has 512 MB of memory).
+# If a larger model cannot be loaded (no disk space, offline) the analysis falls back to the default instead of failing.
+WHISPER_MODELS = ("tiny.en", "base.en", "small.en", "medium.en")
+DEFAULT_WHISPER = os.getenv("WHISPER_MODEL", "base.en").strip() or "base.en"
+# false = always use DEFAULT_WHISPER, even when a request asks for a larger model (keeps a small server in memory)
+ALLOW_LARGER = os.getenv("WHISPER_ALLOW_LARGER", "true").strip().lower() in {"1", "true", "yes", "on"}
 
 WEIGHTS = {"fluency": 0.22, "pace": 0.14, "voice": 0.14, "assertiveness": 0.14, "clarity": 0.18, "eye_contact": 0.18}
 LABELS = {
@@ -52,7 +56,7 @@ _UNAVAILABLE: set[str] = set()  # sizes that failed to load once — don't retry
 
 def load_model_or_fallback(size: str):
     """(model, size actually used): a larger model that cannot be downloaded/loaded falls back to the default."""
-    if size != DEFAULT_WHISPER and size not in _UNAVAILABLE:
+    if ALLOW_LARGER and size != DEFAULT_WHISPER and size not in _UNAVAILABLE:
         try:
             return load_model(size), size
         except Exception:

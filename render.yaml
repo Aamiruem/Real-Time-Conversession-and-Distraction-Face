@@ -1,47 +1,51 @@
-# Render Blueprint: backend API (Docker) + managed PostgreSQL, wired together.
+# Render Blueprint: the backend API on Render's FREE plan ($0).
 #   Render dashboard -> New -> Blueprint -> pick this repo. Then deploy the frontend on Vercel (frontend/vercel.json).
 # Values marked `sync: false` are asked for on the first deploy (leave optional ones empty).
+#
+# Free plan, and what that means:
+#   * sleeps after 15 min without visits; the next visit wakes it in ~50 s
+#   * 512 MB memory: speech analysis uses the small tiny.en Whisper model (WHISPER_MODEL below)
+#   * no disk: the server's files are wiped on every deploy / restart, so keep data in free external services:
+#       - DATABASE_URL: free PostgreSQL that never expires - Neon (neon.tech) or Supabase. Render's own free
+#         database is deleted after 30 days. Left empty = a temporary SQLite file that is lost on every restart.
+#       - MONGODB_URI:  free MongoDB Atlas M0 cluster (mirror of all data)
+#       - recordings:   saved on the server's temporary disk unless AWS S3 is turned on (AWS_ENABLED)
+# Paid upgrade later: plan: starter, WHISPER_MODEL=base.en, WHISPER_ALLOW_LARGER=true, and a disk for recordings
+#   (disk: {name: recordings, mountPath: /data/recordings, sizeGB: 5} + RECORDINGS_DIR=/data/recordings).
 services:
   - type: web
     name: presence-api # -> https://presence-api.onrender.com (if the name is taken Render adds a suffix: use that URL)
     runtime: docker
     dockerContext: ./backend
     dockerfilePath: ./backend/Dockerfile
-    # speech analysis (Whisper) + ML need ~1 GB RAM: "starter" or larger. "free" boots, but sleeps when idle and
-    # can run out of memory on the first speech analysis.
-    plan: starter
+    plan: free
     healthCheckPath: /health
     autoDeploy: true
-    # camera recordings when S3 is off: Render's own filesystem is wiped on every deploy, a disk is kept
-    disk:
-      name: recordings
-      mountPath: /data/recordings
-      sizeGB: 5
     envVars:
-      - key: RECORDINGS_DIR
-        value: /data/recordings
-      - key: DATABASE_URL
-        fromDatabase:
-          name: presence-db
-          property: connectionString
+      - key: DATABASE_URL # Neon / Supabase: postgresql://user:pass@host/db?sslmode=require
+        sync: false
+      - key: MONGODB_URI # MongoDB Atlas: mongodb+srv://user:pass@cluster.mongodb.net/
+        sync: false
+      - key: MONGODB_DB
+        value: presence_ai
       - key: SECRET_KEY
         generateValue: true
       - key: APP_NAME
         value: Presence AI
-      - key: ALLOW_GUESTS # "Continue as guest": anyone can try the app without an account
+      - key: ALLOW_GUESTS # opens on any device without logging in (automatic guest account)
         value: "true"
       - key: REQUIRE_VERIFICATION
         value: "false"
       - key: SITE_URL # your Vercel URL, e.g. https://presence-ai.vercel.app
         sync: false
+      - key: WHISPER_MODEL # also the model baked into the Docker image (build arg)
+        value: tiny.en
+      - key: WHISPER_ALLOW_LARGER
+        value: "false"
       # --- optional ---
-      - key: MONGODB_URI # MongoDB Atlas mirror, e.g. mongodb+srv://user:pass@cluster.mongodb.net/
+      - key: ANTHROPIC_API_KEY # AI coach answers with Claude (built-in coach without it - free)
         sync: false
-      - key: MONGODB_DB
-        value: presence_ai
-      - key: ANTHROPIC_API_KEY # AI coach answers with Claude (built-in coach without it)
-        sync: false
-      - key: AWS_ENABLED # S3 reports, SES email / SNS SMS codes, Comprehend
+      - key: AWS_ENABLED # S3 reports + recordings, SES email / SNS SMS codes, Comprehend
         value: "false"
       - key: AWS_REGION
         value: ap-south-1
@@ -55,9 +59,3 @@ services:
         sync: false
       - key: TURN_CREDENTIAL
         sync: false
-
-databases:
-  - name: presence-db
-    databaseName: focuslink
-    user: focuslink
-    plan: basic-256mb # "free" works for trying it out (Render deletes free databases after 30 days)
