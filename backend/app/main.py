@@ -18,9 +18,10 @@ import app.native_preload  # noqa: F401,I001  (must come before anything that lo
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.responses import JSONResponse
 
 from app import mongo
-from app.config import settings
+from app.config import SETUP_PROBLEMS, settings
 from app.database import describe, engine, init_db, ping
 from app.mcp_server import http_app as mcp_http_app
 from app.mcp_server import mcp
@@ -33,7 +34,11 @@ mcp_app = mcp_http_app()  # None unless MCP_API_KEY is set
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    init_db()
+    try:
+        init_db()
+    except Exception as exc:  # noqa: BLE001 - report it on /health instead of crashing every request
+        SETUP_PROBLEMS.append(f"The database can't be reached ({exc.__class__.__name__}): DATABASE_URL must point to "
+                              "an online PostgreSQL (Neon / Supabase), not localhost - fix it and redeploy")
     if mongo.enabled():
         mongo.sync_in_background(engine)  # bring the MongoDB mirror up to date with SQL
     if mcp_app is None:
@@ -61,7 +66,25 @@ class StripApiPrefix:
         await self.app(scope, receive, send)
 
 
+class SetupGuard:
+    """While SETUP_PROBLEMS lists something, answer 503 with the fix (except /health and CORS preflights)."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if SETUP_PROBLEMS and scope["type"] in ("http", "websocket") and scope.get("path") != "/health"                 and scope.get("method") != "OPTIONS":
+            if scope["type"] == "websocket":
+                await send({"type": "websocket.close", "code": 1011})
+                return
+            await JSONResponse({"detail": "Server setup problem: " + "; ".join(SETUP_PROBLEMS)}, 503)(
+                scope, receive, send)
+            return
+        await self.app(scope, receive, send)
+
+
 app = FastAPI(title=settings.APP_NAME, version="1.0.0", lifespan=lifespan)
+app.add_middleware(SetupGuard)
 app.add_middleware(StripApiPrefix)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 app.add_middleware(GZipMiddleware, minimum_size=1024)  # dashboards and question banks shrink ~5-8x
@@ -95,7 +118,8 @@ FEATURES = ["dashboard", "conversation", "interview", "body-language", "crud", "
 def health():
     ms, mongo_ms = ping(), mongo.ping()
     db = describe()
-    return {"status": "ok" if ms is not None else "degraded", "app": settings.APP_NAME, "api_version": API_VERSION,
+    status = "misconfigured" if SETUP_PROBLEMS else "ok" if ms is not None else "degraded"
+    return {"status": status, "problems": SETUP_PROBLEMS, "app": settings.APP_NAME, "api_version": API_VERSION,
             "features": FEATURES, "aws": settings.AWS_ENABLED, "mcp": mcp_app is not None,
             # where data is stored (no host or credentials: this endpoint is public)
             "database": {"engine": db["engine"], "location": db["location"], "connected": ms is not None,

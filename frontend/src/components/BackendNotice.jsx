@@ -32,11 +32,19 @@ const COPY = {
     command: "python -m app.db_cli status",
     note: "This clears by itself as soon as the database answers again.",
   },
+  setup: {
+    icon: "🛠️",
+    tone: "bad",
+    title: "The server needs a setting before it can open",
+    text: (_, problems) => problems.join(" · ") || "The hosted API reports a setup problem.",
+    noCommand: true,
+    note: "The site owner fixes this in the hosting platform's settings; it opens by itself afterwards.",
+  },
 };
 
 /** Friendly, actionable panel shown when the backend is offline or out of date (auto-rechecks every 5 s). */
 export function BackendNotice() {
-  const { status, version } = useBackendStatus();
+  const { status, version, problems } = useBackendStatus();
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
   const c = COPY[status];
@@ -65,15 +73,17 @@ export function BackendNotice() {
       </div>
       <div className="notice-body">
         <h2>{c.title}</h2>
-        <p>{c.text(version)}</p>
-        <div className="notice-cmd">
-          <code>{command}</code>
-          <button className="btn ghost sm" onClick={copy}>
-            {copied ? "✓ Copied" : "Copy"}
-          </button>
-        </div>
+        <p>{c.text(version, problems)}</p>
+        {!c.noCommand && (
+          <div className="notice-cmd">
+            <code>{command}</code>
+            <button className="btn ghost sm" onClick={copy}>
+              {copied ? "✓ Copied" : "Copy"}
+            </button>
+          </div>
+        )}
         <p className="small muted">
-          {!c.command && (
+          {!c.command && !c.noCommand && (
             <>
               Paste it into any PowerShell window — it stops the old backend for you. Or run <code>.\start.ps1</code>{" "}
               in the project folder to start everything.{" "}

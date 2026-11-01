@@ -1,5 +1,6 @@
-// Shared backend status for the whole app: "checking" | "ok" | "outdated" | "offline" | "database"
-// ("database" = the API answers but can't reach its database, e.g. the AWS RDS instance is stopped).
+// Shared backend status for the whole app: "checking" | "ok" | "outdated" | "offline" | "database" | "setup"
+// ("database" = the API answers but can't reach its database, e.g. the AWS RDS instance is stopped;
+//  "setup" = a hosted API is missing settings such as SECRET_KEY — `problems` says what to fix).
 // One poller for every component (useSyncExternalStore); while the backend is down or out of date it re-checks
 // every 5 s, so the app recovers by itself the moment the backend is (re)started.
 import { useSyncExternalStore } from "react";
@@ -7,7 +8,7 @@ import { useSyncExternalStore } from "react";
 /** API version this frontend needs (backend/app/main.py → API_VERSION). */
 export const REQUIRED_API_VERSION = 8;
 
-let state = { status: "checking", version: null, checkedAt: 0 };
+let state = { status: "checking", version: null, problems: [], checkedAt: 0 };
 const listeners = new Set();
 let timer = null;
 let inflight = null;
@@ -23,6 +24,7 @@ export function checkBackend() {
       if (!res.ok) return emit({ status: "offline", version: null });
       const h = await res.json().catch(() => ({}));
       const version = h.api_version ?? 1; // backends from before versioning report none
+      if (h.status === "misconfigured") return emit({ status: "setup", version, problems: h.problems ?? [] });
       if (version < REQUIRED_API_VERSION) return emit({ status: "outdated", version });
       emit({ status: h.database?.connected === false ? "database" : "ok", version });
     })
@@ -44,7 +46,7 @@ function subscribe(listener) {
   };
 }
 
-const SERVER_STATE = { status: "checking", version: null, checkedAt: 0 };
+const SERVER_STATE = { status: "checking", version: null, problems: [], checkedAt: 0 };
 
 export function useBackendStatus() {
   return useSyncExternalStore(subscribe, () => state, () => SERVER_STATE);

@@ -19,8 +19,45 @@ function lanAddress() {
   return (candidates.find((a) => a.address.startsWith("192.168.")) ?? candidates.find((a) => privateIp(a.address)))?.address ?? "";
 }
 
+/**
+ * Search engine + analytics tags in every page's <head>, from build-time environment variables (Vercel: Settings ->
+ * Environment Variables, then redeploy). Both are optional; without them nothing is added.
+ *   GOOGLE_SITE_VERIFICATION  the content="…" value of Search Console's "HTML tag" ownership check
+ *   GA_MEASUREMENT_ID         Google Analytics 4 id, G-XXXXXXXXXX
+ */
+function siteTags(env) {
+  const verify = (env.GOOGLE_SITE_VERIFICATION || "").trim();
+  const ga = (env.GA_MEASUREMENT_ID || "").trim();
+  const safe = (v) => /^[\w.-]+$/.test(v); // ids only: never let a setting inject markup
+  return {
+    name: "site-tags",
+    transformIndexHtml() {
+      const tags = [];
+      if (verify && safe(verify)) {
+        tags.push({ tag: "meta", attrs: { name: "google-site-verification", content: verify }, injectTo: "head" });
+      }
+      if (ga && safe(ga)) {
+        tags.push(
+          { tag: "script", attrs: { async: true, src: `https://www.googletagmanager.com/gtag/js?id=${ga}` }, injectTo: "head" },
+          {
+            tag: "script",
+            children: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date());gtag("config","${ga}");`,
+            injectTo: "head",
+          },
+        );
+      }
+      return tags;
+    },
+  };
+}
+
 export default defineConfig(({ command, mode, isSsrBuild }) => {
   const env = loadEnv(mode, process.cwd(), "");
+  // canonical links, sitemap, robots.txt and share previews use VITE_SITE_URL; on Vercel it defaults to the
+  // project's production address (never http://localhost:3000, which would keep the site out of Google)
+  if (command === "build" && !env.VITE_SITE_URL && process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    process.env.VITE_SITE_URL = `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  }
   const lan = mode === "lan";
   if (command === "serve") {
     // dev only (never in builds, so a deployed site contains no local paths or addresses):
@@ -54,7 +91,7 @@ export default defineConfig(({ command, mode, isSsrBuild }) => {
     envDir: "..",
     // npm run dev (= dev:lan): a self-signed HTTPS certificate (others accept it once) — browsers only allow
     // camera/mic on HTTPS, so meeting links on your Wi-Fi need it. npm run dev:http serves plain http.
-    plugins: [react(), ...(lan ? [basicSsl({ name: "presence-ai-lan" })] : [])],
+    plugins: [react(), siteTags({ ...env, ...process.env }), ...(lan ? [basicSsl({ name: "presence-ai-lan" })] : [])],
     resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
     server,
     preview: server,

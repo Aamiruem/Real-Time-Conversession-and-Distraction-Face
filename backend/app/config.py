@@ -114,9 +114,12 @@ class Settings:
 
 settings = Settings()
 
+# Setup problems on a hosting platform. The API then answers every request (except /health, which lists them) with
+# 503 and the fix, instead of crashing - a crash only shows "FUNCTION_INVOCATION_FAILED" with no hint why.
+SETUP_PROBLEMS: list[str] = []
 # SECRET_KEY signs every login token: with the public default anyone could forge a login for any account. Local use
-# is fine; on a hosting platform (Vercel / Render set these variables) refuse to start instead of running wide open.
+# is fine; on a hosting platform (Vercel / Render set these variables) the API stays closed until it is set.
 if (os.getenv("VERCEL") or os.getenv("RENDER")) and (
         settings.SECRET_KEY == "dev-secret-change-me" or len(settings.SECRET_KEY) < 32):
-    raise RuntimeError("SECRET_KEY is missing or too short: set a random value of 32+ characters in the hosting "
-                       "platform's environment variables (Vercel: Settings -> Environment Variables), then redeploy.")
+    SETUP_PROBLEMS.append("SECRET_KEY is missing or too short: set a random value of 32+ characters in the hosting "
+                          "platform's environment variables (Vercel: Settings -> Environment Variables), then redeploy")

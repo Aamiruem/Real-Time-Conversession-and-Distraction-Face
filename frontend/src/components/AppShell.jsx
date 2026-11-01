@@ -17,6 +17,8 @@ const STATUS = {
   ok: ["ok", "Live"],
   outdated: ["warn", "Old backend"],
   offline: ["bad", "Offline"],
+  database: ["bad", "Database down"],
+  setup: ["bad", "Needs setup"],
   checking: ["", "Connecting…"],
 };
 
@@ -70,6 +72,7 @@ export function AppShell({ children }) {
   const backend = useBackendStatus();
   const { theme, toggle } = useTheme();
   const [palette, setPalette] = useState(false);
+  const [guestBlocked, setGuestBlocked] = useState(false); // server down / misconfigured: wait instead of /login
 
   const query = useSearchParams().toString();
   useEffect(() => {
@@ -77,15 +80,23 @@ export function AppShell({ children }) {
     const code = path === "/app/meet" && new URLSearchParams(query).get("code");
     if (code && /^[a-z]{3}-[a-z]{4}-[a-z]{3}$/.test(code)) return router.replace(`/${code}`);
     if (!ready || user || offline || guesting.current) return;
+    if (guestBlocked && backend.status !== "ok") return; // try again once the server reports it's healthy
     // no login on this device: open the app straight away as a guest (kept on this device; make a real account
     // any time in Settings). Only when guests are turned off (ALLOW_GUESTS=false) does it go to the login page,
     // keeping the query too, so links into the app still open the right page after signing in.
     guesting.current = true;
     api("/auth/guest", { method: "POST" })
-      .then(signIn)
-      .catch(() => router.replace(`/login?next=${encodeURIComponent(path + (query ? `?${query}` : ""))}`))
+      .then((t) => {
+        setGuestBlocked(false);
+        signIn(t);
+      })
+      .catch((e) => {
+        // the server is down or needs a setting: say so here and retry by itself (see above)
+        if (e.status === 0 || e.status >= 500) setGuestBlocked(true);
+        else router.replace(`/login?next=${encodeURIComponent(path + (query ? `?${query}` : ""))}`);
+      })
       .finally(() => (guesting.current = false));
-  }, [ready, user, offline, path, query, router, signIn]);
+  }, [ready, user, offline, path, query, router, signIn, guestBlocked, backend.status]);
 
   useEffect(() => {
     const onKey = (e) => {
@@ -103,15 +114,19 @@ export function AppShell({ children }) {
     router.replace("/login");
   };
 
-  if (ready && !user && offline) {
-    // saved login, backend unreachable: wait here (auth retries every 5 s) instead of bouncing to the login page
+  if (ready && !user && (offline || guestBlocked)) {
+    // backend unreachable or not set up: wait here (it re-checks every 5 s) instead of bouncing to the login page
     return (
       <main className="offline-wait">
         <Link href="/" className="brand">
           <Logo /> Presence AI
         </Link>
         <BackendNotice />
-        <p className="muted small">You're still signed in — your dashboard opens by itself as soon as the backend answers.</p>
+        <p className="muted small">
+          {offline
+            ? "You're still signed in — your dashboard opens by itself as soon as the backend answers."
+            : "The app opens by itself as soon as the server is ready."}
+        </p>
       </main>
     );
   }

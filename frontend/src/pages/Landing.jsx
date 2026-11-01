@@ -17,7 +17,8 @@ const structuredData = {
       featureList: FEATURES.map((f) => f.title),
     },
     { "@type": "Organization", name: SITE_NAME, url: `${SITE_URL}/`, logo: `${SITE_URL}/icon.svg` },
-    { "@type": "WebSite", name: SITE_NAME, url: `${SITE_URL}/` },
+    // name + alternateName: Google shows "Presence AI" as the site name in results and matches "PresenceAI" too
+    { "@type": "WebSite", name: SITE_NAME, alternateName: ["PresenceAI", "Presence AI app"], url: `${SITE_URL}/` },
     {
       "@type": "FAQPage",
       mainEntity: HOME_FAQ.map((f) => ({

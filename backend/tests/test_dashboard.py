@@ -59,3 +59,17 @@ def test_routes_also_answer_under_api_prefix(client, verified_user):
     assert client.get("/api/auth/me", headers=headers).json()["username"] == creds["username"]
     assert client.get("/api/openapi.json").status_code == 200
     assert "/api/openapi.json" in client.get("/api/docs").text
+
+
+def test_setup_problems_close_the_api_but_health_explains(client, monkeypatch):
+    """On a host with a missing setting the API answers 503 with the fix instead of crashing every request."""
+    from app import config
+
+    monkeypatch.setattr(config, "SETUP_PROBLEMS", ["SECRET_KEY is missing"])
+    import app.main as main
+
+    monkeypatch.setattr(main, "SETUP_PROBLEMS", config.SETUP_PROBLEMS)
+    h = client.get("/api/health").json()
+    assert h["status"] == "misconfigured" and h["problems"] == ["SECRET_KEY is missing"]
+    res = client.post("/api/auth/guest")
+    assert res.status_code == 503 and "SECRET_KEY is missing" in res.json()["detail"]
