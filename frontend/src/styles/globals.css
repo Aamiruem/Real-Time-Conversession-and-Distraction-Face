@@ -363,7 +363,7 @@ details.faq p { color: var(--muted); margin: 10px 0 0; }
 .split-3-2 { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); }
 .split-2-1 { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
 .split-rooms { grid-template-columns: minmax(0, 1.3fr) minmax(0, 2.4fr) minmax(0, 1.1fr); }
-.main { padding: 24px clamp(16px, 3vw, 36px) 60px; min-width: 0; flex: 1; }
+.main { padding: 24px clamp(16px, 3vw, 36px) 20px; min-width: 0; flex: 1; }
 .page-head { margin-bottom: 22px; }
 .page-head h1 { font-size: 2rem; margin: 4px 0 4px; font-weight: 800; }
 .page-head p { margin: 0; color: var(--muted); }
