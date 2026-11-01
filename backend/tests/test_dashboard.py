@@ -50,3 +50,12 @@ def test_dashboard_aggregates_everything(client, verified_user):
 def test_health_reports_api_version(client):
     h = client.get("/health").json()
     assert h["status"] == "ok" and h["api_version"] >= 3 and "dashboard" in h["features"]
+
+
+def test_routes_also_answer_under_api_prefix(client, verified_user):
+    """Vercel services send the public path (/api/...) to the backend; the Vite proxy and Render strip it."""
+    headers, creds = verified_user
+    assert client.get("/api/health").json()["status"] == "ok"
+    assert client.get("/api/auth/me", headers=headers).json()["username"] == creds["username"]
+    assert client.get("/api/openapi.json").status_code == 200
+    assert "/api/openapi.json" in client.get("/api/docs").text

@@ -44,7 +44,25 @@ async def lifespan(_: FastAPI):
     mongo.flush()  # finish mirror writes before exiting
 
 
+class StripApiPrefix:
+    """Serve every route under /api too: behind Vercel services the backend gets the public path (/api/auth/me),
+    while the Vite proxy, Nginx and Render send it without the prefix (/auth/me). /api is kept as root_path, so the
+    docs page at /api/docs still finds /api/openapi.json."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        path = scope.get("path", "")
+        if scope["type"] in ("http", "websocket") and (path == "/api" or path.startswith("/api/")):
+            path = path[4:] or "/"
+            scope = {**scope, "path": path, "raw_path": path.encode(),
+                     "root_path": scope.get("root_path", "") + "/api"}
+        await self.app(scope, receive, send)
+
+
 app = FastAPI(title=settings.APP_NAME, version="1.0.0", lifespan=lifespan)
+app.add_middleware(StripApiPrefix)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 app.add_middleware(GZipMiddleware, minimum_size=1024)  # dashboards and question banks shrink ~5-8x
 

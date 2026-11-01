@@ -13,7 +13,15 @@ def _bool(name: str, default: str = "false") -> bool:
     return os.getenv(name, default).strip().lower() in {"1", "true", "yes", "on"}
 
 
-LOCAL_DATABASE_URL = f"sqlite:///{(BACKEND_DIR / 'focuslink.db').as_posix()}"
+# On Vercel (VERCEL is set) the project folder is read-only and only /tmp can be written: the fallback SQLite file,
+# recordings and the downloaded Whisper model go there. /tmp is per instance and temporary, so set DATABASE_URL
+# (Neon / Supabase) to keep data.
+ON_VERCEL = bool(os.getenv("VERCEL"))
+DATA_DIR = Path("/tmp") if ON_VERCEL else BACKEND_DIR
+if ON_VERCEL:
+    os.environ.setdefault("HF_HOME", "/tmp/huggingface")  # faster-whisper's model download cache
+
+LOCAL_DATABASE_URL = f"sqlite:///{(DATA_DIR / 'focuslink.db').as_posix()}"
 
 
 def aws_database_url() -> str:
@@ -85,7 +93,7 @@ class Settings:
     USE_COMPREHEND: bool = _bool("USE_COMPREHEND")
 
     # Camera recordings: video files go to S3_BUCKET when AWS is on, otherwise to this folder
-    RECORDINGS_DIR: Path = Path(os.getenv("RECORDINGS_DIR", "").strip() or BACKEND_DIR / "recordings")
+    RECORDINGS_DIR: Path = Path(os.getenv("RECORDINGS_DIR", "").strip() or DATA_DIR / "recordings")
     RECORDING_MAX_MB: int = int(os.getenv("RECORDING_MAX_MB", "500"))
 
     # One-time passwords: email via Amazon SES, SMS via Amazon SNS

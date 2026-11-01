@@ -9,6 +9,7 @@ on a held-out test split and writes ml/artifacts/{fatigue_model.joblib, model_ca
 
 import argparse
 import json
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -27,7 +28,8 @@ from sklearn.preprocessing import StandardScaler
 from ml.dataset import from_database, synthetic
 from ml.features import FEATURES, LABELS
 
-ARTIFACTS = Path(__file__).resolve().parent / "artifacts"
+# Vercel functions can only write to /tmp, so the bootstrap model is trained there on first use
+ARTIFACTS = Path("/tmp/ml-artifacts") if os.getenv("VERCEL") else Path(__file__).resolve().parent / "artifacts"
 MODEL_PATH = ARTIFACTS / "fatigue_model.joblib"
 CARD_PATH = ARTIFACTS / "model_card.json"
 USER_WEIGHT = 5.0  # a real labelled session counts as much as 5 simulated ones
