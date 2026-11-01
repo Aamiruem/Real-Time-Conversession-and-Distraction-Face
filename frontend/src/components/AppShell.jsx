@@ -12,6 +12,7 @@ import { Logo } from "./SiteChrome";
 import { InstallButton } from "@/lib/pwa";
 import { NAV_GROUPS, SECTIONS } from "@/lib/sections";
 import { Icon } from "./Icons";
+import { ShareButton } from "./Share";
 
 const STATUS = {
   ok: ["ok", "Live"],
@@ -204,7 +205,8 @@ export function AppShell({ children }) {
               <Icon name="search" size={16} /> <span>Search…</span>
               <kbd>Ctrl K</kbd>
             </button>
-            <InstallButton />
+            <ShareButton className="btn ghost sm compact" label="Share app" />
+            <InstallButton className="btn ghost sm compact" />
             <button className="icon-btn" onClick={toggle} aria-label={themeLabel(theme)} title={themeLabel(theme)}>
               <Icon name={theme === "dark" ? "sun" : "moon"} size={18} />
             </button>

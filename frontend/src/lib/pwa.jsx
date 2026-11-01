@@ -1,5 +1,6 @@
 // Install Presence AI as an app (desktop and phone): service worker + the browser's install prompt.
-import { useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
+import { Icon } from "@/components/Icons";
 
 let deferred = null; // the browser's install prompt, saved until the user clicks "Install app"
 const listeners = new Set();
@@ -43,13 +44,37 @@ export function useInstallPrompt() {
   return { canInstall, install };
 }
 
-/** "Install app" button; renders nothing when the browser can't install (or it's already installed). */
-export function InstallButton({ className = "btn ghost sm", label = "⬇ Install app" }) {
+/** iPhone / iPad: Safari has no install prompt; the app is installed from its Share menu instead. */
+const isIOS = () =>
+  /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
+/**
+ * "Install app" button: the browser's install prompt (Chrome, Edge, Android), or on iPhone / iPad a short how-to
+ * (Share -> Add to Home Screen). Renders nothing where neither applies or the app is already installed.
+ */
+export function InstallButton({ className = "btn ghost sm", label = "Install app" }) {
   const { canInstall, install } = useInstallPrompt();
-  if (!canInstall) return null;
+  const [ios, setIos] = useState(false); // decided after mount: the pre-rendered HTML has no navigator
+  const [tip, setTip] = useState(false);
+  useEffect(() => setIos(isIOS() && !installed()), []);
+  if (canInstall) {
+    return (
+      <button className={className} onClick={install} title="Install Presence AI as an app on this device">
+        <Icon name="download" size={16} /> <span className="btn-label">{label}</span>
+      </button>
+    );
+  }
+  if (!ios) return null;
   return (
-    <button className={className} onClick={install} title="Install Presence AI as an app on this device">
-      {label}
-    </button>
+    <span className="install-ios">
+      <button className={className} onClick={() => setTip((v) => !v)} aria-expanded={tip}>
+        <Icon name="download" size={16} /> <span className="btn-label">{label}</span>
+      </button>
+      {tip && (
+        <span className="install-tip" role="note">
+          In Safari tap <b>Share</b> <Icon name="share" size={14} />, then <b>Add to Home Screen</b>.
+        </span>
+      )}
+    </span>
   );
 }

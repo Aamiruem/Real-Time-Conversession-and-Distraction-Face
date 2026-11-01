@@ -1,7 +1,10 @@
 import { useId } from "react";
 import Link from "@/components/Link";
-import { FEATURES, SITE_NAME } from "@/lib/site";
+import { DESCRIPTION, FEATURES, OWNER, SITE_NAME } from "@/lib/site";
 import { InstallButton } from "@/lib/pwa";
+import { BrandIcon } from "./BrandIcons";
+import { Icon } from "./Icons";
+import { ShareButton } from "./Share";
 import { themeLabel, useTheme } from "@/lib/theme";
 
 /** Presence AI mark: a focus ring with an attention dot (being present) and two voice waves (having presence). */
@@ -39,13 +42,15 @@ export function SiteHeader() {
           <Link href="/#features">Features</Link>
           <Link href="/#how">How it works</Link>
           <Link href="/#faq">FAQ</Link>
-          <InstallButton />
+          <ShareButton className="btn ghost sm compact" />
+          <InstallButton className="btn ghost sm compact" />
           <button className="icon-btn" onClick={toggle} aria-label={themeLabel(theme)} title={themeLabel(theme)}>
             {theme === "dark" ? "☀️" : "🌙"}
           </button>
           <Link href="/login">Sign in</Link>
-          <Link className="btn sm" href="/signup">
-            Get started free
+          {/* the app signs visitors in as a guest by itself: no form needed to start */}
+          <Link className="btn sm" href="/app">
+            Open app
           </Link>
         </nav>
       </div>
@@ -53,22 +58,88 @@ export function SiteHeader() {
   );
 }
 
+/** WhatsApp wants the number as digits only (country code first, no +). */
+const waNumber = (phone) => phone.replace(/\D/g, "");
+
 export function SiteFooter() {
+  const year = new Date().getFullYear();
+  const contacts = [
+    OWNER.portfolio && { href: OWNER.portfolio, label: "Portfolio", icon: <Icon name="globe" size={17} /> },
+    OWNER.linkedin && { href: OWNER.linkedin, label: "LinkedIn", icon: <BrandIcon name="linkedin" size={16} /> },
+    OWNER.phone && {
+      href: `https://wa.me/${waNumber(OWNER.phone)}?text=${encodeURIComponent(`Hi ${OWNER.name.split(" ")[0]}, I found ${SITE_NAME} and `)}`,
+      label: "WhatsApp",
+      icon: <BrandIcon name="whatsapp" size={16} />,
+    },
+    OWNER.phone && { href: `tel:${OWNER.phone}`, label: "Call", icon: <Icon name="phone" size={16} />, same: true },
+    OWNER.email && { href: `mailto:${OWNER.email}`, label: "Email", icon: <Icon name="mail" size={16} />, same: true },
+  ].filter(Boolean);
+
   return (
     <footer className="footer">
-      <div className="container">
-        <span>
-          © {new Date().getFullYear()} {SITE_NAME}
-        </span>
-        <nav aria-label="Footer" style={{ display: "flex", gap: 18, flexWrap: "wrap" }}>
+      <div className="container footer-grid">
+        <section className="footer-brand" aria-label={SITE_NAME}>
+          <Link className="brand" href="/">
+            <Logo /> {SITE_NAME}
+          </Link>
+          <p>{DESCRIPTION.split(":")[0]} — private, no sign-up, runs in the browser on any phone or computer.</p>
+          <div className="footer-actions">
+            <Link className="btn sm" href="/app">
+              Open app
+            </Link>
+            <ShareButton align="left" />
+            <InstallButton />
+          </div>
+        </section>
+
+        <nav aria-label="Features">
+          <h3>Features</h3>
           {FEATURES.map((f) => (
             <Link key={f.slug} href={`/features/${f.slug}`}>
               {f.metaTitle.split(" – ")[0]}
             </Link>
           ))}
-          <Link href="/signup">Sign up</Link>
-          <Link href="/login">Sign in</Link>
         </nav>
+
+        <nav aria-label="Product">
+          <h3>Product</h3>
+          <Link href="/app">Open the app</Link>
+          <Link href="/#how">How it works</Link>
+          <Link href="/#faq">FAQ</Link>
+          <Link href="/login">Sign in</Link>
+          <Link href="/signup">Create account</Link>
+        </nav>
+
+        <section aria-label="Contact the developer">
+          <h3>Built by</h3>
+          <p className="footer-owner">
+            <b>{OWNER.name}</b>
+            <span>{OWNER.role}</span>
+          </p>
+          <div className="contact-list">
+            {contacts.map((c) => (
+              <a
+                key={c.label}
+                className="contact-chip"
+                href={c.href}
+                {...(c.same ? {} : { target: "_blank", rel: "noopener noreferrer" })}
+              >
+                {c.icon} {c.label}
+              </a>
+            ))}
+          </div>
+        </section>
+      </div>
+      <div className="container footer-bottom">
+        <span>
+          © {year} {SITE_NAME}. All rights reserved.
+        </span>
+        <span>
+          Made by{" "}
+          <a href={OWNER.portfolio} target="_blank" rel="noopener noreferrer">
+            {OWNER.name}
+          </a>
+        </span>
       </div>
     </footer>
   );

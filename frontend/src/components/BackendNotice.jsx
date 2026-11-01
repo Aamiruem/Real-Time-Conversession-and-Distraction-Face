@@ -42,12 +42,46 @@ const COPY = {
   },
 };
 
+// On the public site visitors can't start a backend: plain words instead of developer commands
+const HOSTED_COPY = {
+  offline: {
+    icon: "⏳",
+    tone: "warn",
+    title: "The server is starting up",
+    text: () => "It can take up to a minute after a quiet period. This page connects by itself — no need to refresh.",
+    noCommand: true,
+    note: "",
+  },
+  outdated: {
+    icon: "🔄",
+    tone: "warn",
+    title: "An update is being installed",
+    text: () => "The site is switching to its newest version. This page continues by itself in a moment.",
+    noCommand: true,
+    note: "",
+  },
+  database: {
+    icon: "🗄️",
+    tone: "bad",
+    title: "The database isn't answering right now",
+    text: () => "Your data is safe. This page reconnects by itself as soon as the database is back.",
+    noCommand: true,
+    note: "",
+  },
+};
+
+/** This page runs on a real web address (not this computer or the local network). */
+const isHosted = () =>
+  !import.meta.env.DEV &&
+  typeof window !== "undefined" &&
+  !/^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|\[::1\])/.test(window.location.hostname);
+
 /** Friendly, actionable panel shown when the backend is offline or out of date (auto-rechecks every 5 s). */
 export function BackendNotice() {
   const { status, version, problems } = useBackendStatus();
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
-  const c = COPY[status];
+  const c = (isHosted() && HOSTED_COPY[status]) || COPY[status];
   if (!c) return null;
   const command = c.command ?? COMMAND;
 

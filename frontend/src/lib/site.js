@@ -6,6 +6,16 @@ export const DESCRIPTION =
   "Free AI focus tracker and interview coach: real-time distraction & drowsiness detection, mock interviews " +
   "with body-language feedback, an AI speech and conversation coach, and machine-learning fatigue prediction.";
 
+/** Who built Presence AI, shown in the footer. A contact button appears only for each detail filled in. */
+export const OWNER = {
+  name: "Aamir Hussain Azad",
+  role: "Full-stack & AI/ML developer",
+  portfolio: "https://aamir-hussain-azad.vercel.app/",
+  linkedin: "https://www.linkedin.com/in/aamir-azad-55a05a248",
+  phone: "", // international format, e.g. +919876543210: adds Call and WhatsApp buttons
+  email: "",
+};
+
 export const FEATURES = [
   {
     slug: "focus-tracker",
