@@ -1,8 +1,11 @@
 """Sign-up with email + mobile OTP verification, password / OTP login and password reset."""
 import re
 import secrets
+import threading
+import time
+from collections import defaultdict, deque
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import delete, or_, select
 from sqlalchemy.orm import Session
 
@@ -116,7 +119,30 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
     return token_for(user)
 
 
-@router.post("/guest", response_model=Token)
+_guest_times: dict[str, deque] = defaultdict(deque)
+_guest_lock = threading.Lock()
+
+
+def client_ip(request: Request) -> str:
+    """The visitor's address: Vercel / Render / Nginx put it in X-Real-IP or X-Forwarded-For."""
+    forwarded = request.headers.get("x-real-ip") or request.headers.get("x-forwarded-for", "").split(",")[0]
+    return forwarded.strip() or (request.client.host if request.client else "unknown")
+
+
+def limit_guests(request: Request):
+    """Guest accounts are created without signing in, so cap them per address: a script can't fill the database."""
+    now, ip = time.monotonic(), client_ip(request)
+    with _guest_lock:
+        times = _guest_times[ip]
+        while times and now - times[0] > 3600:
+            times.popleft()
+        if len(times) >= settings.GUESTS_PER_HOUR:
+            raise HTTPException(429, "Too many new guest sessions from your network - try again in a while, "
+                                     "or create an account")
+        times.append(now)
+
+
+@router.post("/guest", response_model=Token, dependencies=[Depends(limit_guests)])
 def guest(data: GuestIn | None = None, db: Session = Depends(get_db)):
     """Try everything without an account: a fresh, verified guest user (unguessable password).
 

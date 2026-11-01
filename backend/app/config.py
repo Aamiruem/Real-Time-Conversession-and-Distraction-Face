@@ -73,6 +73,7 @@ class Settings:
     # "Continue as guest": try the app without an account (a fresh guest user per visit)
     ALLOW_GUESTS: bool = _bool("ALLOW_GUESTS", "true")
     GUEST_TOKEN_DAYS: int = int(os.getenv("GUEST_TOKEN_DAYS", "365"))
+    GUESTS_PER_HOUR: int = int(os.getenv("GUESTS_PER_HOUR", "30"))  # new guest accounts per IP address
 
     # Video meetings: browsers connect directly (WebRTC); STUN finds the public address. Behind strict
     # firewalls / mobile networks a TURN relay is needed too - set TURN_URL(S) + credentials (e.g. Twilio,
@@ -112,3 +113,10 @@ class Settings:
 
 
 settings = Settings()
+
+# SECRET_KEY signs every login token: with the public default anyone could forge a login for any account. Local use
+# is fine; on a hosting platform (Vercel / Render set these variables) refuse to start instead of running wide open.
+if (os.getenv("VERCEL") or os.getenv("RENDER")) and (
+        settings.SECRET_KEY == "dev-secret-change-me" or len(settings.SECRET_KEY) < 32):
+    raise RuntimeError("SECRET_KEY is missing or too short: set a random value of 32+ characters in the hosting "
+                       "platform's environment variables (Vercel: Settings -> Environment Variables), then redeploy.")

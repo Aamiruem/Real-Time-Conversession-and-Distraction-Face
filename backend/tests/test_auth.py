@@ -90,3 +90,14 @@ def test_guest_login_lasts_long_enough_to_keep_the_device(client):
     token = client.post("/auth/guest").json()["access_token"]
     days = (jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])["exp"] - time.time()) / 86400
     assert days > settings.GUEST_TOKEN_DAYS - 1
+
+
+def test_guest_accounts_are_rate_limited_per_address(client, monkeypatch):
+    from app.config import settings
+    from app.routers import auth_routes
+
+    monkeypatch.setattr(settings, "GUESTS_PER_HOUR", 2)
+    monkeypatch.setattr(auth_routes, "_guest_times", auth_routes.defaultdict(auth_routes.deque))
+    ip = {"X-Real-IP": "203.0.113.7"}
+    assert [client.post("/auth/guest", headers=ip).status_code for _ in range(3)] == [200, 200, 429]
+    assert client.post("/auth/guest", headers={"X-Real-IP": "203.0.113.8"}).status_code == 200  # others unaffected
