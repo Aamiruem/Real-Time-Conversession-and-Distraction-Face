@@ -282,6 +282,8 @@ details.faq p { color: var(--muted); margin: 10px 0 0; }
 }
 
 /* auth */
+.auth .pill { color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent); }
 .auth { display: grid; grid-template-columns: 1.05fr 1fr; gap: 48px; align-items: start; padding: 48px 0; min-height: calc(100vh - 64px); }
 .auth h1 { font-size: clamp(2rem, 4.4vw, 3rem); margin: 14px 0; font-weight: 800; }
 .auth ul { list-style: none; padding: 0; }
