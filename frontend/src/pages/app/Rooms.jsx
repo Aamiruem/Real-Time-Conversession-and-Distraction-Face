@@ -4,6 +4,7 @@ import { api, apiBlob, getToken, toDate, wsBase } from "@/lib/api";
 import { livePayload, STATE_COLORS, STATE_EMOJI } from "@/lib/attention";
 import { useAuth } from "@/lib/auth";
 import { CameraRecorder } from "@/lib/cameraRecorder";
+import { downloadBlob, saveRecording } from "@/lib/recordings";
 import { canRecord } from "@/lib/meetRecorder";
 import { CAMERA_QUALITY, TRACKING_SPEED, useFaceTracker } from "@/lib/useFaceTracker";
 import { CameraPoster } from "@/components/CameraPoster";
@@ -11,7 +12,7 @@ import { SECTIONS } from "@/lib/sections";
 
 const SENTIMENT = { positive: "😊", negative: "😟", neutral: "😐" };
 const SETTINGS_KEY = "presence.rooms.camera";
-const SIZES = { half: "Half", full: "Full" };
+const SIZES = { small: "Small", half: "Mid", full: "Full" };
 const QUALITY_LABELS = Object.fromEntries(Object.entries(CAMERA_QUALITY).map(([k, q]) => [k, q.label]));
 const SPEED_LABELS = Object.fromEntries(Object.entries(TRACKING_SPEED).map(([k, q]) => [k, q.label]));
 // backend "saved_to" values, as shown to the user
@@ -71,6 +72,7 @@ export default function Rooms() {
   const [size, setSize] = useState("half");
   const panelRef = useRef(null);
   const recorder = useRef(null);
+  const micRef = useRef(null);
   const metricsRef = useRef(cam.metrics);
   metricsRef.current = cam.metrics;
   const [recSecs, setRecSecs] = useState(null); // null = not recording
@@ -168,13 +170,16 @@ export default function Rooms() {
       .catch(() => {});
   }, []);
 
-  function startRecording() {
+  async function startRecording() {
+    // the room camera has no microphone of its own: open one for the recording (video only if not allowed)
+    micRef.current = await navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => null);
     try {
       const r = new CameraRecorder(
         cam.videoRef.current,
         cam.canvasRef.current,
         () => metricsRef.current,
         camSettings.quality,
+        micRef.current,
       );
       r.start();
       recorder.current = r;
@@ -191,25 +196,26 @@ export default function Rooms() {
     recorder.current = null;
     setRecSecs(null);
     const { blob, durationSec, timeline } = await r.stop();
+    micRef.current?.getTracks().forEach((t) => t.stop());
+    micRef.current = null;
     const title = `${room?.name ?? "Focus room"} recording`;
     setRecStatus("Saving…");
-    const form = new FormData();
-    form.append("video", blob, `recording.${blob.type.includes("mp4") ? "mp4" : "webm"}`);
-    form.append("title", title);
-    form.append("source", "rooms");
-    if (roomId) form.append("room_id", String(roomId));
-    form.append("duration_sec", String(durationSec));
-    form.append("quality", camSettings.quality);
-    form.append("speed", camSettings.speed);
-    form.append("timeline", JSON.stringify(timeline));
     try {
-      const saved = await api("/recordings", { method: "POST", body: form });
+      const saved = await saveRecording(blob, {
+        title,
+        source: "rooms",
+        roomId,
+        durationSec,
+        quality: camSettings.quality,
+        speed: camSettings.speed,
+        timeline,
+      });
       const where = saved.saved_to.map((w) => STORED_IN[w] ?? w).join(" + ");
       setRecStatus(`✅ Saved (${(saved.size_bytes / 1e6).toFixed(1)} MB) to ${where}`);
       loadRecordings();
     } catch (e) {
       // never lose the video: hand it to the user as a file instead
-      download(blob, `${title}.${blob.type.includes("mp4") ? "mp4" : "webm"}`);
+      downloadBlob(blob, title);
       setRecStatus(`Could not save to the server (${e.message}) — downloaded to this computer instead`);
     }
   }
@@ -364,7 +370,7 @@ export default function Rooms() {
                 {isRecording ? "● Recording" : cam.status === "running" ? "Sharing focus" : cam.status === "loading" ? "Starting…" : "Off"}
               </span>
             </header>
-            <div ref={panelRef} className={`cam-panel ${size === "full" ? "full" : ""}`}>
+            <div ref={panelRef} className={`cam-panel ${size}`}>
               <div className="video-wrap">
                 <video ref={cam.videoRef} playsInline muted />
                 <canvas ref={cam.canvasRef} />

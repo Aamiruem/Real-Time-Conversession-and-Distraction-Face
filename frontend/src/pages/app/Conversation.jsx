@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { CameraDock } from "@/components/CameraDock";
 import { ConversationFeedback } from "@/components/ConversationFeedback";
 import { PageHead } from "@/components/ui";
 import { api, toDate } from "@/lib/api";
@@ -137,6 +138,7 @@ export default function ConversationCoach() {
               <span className="chip">{useCamera ? "🎥 Camera + 🎙️ mic" : "🎙️ Voice only"}</span>
             </div>
             {useCamera ? (
+              <>
               <div className="video-wrap">
                 <video ref={cam.videoRef} playsInline muted />
                 <canvas ref={cam.canvasRef} />
@@ -151,6 +153,8 @@ export default function ConversationCoach() {
                   />
                 )}
               </div>
+              <CameraDock running={cam.status === "running"} source="conversation" title="Conversation practice" metrics={cam.metrics} />
+              </>
             ) : (
               <div className="voice-stage">
                 <div className="voice-orb" style={{ "--lvl": recording ? levelPct(mic.level) / 100 : 0 }}>🎙️</div>

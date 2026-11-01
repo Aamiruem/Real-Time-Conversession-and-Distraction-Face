@@ -1,5 +1,6 @@
-// Record the camera as you see it on screen: the picture, the face-tracking overlay and a focus read-out, plus a
-// one-a-second focus timeline that is saved with the video (backend: /recordings → SQL + MongoDB, video to S3/disk).
+// Record the camera as you see it on screen: the picture, the face-tracking overlay, a focus read-out and the
+// microphone, plus a one-a-second focus timeline saved with the video (backend: /recordings → SQL + MongoDB,
+// video to S3 / disk).
 import { STATE_COLORS } from "./attention";
 import { TYPES } from "./meetRecorder";
 
@@ -10,9 +11,11 @@ const FPS = 30;
 export class CameraRecorder {
   /**
    * @param {HTMLVideoElement} video the camera  @param {HTMLCanvasElement} overlay useFaceTracker's drawing
-   * @param {() => {focusPct: number, state: string}} metrics the latest focus metrics
+   * @param {(() => {focusPct: number, state: string}) | null} metrics the latest focus metrics (null: no focus HUD)
+   * @param {MediaStream | null} audio microphone to record along (null: video only)
    */
-  constructor(video, overlay, metrics, quality = "medium") {
+  constructor(video, overlay, metrics, quality = "medium", audio = null) {
+    this.audio = audio;
     this.video = video;
     this.overlay = overlay;
     this.metrics = metrics;
@@ -25,9 +28,11 @@ export class CameraRecorder {
   start() {
     this.resize();
     this.mimeType = TYPES.find((t) => MediaRecorder.isTypeSupported(t));
-    this.rec = new MediaRecorder(this.canvas.captureStream(FPS), {
+    const tracks = [...this.canvas.captureStream(FPS).getVideoTracks(), ...(this.audio?.getAudioTracks() ?? [])];
+    this.rec = new MediaRecorder(new MediaStream(tracks), {
       mimeType: this.mimeType,
       videoBitsPerSecond: BITRATE[this.quality] ?? BITRATE.medium,
+      audioBitsPerSecond: 96_000,
     });
     const chunks = [];
     this.rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
@@ -55,6 +60,7 @@ export class CameraRecorder {
   }
 
   sample() {
+    if (!this.metrics) return;
     const m = this.metrics();
     this.timeline.push({ t: this.seconds, focus: Math.round(m.focusPct ?? 0), state: m.state });
   }
@@ -79,9 +85,9 @@ export class CameraRecorder {
 
     const s = h / 720; // HUD scales with the resolution
     const secs = this.seconds;
-    const m = this.metrics();
+    const m = this.metrics?.();
     const label = `REC ${String(Math.floor(secs / 60)).padStart(2, "0")}:${String(secs % 60).padStart(2, "0")}`;
-    const focus = `${m.state} · ${Math.round(m.focusPct ?? 0)}%`;
+    const focus = m ? `${m.state} · ${Math.round(m.focusPct ?? 0)}%` : null;
     ctx.font = `600 ${18 * s}px Inter, system-ui, sans-serif`;
     const pad = 16 * s;
     const pill = (x, text, dot) => {
@@ -99,6 +105,6 @@ export class CameraRecorder {
       return tw;
     };
     const first = pill(pad, label, "#ea4335");
-    pill(pad + first + 10 * s, focus, STATE_COLORS[m.state] ?? "#38bdf8");
+    if (focus) pill(pad + first + 10 * s, focus, STATE_COLORS[m.state] ?? "#38bdf8");
   }
 }

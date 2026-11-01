@@ -47,3 +47,11 @@ def test_rejects_bad_uploads(client, verified_user):
     assert _upload(client, headers, timeline="not json").status_code == 422
     bad_type = client.post("/recordings", headers=headers, files={"video": ("a.txt", b"hi", "text/plain")})
     assert bad_type.status_code == 415
+
+
+def test_direct_upload_without_s3_says_use_the_normal_upload(client, verified_user):
+    headers, _ = verified_user
+    res = client.post("/recordings/upload-url", headers=headers, json={"mime_type": "video/webm;codecs=vp9"})
+    assert res.status_code == 409
+    other = client.post("/recordings/register", headers=headers, data={"key": "user_999999/x.webm"})
+    assert other.status_code == 403  # someone else's key

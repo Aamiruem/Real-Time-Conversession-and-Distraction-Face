@@ -1,4 +1,5 @@
 // Vision Studio: every computer-vision model live on your camera — objects by name, fine names, scene, hands +
+import { CameraDock } from "@/components/CameraDock";
 // gestures, body pose, face mesh + expressions, person segmentation — plus a skin check. Runs entirely in the browser.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { SkinCheck } from "@/components/SkinCheck";
@@ -165,6 +166,7 @@ export default function Vision() {
                 />
               )}
             </div>
+            <CameraDock running={running} source="vision" title="Vision Studio" />
           </div>
           <div className="row" style={{ marginTop: 12, alignItems: "center" }}>
             {running ? (

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { CameraDock } from "@/components/CameraDock";
 import { VoiceCaption, VoiceCoachControl } from "@/components/VoiceCoachControl";
 import { Donut, Gauge, Metric, PageHead, RiskCard } from "@/components/ui";
 import { api, toDate } from "@/lib/api";
@@ -160,6 +161,7 @@ export default function FocusMonitor() {
                 />
               )}
             </div>
+            <CameraDock running={running} source="focus" title="Focus session" metrics={m} />
           </div>
           <div className="row" style={{ marginTop: 12, alignItems: "center" }}>
             {running ? (

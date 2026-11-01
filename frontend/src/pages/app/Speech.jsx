@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { CameraDock } from "@/components/CameraDock";
 import { PageHead, SpeechResult, StateBadge } from "@/components/ui";
 import { api, toDate } from "@/lib/api";
 import { useFaceTracker } from "@/lib/useFaceTracker";
@@ -98,6 +99,7 @@ export default function SpeechCoach() {
               />
             )}
           </div>
+          <CameraDock running={running} source="speech" title="Speech practice" metrics={m} />
           <div className="row" style={{ marginTop: 12 }}>
             {running ? (
               <button className="btn danger" onClick={onStop}>

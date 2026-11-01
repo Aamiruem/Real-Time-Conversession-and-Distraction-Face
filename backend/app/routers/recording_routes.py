@@ -136,6 +136,12 @@ def upload(
             with path.open("wb") as f:
                 shutil.copyfileobj(tmp, f, CHUNK)
 
+    return _save_row(db, user, samples, title=title, source=source, room_id=room_id, mime=mime, size=size,
+                     duration_sec=duration_sec, quality=quality, speed=speed, storage=storage, key=key)
+
+
+def _save_row(db: Session, user: User, samples: list[dict], *, title, source, room_id, mime, size, duration_sec,
+              quality, speed, storage, key) -> RecordingOut:
     focus = [s["focus"] for s in samples]
     rec = Recording(
         user_id=user.id, room_id=room_id, title=title.strip()[:120] or "Camera recording", source=source[:20],
@@ -151,6 +157,61 @@ def upload(
     out = to_out(rec)
     out.saved_to = saved_to(rec)
     return out
+
+
+# ---------- direct upload to S3 (big videos: serverless hosts cap request bodies, e.g. Vercel at 4.5 MB) ----------
+
+class UploadUrlIn(BaseModel):
+    mime_type: str
+
+
+@router.post("/upload-url")
+def upload_url(data: UploadUrlIn, user: User = Depends(get_current_user)):
+    """A 15-minute S3 link the browser PUTs the video to; then POST /recordings/register with the key.
+    409 when S3 isn't set up: send the file to POST /recordings instead."""
+    mime = data.mime_type.split(";")[0].strip()
+    if mime not in TYPES:
+        raise HTTPException(415, "Upload a webm or mp4 video")
+    client = s3()
+    if client is None:
+        raise HTTPException(409, "Direct upload needs AWS S3 (AWS_ENABLED)")
+    key = f"user_{user.id}/{uuid.uuid4().hex}.{TYPES[mime]}"
+    url = client.generate_presigned_url("put_object", ExpiresIn=900, Params={
+        "Bucket": settings.S3_BUCKET, "Key": f"recordings/{key}", "ContentType": mime})
+    return {"key": key, "url": url, "headers": {"Content-Type": mime}}
+
+
+@router.post("/register", response_model=RecordingOut)
+def register(
+    key: str = Form(...),
+    title: str = Form(""),
+    source: str = Form("rooms"),
+    room_id: int | None = Form(None),
+    duration_sec: float = Form(0, ge=0),
+    quality: str = Form("medium"),
+    speed: str = Form("realtime"),
+    timeline: str = Form("[]"),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Save the details of a video the browser uploaded straight to S3 (see /recordings/upload-url)."""
+    if not key.startswith(f"user_{user.id}/") or ".." in key:
+        raise HTTPException(403, "Not your upload")
+    client = s3()
+    if client is None:
+        raise HTTPException(409, "Direct upload needs AWS S3 (AWS_ENABLED)")
+    try:
+        head = client.head_object(Bucket=settings.S3_BUCKET, Key=f"recordings/{key}")
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(404, "The upload didn't arrive in S3") from exc
+    mime, size = head.get("ContentType", "video/webm"), int(head.get("ContentLength", 0))
+    if mime not in TYPES or not size:
+        raise HTTPException(415, "Upload a webm or mp4 video")
+    if size > settings.RECORDING_MAX_MB * CHUNK:
+        client.delete_object(Bucket=settings.S3_BUCKET, Key=f"recordings/{key}")
+        raise HTTPException(413, f"Recording is larger than {settings.RECORDING_MAX_MB} MB")
+    return _save_row(db, user, _parse_timeline(timeline), title=title, source=source, room_id=room_id, mime=mime,
+                     size=size, duration_sec=duration_sec, quality=quality, speed=speed, storage="s3", key=key)
 
 
 @router.get("", response_model=list[RecordingOut])

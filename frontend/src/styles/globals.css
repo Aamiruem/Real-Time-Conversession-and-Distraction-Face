@@ -282,6 +282,15 @@ details.faq p { color: var(--muted); margin: 10px 0 0; }
 .rec-actions .btn.sm { padding: 4px 8px; }
 .rec-player { grid-column: 1 / -1; width: 100%; border-radius: 8px; background: #000; margin-top: 4px; }
 
+/* camera toolbar on every camera page: size Small / Mid / Full + record */
+.cam-dock { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 10px; }
+.cam-dock .seg { flex: 1 1 260px; }
+.cam-dock-status { flex-basis: 100%; margin: 0; }
+.rec-badge-inline { color: var(--bad); font-weight: 800; font-size: .8rem; animation: pulse 1s infinite; }
+.video-wrap[data-size="small"], .cam-panel.small .video-wrap { width: min(100%, 420px); margin-inline: auto; }
+.video-wrap:fullscreen { aspect-ratio: auto; width: 100vw; height: 100vh; border-radius: 0; border: 0; }
+.video-wrap:fullscreen video, .video-wrap:fullscreen canvas { object-fit: contain; }
+
 /* ---------- Focus Rooms layout ---------- */
 .split-rooms { align-items: start; }
 .rooms-col { display: grid; gap: 16px; align-content: start; min-width: 0; }

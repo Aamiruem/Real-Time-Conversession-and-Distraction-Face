@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { CameraDock } from "@/components/CameraDock";
 import { InterviewFeedback } from "@/components/InterviewFeedback";
 import { PageHead } from "@/components/ui";
 import { api, cachedApi, toDate } from "@/lib/api";
@@ -380,6 +381,7 @@ export default function InterviewPrep() {
                     />
                   )}
                 </div>
+                <CameraDock running={camOn} source="interview" title="Interview practice" metrics={cam.metrics} />
               </div>
 
               <div className="row" style={{ marginTop: 12 }}>
