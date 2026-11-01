@@ -163,12 +163,6 @@ export default function Home() {
           ))}
         </section>
 
-        <section className="section" style={{ textAlign: "center" }}>
-          <h2>Ready to focus better?</h2>
-          <Link className="btn" href="/signup">
-            Create your free account
-          </Link>
-        </section>
       </main>
       <SiteFooter />
     </>

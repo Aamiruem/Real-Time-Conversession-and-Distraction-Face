@@ -218,6 +218,7 @@ const ICONS = {
       {P("m6 6 12 12")}
     </>
   ),
+  check: P("M20 6 9 17l-5-5"),
   external: (
     <>
       {P("M15 3h6v6")}

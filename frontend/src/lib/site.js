@@ -21,6 +21,7 @@ export const OWNER = {
   role: "Full-stack & AI/ML developer",
   portfolio: "https://aamir-hussain-azad.vercel.app/",
   linkedin: "https://www.linkedin.com/in/aamir-azad-55a05a248",
+  github: "https://github.com/Aamiruem",
   phone: "", // international format, e.g. +919876543210: adds Call and WhatsApp buttons
   email: "",
 };

@@ -1,6 +1,6 @@
 import { useId } from "react";
 import Link from "@/components/Link";
-import { DESCRIPTION, FEATURES, OWNER, SITE_NAME } from "@/lib/site";
+import { DESCRIPTION, FEATURES, OWNER, SITE_NAME, TOPICS } from "@/lib/site";
 import { InstallButton } from "@/lib/pwa";
 import { BrandIcon } from "./BrandIcons";
 import { Icon } from "./Icons";
@@ -93,30 +93,85 @@ function ContactList() {
   );
 }
 
+const BADGES = ["Free", "No login", "Private", "Any device"];
+
+/** Round social / contact buttons for the footer (each one only when its detail is filled in). */
+function SocialLinks() {
+  const links = [
+    OWNER.portfolio && { href: OWNER.portfolio, label: "Portfolio", icon: <Icon name="globe" size={18} />, brand: "#6366f1" },
+    OWNER.linkedin && { href: OWNER.linkedin, label: "LinkedIn", icon: <BrandIcon name="linkedin" size={17} />, brand: "#0a66c2" },
+    OWNER.github && { href: OWNER.github, label: "GitHub", icon: <BrandIcon name="github" size={18} />, brand: "#6e5494" },
+    OWNER.phone && {
+      href: `https://wa.me/${waNumber(OWNER.phone)}?text=${encodeURIComponent(`Hi ${OWNER.name.split(" ")[0]}, I found ${SITE_NAME} and `)}`,
+      label: "WhatsApp",
+      icon: <BrandIcon name="whatsapp" size={18} />,
+      brand: "#25d366",
+    },
+    OWNER.phone && { href: `tel:${OWNER.phone}`, label: "Call", icon: <Icon name="phone" size={17} />, brand: "#16a34a", same: true },
+    OWNER.email && { href: `mailto:${OWNER.email}`, label: "Email", icon: <Icon name="mail" size={18} />, brand: "#ea4335", same: true },
+  ].filter(Boolean);
+  return (
+    <div className="social-row">
+      {links.map((l) => (
+        <a
+          key={l.label}
+          className="social-btn"
+          href={l.href}
+          style={{ "--brand": l.brand }}
+          title={l.label}
+          aria-label={`${OWNER.name} on ${l.label}`}
+          {...(l.same ? {} : { target: "_blank", rel: "noopener noreferrer" })}
+        >
+          {l.icon}
+        </a>
+      ))}
+    </div>
+  );
+}
+
 export function SiteFooter() {
   const year = new Date().getFullYear();
+  const toTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
   return (
     <footer className="footer">
+      <div className="container">
+        <section className="footer-cta" aria-label="Get started">
+          <div>
+            <h2>
+              Stay focused. <span>Speak with confidence.</span>
+            </h2>
+            <p>Open {SITE_NAME} on any phone or computer — free, private, no sign-up.</p>
+          </div>
+          <div className="footer-cta-actions">
+            <Link className="btn footer-cta-main" href="/app">
+              Open the app →
+            </Link>
+            <ShareButton className="btn ghost footer-cta-ghost" align="left" />
+            <InstallButton className="btn ghost footer-cta-ghost" />
+          </div>
+        </section>
+      </div>
+
       <div className="container footer-grid">
         <section className="footer-brand" aria-label={SITE_NAME}>
           <Link className="brand" href="/">
             <Logo /> {SITE_NAME}
           </Link>
-          <p>{DESCRIPTION.split(":")[0]} — private, no sign-up, runs in the browser on any phone or computer.</p>
-          <div className="footer-actions">
-            <Link className="btn sm" href="/app">
-              Open app
-            </Link>
-            <ShareButton align="left" />
-            <InstallButton />
-          </div>
+          <p>{DESCRIPTION.split(":")[0]} — focus tracking, speech and interview coaching, right in your browser.</p>
+          <ul className="footer-badges" aria-label="Highlights">
+            {BADGES.map((b) => (
+              <li key={b}>
+                <Icon name="check" size={13} /> {b}
+              </li>
+            ))}
+          </ul>
         </section>
 
         <nav aria-label="Features">
           <h3>Features</h3>
           {FEATURES.map((f) => (
-            <Link key={f.slug} href={`/features/${f.slug}`}>
+            <Link key={f.slug} href={`/features/${f.slug}`} className="footer-feature" style={{ "--dot": TOPICS[f.slug]?.color }}>
               {f.metaTitle.split(" – ")[0]}
             </Link>
           ))}
@@ -125,31 +180,50 @@ export function SiteFooter() {
         <nav aria-label="Product">
           <h3>Product</h3>
           <Link href="/app">Open the app</Link>
+          <Link href="/app/meet">Video meetings</Link>
+          <Link href="/app/rooms">Focus rooms</Link>
           <Link href="/#how">How it works</Link>
           <Link href="/#faq">FAQ</Link>
-          <Link href="/login">Sign in</Link>
           <Link href="/signup">Create account</Link>
         </nav>
 
         <section aria-label="Contact the developer">
           <h3>Built by</h3>
-          <p className="footer-owner">
-            <b>{OWNER.name}</b>
-            <span>{OWNER.role}</span>
-          </p>
-          <ContactList />
+          <div className="footer-owner">
+            <span className="owner-avatar" aria-hidden="true">
+              {OWNER.name
+                .split(" ")
+                .map((w) => w[0])
+                .slice(0, 2)
+                .join("")}
+            </span>
+            <div>
+              <b>{OWNER.name}</b>
+              <span>{OWNER.role}</span>
+            </div>
+          </div>
+          <SocialLinks />
+          <a className="footer-portfolio" href={OWNER.portfolio} target="_blank" rel="noopener noreferrer">
+            View portfolio <Icon name="external" size={14} />
+          </a>
         </section>
       </div>
-      <div className="container footer-bottom">
-        <span>
-          © {year} {SITE_NAME}. All rights reserved.
-        </span>
-        <span>
-          Made by{" "}
-          <a href={OWNER.portfolio} target="_blank" rel="noopener noreferrer">
-            {OWNER.name}
-          </a>
-        </span>
+
+      <div className="footer-bottom">
+        <div className="container">
+          <span>
+            © {year} {SITE_NAME}. All rights reserved.
+          </span>
+          <span>
+            Made with <span className="heart" aria-label="love">♥</span> in India by{" "}
+            <a href={OWNER.portfolio} target="_blank" rel="noopener noreferrer">
+              {OWNER.name}
+            </a>
+          </span>
+          <button type="button" className="to-top" onClick={toTop} aria-label="Back to top">
+            ↑ Top
+          </button>
+        </div>
       </div>
     </footer>
   );
