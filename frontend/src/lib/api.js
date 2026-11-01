@@ -59,6 +59,13 @@ export async function cachedApi(path, ttlMs = 30_000) {
   return value;
 }
 
+// A guest's login can be rejected when the server lost it (e.g. a fresh server copy without a shared database).
+// The auth provider registers how to get a new guest login; api() then renews and retries once, so the visitor
+// sees no error. Never used for real accounts, which must sign in again themselves.
+let renewGuest = null;
+let renewing = null;
+export const setGuestRenewal = (fn) => (renewGuest = fn);
+
 export async function api(path, init = {}) {
   if (init.method && init.method !== "GET") cache.clear();
   const headers = new Headers(init.headers);
@@ -74,6 +81,10 @@ export async function api(path, init = {}) {
     res = await fetch(`/api${path}`, { ...init, headers, body });
   } catch {
     throw new ApiError("Cannot reach the server. Is the backend running?", 0, null);
+  }
+  if (res.status === 401 && token && renewGuest && !init.renewed && !path.startsWith("/auth/")) {
+    renewing ??= renewGuest().finally(() => (renewing = null)); // one renewal for many failing requests
+    if (await renewing.catch(() => false)) return api(path, { ...init, renewed: true });
   }
   if (!res.ok) {
     let detail = res.statusText;

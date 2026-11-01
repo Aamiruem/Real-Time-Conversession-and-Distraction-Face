@@ -204,7 +204,11 @@ details.faq p { color: var(--muted); margin: 10px 0 0; }
 .app-footer a:hover { color: var(--accent); }
 .app-footer-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .app-footer .share-menu { top: auto; bottom: calc(100% + 8px); }
-.app-footer .contact-chip { padding: 6px 11px; }
+.contact-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.contact-chip { display: inline-flex; align-items: center; gap: 7px; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--text); font-size: .84rem; font-weight: 600; transition: border-color .15s, transform .15s; }
+.contact-chip:hover { border-color: var(--accent); transform: translateY(-1px); }
+.app-footer .contact-chip { padding: 6px 11px; color: var(--text); }
 
 /* share menu + install how-to (iPhone) */
 .share, .install-ios { position: relative; display: inline-flex; }

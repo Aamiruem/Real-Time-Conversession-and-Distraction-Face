@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { api, getToken, setToken } from "./api";
+import { api, getToken, setGuestRenewal, setToken } from "./api";
 
 const AuthContext = createContext({ user: null, ready: false, offline: false, signIn: () => {}, signOut: () => {} });
 
@@ -46,6 +46,19 @@ export function AuthProvider({ children }) {
     setUser(t.user);
     setOffline(false);
   }, []);
+
+  // guests: a rejected login is replaced by a new guest login behind the scenes (see setGuestRenewal in api.js)
+  const isGuest = !!user?.username?.startsWith("guest-");
+  useEffect(() => {
+    if (!isGuest) return setGuestRenewal(null);
+    setGuestRenewal(async () => {
+      const t = await api("/auth/guest", { method: "POST" });
+      setToken(t.access_token);
+      setUser(t.user);
+      return true;
+    });
+    return () => setGuestRenewal(null);
+  }, [isGuest]);
 
   const signOut = useCallback(() => {
     setToken(null);
