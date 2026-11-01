@@ -48,6 +48,10 @@ def answer(
 ):
     """Mock-interview answer → speech analysis + interview feedback (content, delivery, presence)."""
     from interview.coach import answer_feedback
+    from speech.analyzer import SPEECH_MISSING, speech_available
+
+    if not speech_available():
+        raise HTTPException(503, SPEECH_MISSING)
     from speech.analyzer import DEFAULT_WHISPER, WHISPER_MODELS, analyze
     from speech.audio import decode_audio
     from speech.conversation import conversation_feedback

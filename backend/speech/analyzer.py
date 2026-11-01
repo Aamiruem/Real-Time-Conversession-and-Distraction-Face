@@ -44,6 +44,17 @@ LABELS = {
 }
 
 
+SPEECH_MISSING = ("Speech analysis isn't available on this server: its speech packages aren't installed "
+                  "(pip install -r requirements-speech.txt). Everything else works.")
+
+
+def speech_available() -> bool:
+    """False on servers installed without requirements-speech.txt (e.g. Vercel, to stay under its size limit)."""
+    import importlib.util
+
+    return all(importlib.util.find_spec(m) for m in ("faster_whisper", "av"))
+
+
 @lru_cache(maxsize=2)
 def load_model(size: str = DEFAULT_WHISPER):
     from faster_whisper import WhisperModel

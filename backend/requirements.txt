@@ -1,4 +1,4 @@
-# FastAPI backend (API + MCP server + NLP / ML / speech engines) — also what backend/Dockerfile installs
+# FastAPI backend (API + MCP server + NLP / ML engines) - what Vercel installs; Docker adds requirements-speech.txt
 fastapi==0.115.0
 uvicorn[standard]==0.54.0
 sqlalchemy==2.0.35
@@ -18,10 +18,10 @@ pandas==2.2.3
 scikit-learn==1.5.2
 joblib==1.4.2
 
-# Speech coach analysis runs in the API for the React frontend
-faster-whisper==1.1.1
-av==12.3.0
+# Uploads (recordings, speech audio)
 python-multipart==0.0.12
+# Speech analysis (faster-whisper ~300 MB) is in requirements-speech.txt: Docker / Render and local setups install
+# it, Vercel doesn't (its functions are limited to 500 MB) - speech endpoints then answer 503, everything else works
 
 # AI coach (optional: used when ANTHROPIC_API_KEY is set, otherwise the built-in coach answers)
 anthropic==1.13.0

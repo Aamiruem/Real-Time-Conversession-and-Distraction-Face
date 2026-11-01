@@ -1,0 +1,4 @@
+# Speech coach / interview answer analysis (Whisper speech-to-text + audio decoding), ~300 MB installed.
+# Installed by the Docker image (Render) and local setups; left out on Vercel to fit its 500 MB function limit.
+faster-whisper==1.1.1
+av==12.3.0

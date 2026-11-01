@@ -33,6 +33,10 @@ def analyze_upload(
     db: Session = Depends(get_db),
 ):
     """Transcribe + score a recording with the speech coach engine; saved as a speech session by default."""
+    from speech.analyzer import SPEECH_MISSING, speech_available
+
+    if not speech_available():
+        raise HTTPException(503, SPEECH_MISSING)
     from speech.analyzer import DEFAULT_WHISPER, WHISPER_MODELS, analyze
     from speech.audio import decode_audio
     from speech.conversation import CONVERSATION_TYPES, conversation_feedback
