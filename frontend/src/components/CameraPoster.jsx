@@ -104,6 +104,45 @@ const SCENES = {
       ))}
     </>
   ),
+  fatigue: (c) => (
+    <>
+      <Person x={104} y={124} color={c} />
+      <path d="M92 88c4 3 8 3 12 0M108 88c4 3 8 3 12 0" stroke="#0f172a" strokeWidth="2" fill="none" strokeLinecap="round" />
+      <text x="128" y="64" fontSize="13" fontWeight="800" fill={ink} opacity=".8">z</text>
+      <text x="138" y="52" fontSize="16" fontWeight="800" fill={ink} opacity=".6">z</text>
+      <g transform="translate(196 58)">
+        <rect width="74" height="34" rx="7" fill="none" stroke={ink} strokeWidth="3" />
+        <rect x="74" y="11" width="6" height="12" rx="2" fill={ink} />
+        <rect x="5" y="5" width="22" height="24" rx="3" fill={c} />
+      </g>
+      <g transform="translate(176 110)">
+        {[18, 30, 24, 38].map((h, i) => (
+          <rect key={i} x={i * 22} y={40 - h} width="14" height={h} rx="3" fill={i === 3 ? c : ink} opacity={i === 3 ? 1 : 0.45} />
+        ))}
+        <text x="44" y="56" textAnchor="middle" fontSize="10" fontWeight="800" fill={ink}>risk: high</text>
+      </g>
+    </>
+  ),
+  analytics: (c) => (
+    <>
+      <rect x="50" y="34" width="220" height="112" rx="10" fill={ink} opacity=".1" stroke={ink} strokeOpacity=".3" />
+      {[34, 52, 44, 66, 58, 80].map((h, i) => (
+        <rect key={i} x={70 + i * 26} y={130 - h} width="16" height={h} rx="3" fill={c} opacity={0.55 + i * 0.08} />
+      ))}
+      <path d="M72 96l26-14 26 8 26-22 26 6 26-24 26 6" fill="none" stroke={ink} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="254" cy="56" r="5" fill={ink} />
+    </>
+  ),
+  secure: (c) => (
+    <>
+      <path d="M160 26l56 20v34c0 34-24 56-56 66-32-10-56-32-56-66V46z" fill={c} opacity=".9" />
+      <path d="M160 26l56 20v34c0 34-24 56-56 66z" fill="#000" opacity=".12" />
+      <rect x="138" y="80" width="44" height="34" rx="6" fill={ink} />
+      <path d="M146 80v-10a14 14 0 0 1 28 0v10" fill="none" stroke={ink} strokeWidth="6" />
+      <circle cx="160" cy="95" r="5" fill={c} />
+      <rect x="158" y="96" width="4" height="10" rx="2" fill={c} />
+    </>
+  ),
   rooms: (c) => (
     <>
       {[0, 1, 2].flatMap((col) =>
@@ -151,6 +190,17 @@ export function CameraPoster({ kind, color, title, hint, loading = false, onStar
         {loading ? <span className="spinner" /> : <Icon name="play" size={small ? 22 : 30} />}
       </button>
       <p className="cam-poster-hint">{hint}</p>
+    </div>
+  );
+}
+
+/** A colourful topic thumbnail (feature cards and pages): the same scene as the camera cover, in the topic's colour. */
+export function TopicThumb({ kind, color, label }) {
+  return (
+    <div className="topic-thumb" style={{ "--pc": color }} role="img" aria-label={label}>
+      <svg viewBox="0 0 320 180" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+        {SCENES[kind]?.(color)}
+      </svg>
     </div>
   );
 }

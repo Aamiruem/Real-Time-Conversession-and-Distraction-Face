@@ -1,6 +1,7 @@
 import Link from "@/components/Link";
 import { SiteFooter, SiteHeader } from "@/components/SiteChrome";
-import { DESCRIPTION, FEATURES, HOME_FAQ, jsonLd, SITE_NAME, SITE_URL } from "@/lib/site";
+import { DESCRIPTION, FEATURES, HOME_FAQ, jsonLd, SITE_NAME, SITE_URL, TOPICS } from "@/lib/site";
+import { TopicThumb } from "@/components/CameraPoster";
 
 // Pre-rendered to static HTML at build time (scripts/prerender.mjs), so crawlers get complete HTML instantly.
 const structuredData = {
@@ -32,19 +33,19 @@ const structuredData = {
 
 const EXTRA = [
   {
-    icon: "💬",
     title: "Focus rooms",
     text: "Real-time chat where everyone sees each other's live focus score, with sentiment and confidence analysis.",
+    topic: { kind: "rooms", color: "#0d9488", app: "/app/rooms", open: "Join a focus room" },
   },
   {
-    icon: "📊",
     title: "Analytics",
     text: "Focus history, speaking progress, leaderboard and conversation insights in one dashboard.",
+    topic: { kind: "analytics", color: "#0284c7", app: "/app/analytics", open: "See your analytics" },
   },
   {
-    icon: "🔐",
     title: "Secure accounts",
     text: "Bcrypt-hashed passwords, optional email + mobile OTP verification, data on AWS RDS and S3.",
+    topic: { kind: "secure", color: "#4f46e5", app: "/signup", open: "Create a free account" },
   },
 ];
 
@@ -93,19 +94,24 @@ export default function Home() {
         <section id="features" className="section">
           <h2>Everything you need to focus and communicate better</h2>
           <div className="grid g3">
-            {FEATURES.map((f) => (
-              <Link key={f.slug} href={`/features/${f.slug}`} className="card feature-card">
-                <div className="ic">{f.icon}</div>
-                <h3>{f.metaTitle.split(" – ")[0]}</h3>
-                <p>{f.summary}</p>
-                <p style={{ marginTop: 10, color: "var(--accent)", fontWeight: 600 }}>Learn more →</p>
-              </Link>
-            ))}
-            {EXTRA.map((f) => (
-              <article key={f.title} className="card">
-                <div className="ic">{f.icon}</div>
+            {[
+              ...FEATURES.map((f) => ({ title: f.metaTitle.split(" – ")[0], text: f.summary, topic: TOPICS[f.slug], more: `/features/${f.slug}` })),
+              ...EXTRA,
+            ].map((f) => (
+              <article key={f.title} className="card feature-card" style={{ "--pc": f.topic.color }}>
+                <TopicThumb kind={f.topic.kind} color={f.topic.color} label={f.title} />
                 <h3>{f.title}</h3>
                 <p>{f.text}</p>
+                <div className="feature-actions">
+                  <Link className="btn sm topic-btn" href={f.topic.app}>
+                    {f.topic.open} →
+                  </Link>
+                  {f.more && (
+                    <Link className="feature-more" href={f.more}>
+                      Learn more
+                    </Link>
+                  )}
+                </div>
               </article>
             ))}
           </div>

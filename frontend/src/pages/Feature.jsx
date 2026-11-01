@@ -1,7 +1,9 @@
 import Link from "@/components/Link";
 import { useParams } from "react-router";
 import { SiteFooter, SiteHeader } from "@/components/SiteChrome";
-import { FEATURES, jsonLd, SITE_NAME, SITE_URL } from "@/lib/site";
+import { TopicThumb } from "@/components/CameraPoster";
+import { ShareButton } from "@/components/Share";
+import { FEATURES, jsonLd, SITE_NAME, SITE_URL, TOPICS } from "@/lib/site";
 import NotFound from "./NotFound";
 
 // Page text and SEO tags (lib/seo.js) come from FEATURES in lib/site.js; every slug is pre-rendered at build time.
@@ -9,6 +11,7 @@ export default function FeaturePage() {
   const { slug } = useParams();
   const f = FEATURES.find((x) => x.slug === slug);
   if (!f) return <NotFound />;
+  const topic = TOPICS[f.slug];
   const url = `${SITE_URL}/features/${f.slug}`;
   const data = {
     "@context": "https://schema.org",
@@ -43,16 +46,17 @@ export default function FeaturePage() {
         </nav>
         <article className="prose">
           <header className="hero" style={{ textAlign: "left", paddingTop: 30 }}>
-            <div className="ic" style={{ fontSize: "2.4rem" }}>
-              {f.icon}
-            </div>
+            <TopicThumb kind={topic.kind} color={topic.color} label={f.metaTitle.split(" – ")[0]} />
             <h1 style={{ fontSize: "clamp(2rem, 5vw, 3.2rem)" }}>{f.title}</h1>
             <p className="lead" style={{ margin: "0 0 24px" }}>
               {f.summary}
             </p>
-            <Link className="btn" href="/signup">
-              Try it free
-            </Link>
+            <div className="feature-actions" style={{ "--pc": topic.color }}>
+              <Link className="btn topic-btn" href={topic.app}>
+                {topic.open} — free, no login
+              </Link>
+              <ShareButton path={`/features/${f.slug}`} className="btn ghost" />
+            </div>
           </header>
           {f.sections.map((s) => (
             <section key={s.heading}>

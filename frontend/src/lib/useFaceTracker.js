@@ -17,7 +17,7 @@ export const CAMERA_QUALITY = {
 export const TRACKING_SPEED = {
   eco: { label: "Eco", fps: 8 },
   balanced: { label: "Balanced", fps: 15 },
-  realtime: { label: "Real-time", fps: 0 },
+  realtime: { label: "Fast", fps: 0 },
 };
 
 /** One shared MediaPipe FaceLandmarker (loaded lazily from our own /public folder). */
