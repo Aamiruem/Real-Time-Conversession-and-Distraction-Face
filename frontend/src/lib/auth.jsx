@@ -50,7 +50,10 @@ export function AuthProvider({ children }) {
   // guests: a rejected login is replaced by a new guest login behind the scenes (see setGuestRenewal in api.js)
   const isGuest = !!user?.username?.startsWith("guest-");
   useEffect(() => {
-    if (!isGuest) return setGuestRenewal(null);
+    if (!isGuest) {
+      setGuestRenewal(null);
+      return undefined; // an effect returns a cleanup function or nothing — React calls anything else
+    }
     setGuestRenewal(async () => {
       const t = await api("/auth/guest", { method: "POST" });
       setToken(t.access_token);

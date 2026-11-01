@@ -79,7 +79,10 @@ export function AppShell({ children }) {
   useEffect(() => {
     // an old invite link (/app/meet?code=…): meetings now live at their own link, /<code>, which guests can open too
     const code = path === "/app/meet" && new URLSearchParams(query).get("code");
-    if (code && /^[a-z]{3}-[a-z]{4}-[a-z]{3}$/.test(code)) return router.replace(`/${code}`);
+    if (code && /^[a-z]{3}-[a-z]{4}-[a-z]{3}$/.test(code)) {
+      router.replace(`/${code}`);
+      return;
+    }
     if (!ready || user || offline || guesting.current) return;
     if (guestBlocked && backend.status !== "ok") return; // try again once the server reports it's healthy
     // no login on this device: open the app straight away as a guest (kept on this device; make a real account
