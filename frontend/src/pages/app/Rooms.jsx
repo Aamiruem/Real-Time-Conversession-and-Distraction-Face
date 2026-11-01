@@ -3,53 +3,18 @@ import { Gauge, PageHead } from "@/components/ui";
 import { api, apiBlob, getToken, toDate, wsBase } from "@/lib/api";
 import { livePayload, STATE_COLORS, STATE_EMOJI } from "@/lib/attention";
 import { useAuth } from "@/lib/auth";
-import { CameraRecorder } from "@/lib/cameraRecorder";
-import { downloadBlob, saveRecording } from "@/lib/recordings";
-import { canRecord } from "@/lib/meetRecorder";
-import { CAMERA_QUALITY, TRACKING_SPEED, useFaceTracker } from "@/lib/useFaceTracker";
+import { CAMERA_QUALITY, useFaceTracker } from "@/lib/useFaceTracker";
+import { CameraDock } from "@/components/CameraDock";
 import { CameraPoster } from "@/components/CameraPoster";
 import { SECTIONS } from "@/lib/sections";
 
 const SENTIMENT = { positive: "😊", negative: "😟", neutral: "😐" };
-const SETTINGS_KEY = "presence.rooms.camera";
-const SIZES = { small: "Small", half: "Mid", full: "Full" };
 const QUALITY_LABELS = Object.fromEntries(Object.entries(CAMERA_QUALITY).map(([k, q]) => [k, q.label]));
-const SPEED_LABELS = Object.fromEntries(Object.entries(TRACKING_SPEED).map(([k, q]) => [k, q.label]));
 // backend "saved_to" values, as shown to the user
 const STORED_IN = { sqlite: "SQL", postgresql: "SQL", "postgresql (aws-rds)": "AWS RDS", mongodb: "MongoDB", s3: "S3", disk: "disk" };
 
-function loadSettings() {
-  const defaults = { quality: "medium", speed: "realtime" };
-  try {
-    return { ...defaults, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}") };
-  } catch {
-    return defaults;
-  }
-}
-
 const clock = (secs) =>
   `${String(Math.floor(secs / 60)).padStart(2, "0")}:${String(Math.floor(secs % 60)).padStart(2, "0")}`;
-
-/** A row of buttons where one is selected. */
-function Seg({ label, options, value, onChange }) {
-  return (
-    <div className="seg" role="radiogroup" aria-label={label}>
-      <span>{label}</span>
-      {Object.entries(options).map(([k, text]) => (
-        <button
-          key={k}
-          type="button"
-          role="radio"
-          aria-checked={value === k}
-          className={value === k ? "on" : ""}
-          onClick={() => onChange(k)}
-        >
-          {text}
-        </button>
-      ))}
-    </div>
-  );
-}
 
 export default function Rooms() {
   const { user } = useAuth();
@@ -66,16 +31,8 @@ export default function Rooms() {
   const ws = useRef(null);
   const chatEnd = useRef(null);
   const lastTyping = useRef(0);
-  const [camSettings, setCamSettings] = useState(loadSettings);
-  const cam = useFaceTracker(camSettings);
+  const cam = useFaceTracker(); // quality / AI speed: the player's ⚙ menu (shared camera settings)
   const lastPush = useRef(0);
-  const [size, setSize] = useState("half");
-  const panelRef = useRef(null);
-  const recorder = useRef(null);
-  const micRef = useRef(null);
-  const metricsRef = useRef(cam.metrics);
-  metricsRef.current = cam.metrics;
-  const [recSecs, setRecSecs] = useState(null); // null = not recording
   const [recStatus, setRecStatus] = useState("");
   const [recordings, setRecordings] = useState([]);
   const [playing, setPlaying] = useState(null); // { id, url }
@@ -130,35 +87,7 @@ export default function Rooms() {
     };
   }, [roomId]);
 
-  // ---------------------------------------------------------------- camera settings, size and recording
-  const setCam = (k, v) =>
-    setCamSettings((cur) => {
-      const next = { ...cur, [k]: v };
-      try {
-        localStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
-      } catch {
-        /* private mode — settings last for this visit */
-      }
-      return next;
-    });
-
-  // Full = camera, gauge and controls fill the screen (browser fullscreen when allowed); Esc goes back to Half
-  function changeSize(next) {
-    setSize(next);
-    if (next === "full") panelRef.current?.requestFullscreen?.().catch(() => {});
-    else if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-  }
-  useEffect(() => {
-    const onChange = () => !document.fullscreenElement && setSize("half");
-    const onKey = (e) => e.key === "Escape" && setSize("half");
-    document.addEventListener("fullscreenchange", onChange);
-    window.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("fullscreenchange", onChange);
-      window.removeEventListener("keydown", onKey);
-    };
-  }, []);
-
+  // ---------------------------------------------------------------- recordings (made with the player's Record button)
   const loadRecordings = () =>
     api("/recordings")
       .then(setRecordings)
@@ -169,70 +98,6 @@ export default function Rooms() {
       .then(setStorage)
       .catch(() => {});
   }, []);
-
-  async function startRecording() {
-    // the room camera has no microphone of its own: open one for the recording (video only if not allowed)
-    micRef.current = await navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => null);
-    try {
-      const r = new CameraRecorder(
-        cam.videoRef.current,
-        cam.canvasRef.current,
-        () => metricsRef.current,
-        camSettings.quality,
-        micRef.current,
-      );
-      r.start();
-      recorder.current = r;
-      setRecSecs(0);
-      setRecStatus("");
-    } catch (e) {
-      setRecStatus(`Could not record: ${e.message}`);
-    }
-  }
-
-  async function stopRecording() {
-    const r = recorder.current;
-    if (!r) return;
-    recorder.current = null;
-    setRecSecs(null);
-    const { blob, durationSec, timeline } = await r.stop();
-    micRef.current?.getTracks().forEach((t) => t.stop());
-    micRef.current = null;
-    const title = `${room?.name ?? "Focus room"} recording`;
-    setRecStatus("Saving…");
-    try {
-      const saved = await saveRecording(blob, {
-        title,
-        source: "rooms",
-        roomId,
-        durationSec,
-        quality: camSettings.quality,
-        speed: camSettings.speed,
-        timeline,
-      });
-      const where = saved.saved_to.map((w) => STORED_IN[w] ?? w).join(" + ");
-      setRecStatus(`✅ Saved (${(saved.size_bytes / 1e6).toFixed(1)} MB) to ${where}`);
-      loadRecordings();
-    } catch (e) {
-      // never lose the video: hand it to the user as a file instead
-      downloadBlob(blob, title);
-      setRecStatus(`Could not save to the server (${e.message}) — downloaded to this computer instead`);
-    }
-  }
-
-  // the running clock; stop + save when the camera stops
-  const isRecording = recSecs !== null;
-  useEffect(() => {
-    if (!isRecording) return;
-    const t = setInterval(() => setRecSecs(recorder.current?.seconds ?? 0), 500);
-    return () => clearInterval(t);
-  }, [isRecording]);
-  useEffect(() => {
-    if (cam.status !== "running" && recorder.current) stopRecording();
-  }, [cam.status]);
-  const stopRef = useRef(stopRecording);
-  stopRef.current = stopRecording;
-  useEffect(() => () => void stopRef.current(), []); // leaving the page mid-recording still saves it
 
   async function play(rec) {
     if (playing?.id === rec.id) return setPlaying(null);
@@ -367,14 +232,13 @@ export default function Rooms() {
             <header className="panel-head">
               <b>📷 My camera</b>
               <span className={`pill ${cam.status === "running" ? "ok" : ""}`}>
-                {isRecording ? "● Recording" : cam.status === "running" ? "Sharing focus" : cam.status === "loading" ? "Starting…" : "Off"}
+                {cam.status === "running" ? "Sharing focus" : cam.status === "loading" ? "Starting…" : "Off"}
               </span>
             </header>
-            <div ref={panelRef} className={`cam-panel ${size}`}>
+            <div className="cam-panel">
               <div className="video-wrap">
                 <video ref={cam.videoRef} playsInline muted />
                 <canvas ref={cam.canvasRef} />
-                {isRecording && <span className="rec-badge">● REC {clock(recSecs)}</span>}
                 {cam.status !== "running" && (
                   <CameraPoster
                     kind="rooms"
@@ -387,30 +251,23 @@ export default function Rooms() {
                   />
                 )}
               </div>
+              <CameraDock
+                running={cam.status === "running"}
+                source="rooms"
+                title={`${room?.name ?? "Focus room"} recording`}
+                metrics={cam.metrics}
+                roomId={roomId}
+                onSaved={(saved) => {
+                  const where = saved.saved_to?.map((w) => STORED_IN[w] ?? w).join(" + ");
+                  setRecStatus(`✅ Saved (${(saved.size_bytes / 1e6).toFixed(1)} MB)${where ? ` to ${where}` : ""}`);
+                  loadRecordings();
+                }}
+              />
               {cam.status === "running" && (
                 <Gauge value={cam.metrics.focusPct} label={`My focus · ${cam.metrics.state}`} size={150} />
               )}
-              <div className="cam-tools">
-                <Seg label="Size" options={SIZES} value={size} onChange={changeSize} />
-                <Seg label="Quality" options={QUALITY_LABELS} value={camSettings.quality} onChange={(v) => setCam("quality", v)} />
-                <Seg label="Speed" options={SPEED_LABELS} value={camSettings.speed} onChange={(v) => setCam("speed", v)} />
-              </div>
               {cam.status === "running" ? (
                 <div className="cam-actions">
-                  {isRecording ? (
-                    <button className="btn sm rec-stop" onClick={stopRecording}>
-                      ⏹ Stop & save {clock(recSecs)}
-                    </button>
-                  ) : (
-                    <button
-                      className="btn sm"
-                      onClick={startRecording}
-                      disabled={!canRecord()}
-                      title={canRecord() ? "Record the camera with its focus data" : "Recording needs Chrome, Edge or Firefox"}
-                    >
-                      🔴 Record
-                    </button>
-                  )}
                   <button className="btn ghost sm" onClick={cam.stop}>
                     Stop camera
                   </button>

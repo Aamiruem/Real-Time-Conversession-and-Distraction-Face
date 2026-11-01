@@ -1,9 +1,33 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { setCameraSetting, useCameraSettings } from "@/lib/cameraSettings";
 import { CameraRecorder } from "@/lib/cameraRecorder";
 import { canRecord } from "@/lib/meetRecorder";
 import { downloadBlob, saveRecording } from "@/lib/recordings";
 import { Icon } from "./Icons";
+
+// the ⚙ menu's choices, best first (labels like a video player's quality menu)
+const SETTINGS = {
+  quality: {
+    label: "Quality",
+    icon: "camera",
+    options: [
+      ["high", "1080p", "Full HD — sharpest, most data"],
+      ["medium", "720p", "HD — recommended"],
+      ["low", "480p", "Data saver — slow connections"],
+    ],
+  },
+  speed: {
+    label: "AI speed",
+    icon: "zap",
+    options: [
+      ["realtime", "Fast", "Checks every frame — most accurate"],
+      ["balanced", "Balanced", "15 checks a second"],
+      ["eco", "Eco", "8 checks a second — saves battery"],
+    ],
+  },
+};
+const optionLabel = (key, value) => SETTINGS[key].options.find(([v]) => v === value)?.[1] ?? value;
 
 const clock = (s) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 
@@ -15,7 +39,9 @@ const clock = (s) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(Ma
  *   source    which section recorded it (focus, speech, interview…), shown in the recordings list
  *   metrics   optional live {focusPct, state}: adds a focus read-out and a focus timeline to the recording
  */
-export function CameraDock({ running, source, title, metrics = null }) {
+export function CameraDock({ running, source, title, metrics = null, roomId = null, onSaved }) {
+  const settings = useCameraSettings();
+  const [menu, setMenu] = useState(null); // null | "main" | "quality" | "speed"
   const box = useRef(null);
   const [size, setSize] = useState("mid");
   const [secs, setSecs] = useState(null); // null = not recording
@@ -56,7 +82,7 @@ export function CameraDock({ running, source, title, metrics = null }) {
       }
     }
     try {
-      const r = new CameraRecorder(video, w.querySelector("canvas"), metrics ? () => latest.current : null, "medium", audio);
+      const r = new CameraRecorder(video, w.querySelector("canvas"), metrics ? () => latest.current : null, settings.quality, audio);
       r.start();
       rec.current = r;
       setSecs(0);
@@ -77,7 +103,16 @@ export function CameraDock({ running, source, title, metrics = null }) {
     const name = `${title} ${new Date().toLocaleString()}`;
     setStatus("Saving…");
     try {
-      const saved = await saveRecording(blob, { title: name, source, durationSec, timeline });
+      const saved = await saveRecording(blob, {
+        title: name,
+        source,
+        roomId,
+        durationSec,
+        quality: settings.quality,
+        speed: settings.speed,
+        timeline,
+      });
+      onSaved?.(saved);
       setStatus(`✅ Saved (${(saved.size_bytes / 1e6).toFixed(1)} MB) — see "My recordings" in Focus Rooms`);
     } catch (e) {
       downloadBlob(blob, name);
@@ -99,12 +134,66 @@ export function CameraDock({ running, source, title, metrics = null }) {
   }, [running]);
   useEffect(() => () => void stopRef.current(), []);
 
+  useEffect(() => {
+    if (!menu) return;
+    const close = (e) => {
+      if (e.type === "keydown" ? e.key === "Escape" : !e.target.closest?.(".vid-settings, .vid-btn.gear")) setMenu(null);
+    };
+    document.addEventListener("pointerdown", close);
+    document.addEventListener("keydown", close);
+    return () => {
+      document.removeEventListener("pointerdown", close);
+      document.removeEventListener("keydown", close);
+    };
+  }, [menu]);
+
+  const settingsMenu = menu && (
+    <div className="vid-settings" role="menu" aria-label="Camera settings">
+      {menu === "main" ? (
+        Object.entries(SETTINGS).map(([key, def]) => (
+          <button key={key} type="button" role="menuitem" className="vid-settings-row" onClick={() => setMenu(key)}>
+            <Icon name={def.icon} size={18} />
+            <span>{def.label}</span>
+            <b>{optionLabel(key, settings[key])}</b>
+            <span aria-hidden="true">›</span>
+          </button>
+        ))
+      ) : (
+        <>
+          <button type="button" className="vid-settings-back" onClick={() => setMenu("main")}>
+            ‹ {SETTINGS[menu].label}
+          </button>
+          {SETTINGS[menu].options.map(([value, label, hint]) => (
+            <button
+              key={value}
+              type="button"
+              role="menuitemradio"
+              aria-checked={settings[menu] === value}
+              className="vid-settings-option"
+              onClick={() => {
+                setCameraSetting(menu, value);
+                setMenu("main");
+              }}
+            >
+              <span className="vid-check" aria-hidden="true">{settings[menu] === value ? "✓" : ""}</span>
+              <span>
+                <b>{label}</b>
+                <small>{hint}</small>
+              </span>
+            </button>
+          ))}
+        </>
+      )}
+    </div>
+  );
+
   const views = [
     ["small", "viewSmall", "Mini view"],
     ["mid", "viewMid", "Default view"],
   ];
   const controls = (running || recording) && (
-    <div className={`vid-controls ${recording || size === "full" ? "pinned" : ""}`}>
+    <div className={`vid-controls ${recording || menu || size === "full" ? "pinned" : ""}`}>
+      {settingsMenu}
       <div className="vid-group">
         {recording ? (
           <button type="button" className="vid-btn rec live" onClick={stop} title="Stop and save the recording" aria-label="Stop and save the recording">
@@ -129,6 +218,17 @@ export function CameraDock({ running, source, title, metrics = null }) {
         )}
       </div>
       <div className="vid-group">
+        <button
+          type="button"
+          className={`vid-btn gear ${menu ? "on" : ""}`}
+          onClick={() => setMenu(menu ? null : "main")}
+          title="Settings: quality and AI speed"
+          aria-label="Camera settings"
+          aria-expanded={!!menu}
+        >
+          <Icon name="settings" size={20} />
+          <span className="vid-badge">{optionLabel("quality", settings.quality)}</span>
+        </button>
         {views.map(([k, icon, label]) => (
           <button
             key={k}

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AttentionEngine, LEFT_EYE, LEFT_IRIS, RIGHT_EYE, RIGHT_IRIS, STATE_COLORS } from "./attention";
 import { BodyTracker } from "./body";
 import { PresenceTracker } from "./presence";
+import { useCameraSettings } from "./cameraSettings";
 import { faceFrame } from "./voiceCoach";
 
 let landmarkerPromise = null;
@@ -48,15 +49,19 @@ export function loadFaceLandmarker() {
  * `metrics` refreshes ~5×/s for the UI; `engine` holds the full per-frame state.
  * With `presence: true` it also tracks smile, framing and picture quality (`presence` = PresenceTracker);
  * with `body: true` it adds posture, hands and objects in the frame (`body` = BodyTracker).
- * `quality` (CAMERA_QUALITY key) and `speed` (TRACKING_SPEED key) can change while the camera runs.
+ * `quality` (CAMERA_QUALITY key) and `speed` (TRACKING_SPEED key) can change while the camera runs; by default they
+ * follow the shared camera settings (the player's ⚙ menu, lib/cameraSettings).
  */
 export function useFaceTracker({
   audio = false,
   presence: withPresence = false,
   body: withBody = false,
-  quality = "medium",
-  speed = "realtime",
+  quality: qualityOption,
+  speed: speedOption,
 } = {}) {
+  const shared = useCameraSettings();
+  const quality = qualityOption ?? shared.quality;
+  const speed = speedOption ?? shared.speed;
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const engine = useRef(new AttentionEngine());

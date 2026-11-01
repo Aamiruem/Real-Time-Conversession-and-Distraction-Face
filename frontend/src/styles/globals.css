@@ -411,6 +411,23 @@ details.faq p { color: var(--muted); margin: 10px 0 0; }
 .vid-time { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px; background: #000a; color: #fff;
   font-size: .82rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 .vid-time .rec-dot { width: 9px; height: 9px; border-radius: 50%; background: #ea4335; animation: pulse 1s infinite; }
+/* ⚙ settings menu (quality / AI speed), like a video player's */
+.vid-btn.gear { position: relative; }
+.vid-btn.gear svg { transition: transform .3s; }
+.vid-btn.gear.on svg { transform: rotate(60deg); }
+.vid-badge { position: absolute; top: -4px; right: -8px; padding: 1px 5px; border-radius: 6px; background: #ea4335; color: #fff;
+  font-size: .6rem; font-weight: 800; line-height: 1.4; pointer-events: none; }
+.vid-settings { position: absolute; right: 14px; bottom: calc(100% - 22px); min-width: 280px; padding: 8px 0; border-radius: 14px;
+  background: #1c1c1ef2; color: #fff; box-shadow: 0 16px 40px #0009; backdrop-filter: blur(10px); z-index: 4; }
+.vid-settings button { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 16px; border: 0; background: none;
+  color: #fff; font: inherit; font-size: .9rem; text-align: left; cursor: pointer; }
+.vid-settings button:hover, .vid-settings button:focus-visible { background: #ffffff1a; outline: none; }
+.vid-settings-row span:nth-of-type(1) { flex: 1; }
+.vid-settings-row b { font-weight: 600; color: #cbd5e1; }
+.vid-settings-back { font-weight: 700; border-bottom: 1px solid #ffffff22 !important; margin-bottom: 4px; }
+.vid-settings-option span:last-child { display: grid; gap: 1px; }
+.vid-settings-option small { color: #9aa4b2; font-size: .76rem; }
+.vid-check { width: 16px; color: #8ab4f8; font-weight: 800; }
 .video-wrap:fullscreen .vid-controls { padding: 60px 28px 24px; }
 .video-wrap:fullscreen .vid-btn { width: 52px; height: 52px; }
 .cam-dock-status { margin: 8px 2px 0; }
