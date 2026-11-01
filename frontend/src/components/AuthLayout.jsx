@@ -1,4 +1,4 @@
-import { SiteHeader } from "./SiteChrome";
+import { SiteFooter, SiteHeader } from "./SiteChrome";
 
 export function AuthLayout({ children }) {
   return (
@@ -27,6 +27,7 @@ export function AuthLayout({ children }) {
           {children}
         </section>
       </main>
+      <SiteFooter />
     </>
   );
 }

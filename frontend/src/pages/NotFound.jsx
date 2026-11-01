@@ -1,5 +1,5 @@
 import Link from "@/components/Link";
-import { SiteHeader } from "@/components/SiteChrome";
+import { SiteFooter, SiteHeader } from "@/components/SiteChrome";
 
 export default function NotFound() {
   return (
@@ -13,6 +13,7 @@ export default function NotFound() {
           Back to home
         </Link>
       </main>
+      <SiteFooter />
     </>
   );
 }

@@ -8,7 +8,7 @@ import { themeLabel, useTheme } from "@/lib/theme";
 import { BackendNotice } from "./BackendNotice";
 import { CoachPanel, openCoach } from "./CoachPanel";
 import { CommandPalette } from "./CommandPalette";
-import { Logo } from "./SiteChrome";
+import { AppFooter, Logo } from "./SiteChrome";
 import { InstallButton } from "@/lib/pwa";
 import { NAV_GROUPS, SECTIONS } from "@/lib/sections";
 import { Icon } from "./Icons";
@@ -216,6 +216,7 @@ export function AppShell({ children }) {
         <main className="main">
           <BackendNotice />
           {children}
+          <AppFooter />
         </main>
       </div>
       <CommandPalette open={palette} onClose={() => setPalette(false)} onLogout={logout} />

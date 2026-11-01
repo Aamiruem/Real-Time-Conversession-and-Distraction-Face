@@ -61,9 +61,9 @@ export function SiteHeader() {
 /** WhatsApp wants the number as digits only (country code first, no +). */
 const waNumber = (phone) => phone.replace(/\D/g, "");
 
-export function SiteFooter() {
-  const year = new Date().getFullYear();
-  const contacts = [
+/** The developer's contact buttons: only those with a detail filled in (OWNER in lib/site.js). */
+function ownerContacts() {
+  return [
     OWNER.portfolio && { href: OWNER.portfolio, label: "Portfolio", icon: <Icon name="globe" size={17} /> },
     OWNER.linkedin && { href: OWNER.linkedin, label: "LinkedIn", icon: <BrandIcon name="linkedin" size={16} /> },
     OWNER.phone && {
@@ -74,6 +74,27 @@ export function SiteFooter() {
     OWNER.phone && { href: `tel:${OWNER.phone}`, label: "Call", icon: <Icon name="phone" size={16} />, same: true },
     OWNER.email && { href: `mailto:${OWNER.email}`, label: "Email", icon: <Icon name="mail" size={16} />, same: true },
   ].filter(Boolean);
+}
+
+function ContactList() {
+  return (
+    <div className="contact-list">
+      {ownerContacts().map((c) => (
+        <a
+          key={c.label}
+          className="contact-chip"
+          href={c.href}
+          {...(c.same ? {} : { target: "_blank", rel: "noopener noreferrer" })}
+        >
+          {c.icon} {c.label}
+        </a>
+      ))}
+    </div>
+  );
+}
+
+export function SiteFooter() {
+  const year = new Date().getFullYear();
 
   return (
     <footer className="footer">
@@ -116,18 +137,7 @@ export function SiteFooter() {
             <b>{OWNER.name}</b>
             <span>{OWNER.role}</span>
           </p>
-          <div className="contact-list">
-            {contacts.map((c) => (
-              <a
-                key={c.label}
-                className="contact-chip"
-                href={c.href}
-                {...(c.same ? {} : { target: "_blank", rel: "noopener noreferrer" })}
-              >
-                {c.icon} {c.label}
-              </a>
-            ))}
-          </div>
+          <ContactList />
         </section>
       </div>
       <div className="container footer-bottom">
@@ -140,6 +150,24 @@ export function SiteFooter() {
             {OWNER.name}
           </a>
         </span>
+      </div>
+    </footer>
+  );
+}
+
+/** Slim footer under every app page: share, the developer's links, copyright. */
+export function AppFooter() {
+  return (
+    <footer className="app-footer">
+      <span>
+        © {new Date().getFullYear()} {SITE_NAME} · Made by{" "}
+        <a href={OWNER.portfolio} target="_blank" rel="noopener noreferrer">
+          {OWNER.name}
+        </a>
+      </span>
+      <div className="app-footer-actions">
+        <ShareButton label="Share app" align="left" />
+        <ContactList />
       </div>
     </footer>
   );
