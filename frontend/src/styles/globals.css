@@ -197,10 +197,34 @@ details.faq p { color: var(--muted); margin: 10px 0 0; }
   .footer-cta { padding: 22px 20px; }
   .footer-bottom .container { justify-content: center; text-align: center; }
 }
+/* both footers: a dark brand background on every page, in light and dark mode — the theme tokens are redefined
+   inside them, so every footer rule picks up the dark palette */
+.footer, .app-footer { --text: #e2e8f0; --muted: #9fb0c8; --line: #ffffff1c; --line-strong: #ffffff33; --surface: #ffffff0f;
+  --surface2: #ffffff08; --inset: #ffffff0b; --hover: #ffffff14; --accent: #38bdf8; --accent2: #a78bfa; --on-accent: #04121f;
+  color-scheme: dark; }
+.footer { background: radial-gradient(900px 340px at 10% 0%, #1d4ed833, transparent 70%),
+    radial-gradient(800px 320px at 95% 100%, #7c3aed33, transparent 70%), linear-gradient(170deg, #0b1120, #0f1733 55%, #17123a) !important; }
+.footer .share-menu, .footer .install-tip, .app-footer .share-menu { background: #111a2e; }
+.footer .btn.ghost, .app-footer .btn.ghost { background: #ffffff10; color: var(--text); border-color: var(--line); }
+
 /* footer under every app page */
-.app-footer { container-type: inline-size; margin-top: 56px; border: 1px solid var(--line); border-radius: 18px; overflow: hidden; color: var(--muted);
-  font-size: .86rem; background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 6%, var(--surface)), var(--surface) 55%,
-  color-mix(in srgb, var(--accent2) 6%, var(--surface))); }
+.app-footer { container-type: inline-size; margin-top: 56px; border: 1px solid #ffffff14; border-radius: 20px; overflow: hidden;
+  color: var(--muted); font-size: .86rem; box-shadow: 0 18px 44px #0f172a2e;
+  background: radial-gradient(600px 220px at 0% 0%, #1d4ed840, transparent 70%), radial-gradient(600px 220px at 100% 100%, #7c3aed40, transparent 70%),
+    linear-gradient(160deg, #0b1120, #111a3a 60%, #1b1442); }
+/* "Keep going": related sections for the page you're on */
+.af-related { padding: 18px 20px 4px; }
+.af-related h3 { margin: 0 0 10px; font-size: .74rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+.af-related-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.af-card { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; color: var(--text);
+  background: #ffffff0a; border: 1px solid var(--line); transition: transform .15s, border-color .15s, background .15s; }
+.af-card span:nth-child(2) { display: grid; gap: 2px; min-width: 0; flex: 1; }
+.af-card small { color: var(--muted); font-size: .78rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.af-card-ico { width: 40px; height: 40px; flex: none; display: grid; place-items: center; border-radius: 12px; color: #fff;
+  background: linear-gradient(135deg, var(--c), color-mix(in srgb, var(--c) 55%, #000)); box-shadow: 0 6px 16px color-mix(in srgb, var(--c) 40%, transparent); }
+.af-card-go { color: var(--muted); font-weight: 800; transition: transform .15s, color .15s; }
+.af-card:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--c) 60%, transparent); background: color-mix(in srgb, var(--c) 14%, transparent); }
+.af-card:hover .af-card-go { color: var(--c); transform: translateX(3px); }
 .af-main { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 18px 26px; padding: 18px 20px; }
 .af-brand { display: inline-flex; align-items: center; gap: 10px; color: var(--text); }
 .af-brand span { display: grid; line-height: 1.25; }
@@ -208,7 +232,7 @@ details.faq p { color: var(--muted); margin: 10px 0 0; }
 .af-links { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
 .af-link { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; font-weight: 650;
   color: color-mix(in srgb, var(--text) 80%, var(--muted)); border: 1px solid transparent; transition: background .15s, color .15s, border-color .15s, transform .15s; }
-.af-link svg { color: var(--c); }
+.af-link svg { color: color-mix(in srgb, var(--c) 70%, #fff); }
 .af-link:hover { color: var(--c); background: color-mix(in srgb, var(--c) 10%, transparent); border-color: color-mix(in srgb, var(--c) 30%, transparent);
   transform: translateY(-1px); }
 .af-actions { display: flex; align-items: center; gap: 10px; }

@@ -6,6 +6,7 @@ import { BrandIcon } from "./BrandIcons";
 import { Icon } from "./Icons";
 import { ShareButton } from "./Share";
 import { SECTIONS } from "@/lib/sections";
+import { usePathname } from "@/lib/navigation";
 import { themeLabel, useTheme } from "@/lib/theme";
 
 /** Presence AI mark: a focus ring with an attention dot (being present) and two voice waves (having presence). */
@@ -233,11 +234,49 @@ export function SiteFooter() {
 /** The sections the app footer links to (colours / icons from lib/sections). */
 const APP_LINKS = ["/app", "/app/focus", "/app/speech", "/app/interview", "/app/meet", "/app/analytics"];
 
+/** "Related to this page": where people usually go next from each section. */
+const RELATED = {
+  "/app": ["/app/focus", "/app/speech", "/app/interview"],
+  "/app/routine": ["/app/focus", "/app/analytics", "/app/speech"],
+  "/app/focus": ["/app/analytics", "/app/rooms", "/app/routine"],
+  "/app/speech": ["/app/conversation", "/app/interview", "/app/analytics"],
+  "/app/conversation": ["/app/speech", "/app/interview", "/app/rooms"],
+  "/app/interview": ["/app/speech", "/app/conversation", "/app/focus"],
+  "/app/meet": ["/app/rooms", "/app/conversation", "/app/focus"],
+  "/app/rooms": ["/app/meet", "/app/focus", "/app/analytics"],
+  "/app/analytics": ["/app/focus", "/app/speech", "/app/routine"],
+  "/app/vision": ["/app/lab", "/app/focus", "/app/interview"],
+  "/app/lab": ["/app/vision", "/app/analytics", "/app/focus"],
+  "/app/settings": ["/app", "/app/analytics", "/app/routine"],
+};
+
 /** Footer under every app page: quick links to the main sections, share, the developer's links, back to top. */
 export function AppFooter() {
   const toTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
+  const path = usePathname();
+  const related = (RELATED[path] ?? RELATED["/app"]).filter((h) => SECTIONS[h]);
   return (
     <footer className="app-footer">
+      <section className="af-related" aria-label="Related to this page">
+        <h3>Keep going</h3>
+        <div className="af-related-grid">
+          {related.map((href) => {
+            const sec = SECTIONS[href];
+            return (
+              <Link key={href} href={href} className="af-card" style={{ "--c": sec.color }}>
+                <span className="af-card-ico">
+                  <Icon name={sec.icon} size={20} />
+                </span>
+                <span>
+                  <b>{sec.label}</b>
+                  <small>{sec.desc}</small>
+                </span>
+                <span className="af-card-go" aria-hidden="true">→</span>
+              </Link>
+            );
+          })}
+        </div>
+      </section>
       <div className="af-main">
         <Link href="/" className="af-brand" aria-label={`${SITE_NAME} home`}>
           <Logo size={34} />
