@@ -2,7 +2,7 @@ import Link from "@/components/Link";
 import { usePathname, useRouter, useSearchParams } from "@/lib/navigation";
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
-import { useAuth } from "@/lib/auth";
+import { useAuth, wasSignedOut } from "@/lib/auth";
 import { useBackendStatus } from "@/lib/backend";
 import { themeLabel, useTheme } from "@/lib/theme";
 import { BackendNotice } from "./BackendNotice";
@@ -84,6 +84,11 @@ export function AppShell({ children }) {
       return;
     }
     if (!ready || user || offline || guesting.current) return;
+    if (wasSignedOut()) {
+      // signed out on purpose: show the login page (it has "Continue as guest") instead of a new guest session
+      router.replace(`/login?next=${encodeURIComponent(path + (query ? `?${query}` : ""))}`);
+      return;
+    }
     if (guestBlocked && backend.status !== "ok") return; // try again once the server reports it's healthy
     // no login on this device: open the app straight away as a guest (kept on this device; make a real account
     // any time in Settings). Only when guests are turned off (ALLOW_GUESTS=false) does it go to the login page,

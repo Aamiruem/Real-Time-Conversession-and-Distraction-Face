@@ -107,7 +107,7 @@ function DevCodes({ codes }) {
   if (!codes || !Object.keys(codes).length) return null;
   return (
     <div className="alert dev">
-      🧪 Dev mode — AWS SES/SNS not configured, so codes are shown here instead of being sent.{" "}
+      🧪 Test mode — no email / SMS service is connected yet, so your codes are shown here instead of being sent.{" "}
       {Object.entries(codes).map(([k, v]) => (
         <b key={k} style={{ marginRight: 10 }}>
           {k === "email" ? "Email" : "SMS"}: {v}

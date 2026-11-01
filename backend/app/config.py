@@ -110,11 +110,14 @@ class Settings:
     OTP_RESEND_SECONDS: int = int(os.getenv("OTP_RESEND_SECONDS", "60"))
     # Dev mode returns the code in the API response instead of failing when AWS can't deliver it.
     # Defaults to on only while AWS is disabled — never enable it in production.
-    OTP_DEV_MODE: bool = _bool("OTP_DEV_MODE", "false" if _bool("AWS_ENABLED") or os.getenv("TWILIO_FROM") else "true")
+    # Test mode: a code that can't be sent is shown on screen instead. On by default until both channels can really
+    # deliver (email: AWS SES; SMS: Twilio or AWS SNS); a code that *was* sent is never shown.
+    OTP_DEV_MODE: bool = _bool("OTP_DEV_MODE", "false" if (_bool("AWS_ENABLED") and os.getenv("SES_SENDER")) and (
+        _bool("AWS_ENABLED") or os.getenv("TWILIO_FROM")) else "true")
 
-    # Easy sign-up: when false, accounts work immediately (no email/SMS codes, mobile optional).
-    # Defaults to on only when AWS can actually deliver codes.
-    REQUIRE_VERIFICATION: bool = _bool("REQUIRE_VERIFICATION", "true" if _bool("AWS_ENABLED") else "false")
+    # New accounts verify their email and mobile number with one-time codes. Without an email / SMS service
+    # (AWS, Twilio) OTP_DEV_MODE shows the codes on screen, so the whole flow can be tested.
+    REQUIRE_VERIFICATION: bool = _bool("REQUIRE_VERIFICATION", "true")
 
 
 settings = Settings()

@@ -1,6 +1,25 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { api, getToken, setGuestRenewal, setToken } from "./api";
 
+// Signing out on purpose is remembered on this device: the app then shows the login page instead of opening a new
+// guest session by itself. Any sign-in (including "Continue as guest") clears it.
+const SIGNED_OUT_KEY = "focuslink.signedOut";
+export function wasSignedOut() {
+  try {
+    return localStorage.getItem(SIGNED_OUT_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+function rememberSignedOut(on) {
+  try {
+    if (on) localStorage.setItem(SIGNED_OUT_KEY, "1");
+    else localStorage.removeItem(SIGNED_OUT_KEY);
+  } catch {
+    /* private mode */
+  }
+}
+
 const AuthContext = createContext({ user: null, ready: false, offline: false, signIn: () => {}, signOut: () => {} });
 
 export function AuthProvider({ children }) {
@@ -42,6 +61,7 @@ export function AuthProvider({ children }) {
   }, [offline, restore]);
 
   const signIn = useCallback((t) => {
+    rememberSignedOut(false);
     setToken(t.access_token);
     setUser(t.user);
     setOffline(false);
@@ -64,6 +84,7 @@ export function AuthProvider({ children }) {
   }, [isGuest]);
 
   const signOut = useCallback(() => {
+    rememberSignedOut(true);
     setToken(null);
     setUser(null);
     setOffline(false);

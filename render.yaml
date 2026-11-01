@@ -34,8 +34,8 @@ services:
         value: Presence AI
       - key: ALLOW_GUESTS # opens on any device without logging in (automatic guest account)
         value: "true"
-      - key: REQUIRE_VERIFICATION
-        value: "false"
+      - key: REQUIRE_VERIFICATION # email + mobile codes for new accounts (shown on screen until SMS / email is set up)
+        value: "true"
       - key: SITE_URL # your Vercel URL, e.g. https://presence-ai.vercel.app
         sync: false
       - key: WHISPER_MODEL # also the model baked into the Docker image (build arg)
