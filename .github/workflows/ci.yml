@@ -1,23 +1,24 @@
-# Tests on every push / pull request, and an end-to-end smoke test of every successful Vercel deployment
-# (Vercel reports deployments to GitHub; scripts/smoke-test.mjs then checks the live site).
+# Tests on every push / pull request, and an end-to-end smoke test of the live site after every successful Vercel
+# deployment of main. Vercel reports to GitHub as a commit status ("Vercel"); scripts/smoke-test.mjs then checks
+# the site at the repository variable SITE_URL (Settings -> Secrets and variables -> Actions -> Variables).
 name: CI
 
 on:
   push:
     branches: [main]
   pull_request:
-  deployment_status:
+  status:
 
 jobs:
   backend:
-    if: github.event_name != 'deployment_status'
+    if: github.event_name != 'status'
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: backend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
           cache: pip
@@ -26,14 +27,14 @@ jobs:
       - run: python -m pytest -q
 
   frontend:
-    if: github.event_name != 'deployment_status'
+    if: github.event_name != 'status'
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: "22"
           cache: npm
@@ -42,14 +43,13 @@ jobs:
       - run: npm run build
 
   smoke-test:
-    # runs when Vercel (or any host reporting to GitHub) finishes a deployment
     if: >-
-      github.event_name == 'deployment_status' && github.event.deployment_status.state == 'success' &&
-      github.event.deployment.environment == 'Production'
+      github.event_name == 'status' && github.event.context == 'Vercel' && github.event.state == 'success' &&
+      contains(github.event.branches.*.name, 'main') && vars.SITE_URL != ''
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: "22"
-      - run: node scripts/smoke-test.mjs "${{ github.event.deployment_status.environment_url || github.event.deployment_status.target_url }}"
+      - run: node scripts/smoke-test.mjs "${{ vars.SITE_URL }}"

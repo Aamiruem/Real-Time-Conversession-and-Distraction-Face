@@ -1,4 +1,6 @@
 """Video meetings (signaling over WebSocket) and guest access."""
+import time
+
 import pytest
 from starlette.websockets import WebSocketDisconnect
 
@@ -8,6 +10,14 @@ from app.routers import meet_routes
 
 def _token(headers):
     return headers["Authorization"].split()[1]
+
+
+def _removed(code, timeout=3.0):
+    """The server cleans up a meeting after the last socket closes, on its own task: give it a moment."""
+    deadline = time.monotonic() + timeout
+    while code in meet_routes.meetings and time.monotonic() < deadline:
+        time.sleep(0.02)
+    return code not in meet_routes.meetings
 
 
 def test_guest_gets_a_working_account(client):
@@ -82,7 +92,7 @@ def test_two_people_meet_signal_chat_and_leave(client, make_user):
             b.send_json({"type": "nonsense"})
             b.send_text("not json")
         assert a.receive_json() == {"type": "left", "id": wb["you"]}
-    assert code not in meet_routes.meetings  # empty meetings are removed
+    assert _removed(code)  # empty meetings are removed
 
 
 def test_full_meeting_and_bad_tokens(client, make_user, monkeypatch):
@@ -211,7 +221,7 @@ def test_host_controls(client, make_user):
             a.receive_json()
             h.send_json({"type": "end"})
             assert a.receive_json()["type"] == "ended"
-    assert code not in meet_routes.meetings
+    assert _removed(code)
     # the attendance report and history remember it
     report = client.get(f"/meet/{code}/attendance", headers=host).json()
     assert len(report["people"]) == 3 and all(p["here_now"] is False for p in report["people"])
