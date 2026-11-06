@@ -28,7 +28,7 @@ body {
   line-height: 1.6;
   background: radial-gradient(1100px 560px at 85% -10%, var(--glow1) 0%, transparent 60%),
     radial-gradient(900px 500px at -10% 5%, var(--glow2) 0%, transparent 55%), var(--bg);
-  background-attachment: fixed; min-height: 100vh;
+  background-attachment: fixed; min-height: 100vh; min-height: 100dvh;
 }
 a { color: var(--accent); text-decoration: none; }
 h1, h2, h3 { line-height: 1.15; letter-spacing: -0.015em; }
@@ -208,7 +208,7 @@ details.faq p { color: var(--muted); margin: 10px 0 0; }
 .footer .btn.ghost, .app-footer .btn.ghost { background: #ffffff10; color: var(--text); border-color: var(--line); }
 
 /* the footer always sits at the bottom of the page, however short the page is, and never moves on hover */
-#root { min-height: 100vh; display: flex; flex-direction: column; }
+#root { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
 #root > main, #root > .shell { flex: 1 0 auto; }
 .main { display: flex; flex-direction: column; }
 .main-body { flex: 1 0 auto; min-width: 0; }
@@ -297,9 +297,9 @@ details.faq p { color: var(--muted); margin: 10px 0 0; }
 .otp { letter-spacing: .4em; font-size: 1.2rem; text-align: center; font-weight: 700; }
 
 /* app shell */
-.shell { display: grid; grid-template-columns: 250px 1fr; min-height: 100vh; }
+.shell { display: grid; grid-template-columns: 250px 1fr; min-height: 100vh; min-height: 100dvh; }
 .side { background: var(--surface2); border-right: 1px solid var(--line); padding: 18px 12px; position: sticky; top: 0;
-  height: 100vh; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+  height: 100vh; height: 100dvh; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
 .side a.nav-item { display: flex; gap: 11px; align-items: center; padding: 6px 10px 6px 8px; border-radius: 12px;
   color: var(--text); opacity: .82; font-weight: 500; font-size: .94rem; transition: background .15s, opacity .15s; }
 .side a.nav-item:hover { opacity: 1; background: color-mix(in srgb, var(--c, var(--accent)) 9%, transparent); }
@@ -1372,3 +1372,24 @@ video.hidden { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-
   background: color-mix(in srgb, var(--bad) 14%, var(--surface)); }
 .btn.rt-danger { background: var(--bad); color: #fff; box-shadow: none; }
 .btn.rt-danger:hover { filter: brightness(1.08); }
+
+/* ---------- any device: touch screens, notches, small and large screens ---------- */
+/* iPhones zoom the whole page in when a text box under 16px is focused: keep them at 16px on touch screens */
+@media (hover: none) and (pointer: coarse) {
+  input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea { font-size: 16px; }
+  .btn, .btn.sm, .icon-btn, .vid-btn, .seg button, .cam-dock-size { min-height: 40px; }
+}
+/* keep content clear of the notch and the home bar (iPhone, Android gesture bar) */
+.topbar { padding-left: max(clamp(16px, 3vw, 36px), env(safe-area-inset-left)); padding-right: max(clamp(16px, 3vw, 36px), env(safe-area-inset-right)); }
+.container { padding-left: max(clamp(16px, 4vw, 32px), env(safe-area-inset-left)); padding-right: max(clamp(16px, 4vw, 32px), env(safe-area-inset-right)); }
+.footer-bottom, .app-footer { padding-bottom: env(safe-area-inset-bottom); }
+/* never let a long word, link or code line push the page sideways */
+p, li, h1, h2, h3, td, .msg-text { overflow-wrap: anywhere; }
+img, video, canvas, svg { max-width: 100%; }
+/* landscape phones: less vertical chrome so the content still fits */
+@media (max-height: 480px) and (orientation: landscape) {
+  .topbar { position: static; }
+  .cmd-bar { position: static; }
+}
+/* very large screens: keep lines readable */
+@media (min-width: 1800px) { .main { max-width: 1680px; width: 100%; margin-inline: auto; } }

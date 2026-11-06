@@ -350,3 +350,8 @@
   border-radius: 999px; background: #d93025; color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
 .gm-danger:hover { background: #b3261e; }
 .gm-round:disabled { opacity: .4; cursor: not-allowed; }
+
+/* phones: the call fills the visible screen (not behind the address bar) and the controls clear the home bar */
+.gm-room { height: 100vh; height: 100dvh; inset: auto 0 0 0; top: 0; }
+.gm-bar { padding-bottom: max(0px, env(safe-area-inset-bottom)); }
+.gm-code input { min-width: 0; width: 100%; max-width: 210px; }
