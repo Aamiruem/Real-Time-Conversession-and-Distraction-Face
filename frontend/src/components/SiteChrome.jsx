@@ -232,7 +232,7 @@ export function SiteFooter() {
 }
 
 /** The sections the app footer links to (colours / icons from lib/sections). */
-const APP_LINKS = ["/app", "/app/focus", "/app/speech", "/app/interview", "/app/meet", "/app/analytics"];
+const APP_LINKS = ["/app", "/app/focus", "/app/presence", "/app/speech", "/app/interview", "/app/meet", "/app/analytics"];
 
 /** "Related to this page": where people usually go next from each section. */
 const RELATED = {

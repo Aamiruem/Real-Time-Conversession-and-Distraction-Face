@@ -1463,7 +1463,7 @@ img, video, canvas, svg { max-width: 100%; }
   background: linear-gradient(135deg, var(--c), color-mix(in srgb, var(--c) 60%, #000)); box-shadow: 0 6px 14px color-mix(in srgb, var(--c) 35%, transparent); }
 
 /* ================= Presence Studio ================= */
-.ps-prompts { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin: 0 0 14px; padding-bottom: 2px; }
+.ps-prompts { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
 .ps-chip { flex: none; padding: 9px 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--text);
   font: inherit; font-weight: 650; font-size: .88rem; cursor: pointer; }
 .ps-chip.on { background: #c026d3; border-color: #c026d3; color: #fff; }
