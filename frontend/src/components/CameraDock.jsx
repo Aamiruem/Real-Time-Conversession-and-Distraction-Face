@@ -39,7 +39,7 @@ const clock = (s) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(Ma
  *   source    which section recorded it (focus, speech, interview…), shown in the recordings list
  *   metrics   optional live {focusPct, state}: adds a focus read-out and a focus timeline to the recording
  */
-export function CameraDock({ running, source, title, metrics = null, roomId = null, onSaved }) {
+export function CameraDock({ running, source, title, metrics = null, roomId = null, onSaved, recordable = true }) {
   const settings = useCameraSettings();
   const [menu, setMenu] = useState(null); // null | "main" | "quality" | "speed"
   const gear = useRef(null);
@@ -223,7 +223,7 @@ export function CameraDock({ running, source, title, metrics = null, roomId = nu
     <div className={`vid-controls ${recording || menu || size === "full" ? "pinned" : ""}`}>
       {inFull && settingsMenu}
       <div className="vid-group">
-        {recording ? (
+        {!recordable ? null : recording ? (
           <button type="button" className="vid-btn rec live" onClick={stop} title="Stop and save the recording" aria-label="Stop and save the recording">
             <span className="stop-square" />
           </button>

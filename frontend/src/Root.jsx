@@ -20,6 +20,7 @@ const PAGES = {
   Conversation: () => import("./pages/app/Conversation"),
   Interview: () => import("./pages/app/Interview"),
   Rooms: () => import("./pages/app/Rooms"),
+  Presence: () => import("./pages/app/Presence"),
   Meet: () => import("./pages/app/Meet"),
   Vision: () => import("./pages/app/Vision"),
   Analytics: () => import("./pages/app/Analytics"),
@@ -38,6 +39,7 @@ const Meet = lazy(PAGES.Meet);
 const Vision = lazy(PAGES.Vision);
 const Analytics = lazy(PAGES.Analytics);
 const Lab = lazy(PAGES.Lab);
+const Presence = lazy(PAGES.Presence);
 const Settings = lazy(PAGES.Settings);
 const Routine = lazy(PAGES.Routine);
 const MeetLink = lazy(PAGES.MeetLink);
@@ -99,6 +101,7 @@ export default function App() {
           <Route path="speech" element={<Speech />} />
           <Route path="conversation" element={<Conversation />} />
           <Route path="interview" element={<Interview />} />
+          <Route path="presence" element={<Presence />} />
           <Route path="meet" element={<Meet />} />
           <Route path="rooms" element={<Rooms />} />
           <Route path="analytics" element={<Analytics />} />

@@ -6,6 +6,7 @@ export const SECTIONS = {
   "/app/focus": { icon: "focus", label: "Focus Monitor", color: "#16a34a", desc: "Live focus, distraction and drowsiness" },
   "/app/speech": { icon: "mic", label: "Speech Coach", color: "#7c3aed", desc: "Confidence, pace and pronunciation" },
   "/app/conversation": { icon: "chat", label: "Conversation Coach", color: "#db2777", desc: "Fluency, tone and interaction" },
+  "/app/presence": { icon: "sparkles", label: "Presence Studio", color: "#c026d3", desc: "Video + voice: face, body and personality feedback" },
   "/app/interview": { icon: "briefcase", label: "Interview Prep", color: "#d97706", desc: "Mock interviews, any field" },
   "/app/meet": { icon: "video", label: "Meet", color: "#dc2626", desc: "HD video meetings, screen share, chat" },
   "/app/rooms": { icon: "users", label: "Focus Rooms", color: "#0d9488", desc: "Chat with live focus" },
@@ -17,7 +18,7 @@ export const SECTIONS = {
 
 export const NAV_GROUPS = [
   ["Home", ["/app", "/app/routine"]],
-  ["Practice", ["/app/focus", "/app/speech", "/app/conversation", "/app/interview"]],
+  ["Practice", ["/app/focus", "/app/presence", "/app/speech", "/app/conversation", "/app/interview"]],
   ["Community", ["/app/meet", "/app/rooms"]],
   ["Insights", ["/app/analytics", "/app/vision", "/app/lab"]],
 ];

@@ -41,6 +41,25 @@ const greeting = () => {
   return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
 };
 
+// phones: the first screen is a home screen — every section one tap away (the desktop has the sidebar)
+const QUICK = ["/app/focus", "/app/presence", "/app/speech", "/app/interview", "/app/conversation", "/app/meet", "/app/rooms",
+  "/app/routine", "/app/analytics", "/app/vision", "/app/lab", "/app/settings"];
+function QuickTiles() {
+  return (
+    <nav className="quick-tiles mobile-only" aria-label="All sections">
+      {QUICK.map((href) => {
+        const sec = SECTIONS[href];
+        return (
+          <Link key={href} href={href} className="quick-tile" style={{ "--c": sec.color }}>
+            <span className="quick-ico"><Icon name={sec.icon} size={22} /></span>
+            <span>{sec.label.replace("Account settings", "Settings")}</span>
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
 function Skeleton() {
   return (
     <div className="dash">
@@ -108,6 +127,7 @@ export default function Dashboard() {
 
   return (
     <div className="dash">
+      <QuickTiles />
       {/* ---------------------------------------------------------------- hero */}
       <section className="card dash-hero">
         <div>

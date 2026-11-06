@@ -1,6 +1,6 @@
 import Link from "@/components/Link";
 import { usePathname, useRouter, useSearchParams } from "@/lib/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth, wasSignedOut } from "@/lib/auth";
 import { useBackendStatus } from "@/lib/backend";
@@ -13,6 +13,7 @@ import { InstallButton } from "@/lib/pwa";
 import { NAV_GROUPS, SECTIONS } from "@/lib/sections";
 import { Icon } from "./Icons";
 import { ShareButton } from "./Share";
+import { MenuIcon, MobileMenu, MobileTabs } from "./MobileNav";
 
 const STATUS = {
   ok: ["ok", "Live"],
@@ -73,6 +74,9 @@ export function AppShell({ children }) {
   const backend = useBackendStatus();
   const { theme, toggle } = useTheme();
   const [palette, setPalette] = useState(false);
+  const [menu, setMenu] = useState(false); // phones: the ☰ menu sheet
+  const closeMenu = useCallback(() => setMenu(false), []);
+  useEffect(() => setMenu(false), [path]);
   const [guestBlocked, setGuestBlocked] = useState(false); // server down / misconfigured: wait instead of /login
 
   const query = useSearchParams().toString();
@@ -193,6 +197,9 @@ export function AppShell({ children }) {
 
       <div className="workspace">
         <header className="topbar" style={{ "--c": page.color }}>
+          <button type="button" className="icon-btn menu-btn" onClick={() => setMenu(true)} aria-label="Open menu" aria-expanded={menu}>
+            <MenuIcon size={20} />
+          </button>
           <div className="topbar-title">
             <span className="nav-ico lg">
               <Icon name={page.icon} size={21} />
@@ -203,19 +210,23 @@ export function AppShell({ children }) {
             </div>
           </div>
           <div className="topbar-actions">
-            <span className={`status-pill ${tone}`} title="Backend status (re-checked automatically)">
+            <span className={`status-pill desk-only ${tone}`} title="Backend status (re-checked automatically)">
               <span className="dot" /> {label}
             </span>
-            <button className="coach-btn" onClick={() => openCoach()} aria-label="Open the AI coach">
+            <button className="coach-btn desk-only" onClick={() => openCoach()} aria-label="Open the AI coach">
               <Icon name="sparkles" size={17} /> <span>Coach</span>
             </button>
-            <button className="topbar-search" onClick={() => setPalette(true)} aria-label="Search pages and actions">
+            <button className="topbar-search desk-only" onClick={() => setPalette(true)} aria-label="Search pages and actions">
               <Icon name="search" size={16} /> <span>Search…</span>
               <kbd>Ctrl K</kbd>
             </button>
-            <ShareButton className="btn ghost sm compact" label="Share app" />
-            <InstallButton className="btn ghost sm compact" />
-            <button className="icon-btn" onClick={toggle} aria-label={themeLabel(theme)} title={themeLabel(theme)}>
+            <span className="desk-only">
+              <ShareButton className="btn ghost sm compact" label="Share app" />
+            </span>
+            <span className="desk-only">
+              <InstallButton className="btn ghost sm compact" />
+            </span>
+            <button className="icon-btn desk-only" onClick={toggle} aria-label={themeLabel(theme)} title={themeLabel(theme)}>
               <Icon name={theme === "dark" ? "sun" : "moon"} size={18} />
             </button>
             <UserMenu user={user} onLogout={logout} />
@@ -230,6 +241,18 @@ export function AppShell({ children }) {
           <AppFooter />
         </main>
       </div>
+      <MobileTabs path={path} menuOpen={menu} onMenu={() => setMenu(true)} />
+      <MobileMenu
+        open={menu}
+        onClose={closeMenu}
+        path={path}
+        user={user}
+        theme={theme}
+        onTheme={toggle}
+        onCoach={() => openCoach()}
+        onSearch={() => setPalette(true)}
+        onLogout={logout}
+      />
       <CommandPalette open={palette} onClose={() => setPalette(false)} onLogout={logout} />
       <CoachPanel />
     </div>
