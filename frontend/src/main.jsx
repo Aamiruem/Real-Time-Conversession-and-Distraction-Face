@@ -2,7 +2,7 @@ import { StrictMode } from "react";
 import { createRoot, hydrateRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router";
 import { registerServiceWorker } from "./lib/pwa";
-import App from "./Root";
+import App from "./app";
 import "./styles/globals.css";
 
 const root = document.getElementById("root");

@@ -1,11 +1,12 @@
-import { useId } from "react";
+import { useEffect, useId, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "@/components/Link";
 import { FEATURES, OWNER, SITE_NAME, TOPICS } from "@/lib/site";
 import { InstallButton } from "@/lib/pwa";
 import { BrandIcon } from "./BrandIcons";
 import { Icon } from "./Icons";
 import { ShareButton } from "./Share";
-import { SECTIONS } from "@/lib/sections";
+import { NAV_GROUPS, SECTIONS } from "@/lib/sections";
 import { usePathname } from "@/lib/navigation";
 import { themeLabel, useTheme } from "@/lib/theme";
 
@@ -32,8 +33,13 @@ export function Logo({ size = 30 }) {
   );
 }
 
+// the feature pages' icons, matching their app sections
+const FEATURE_ICON = { "focus-tracker": "focus", "speech-coach": "mic", "fatigue-prediction": "flask",
+  "interview-preparation": "briefcase", "conversation-coach": "chat" };
+
 export function SiteHeader() {
   const { theme, toggle } = useTheme();
+  const [menu, setMenu] = useState(false);
   return (
     <header className="nav">
       <div className="container">
@@ -41,22 +47,121 @@ export function SiteHeader() {
           <Logo /> {SITE_NAME}
         </Link>
         <nav aria-label="Main">
-          <Link href="/#features">Features</Link>
-          <Link href="/#how">How it works</Link>
-          <Link href="/#faq">FAQ</Link>
-          <ShareButton className="btn ghost sm compact" />
-          <InstallButton className="btn ghost sm compact" />
-          <button className="icon-btn" onClick={toggle} aria-label={themeLabel(theme)} title={themeLabel(theme)}>
+          <Link href="/#features" className="wide-only">Features</Link>
+          <Link href="/#how" className="wide-only">How it works</Link>
+          <Link href="/#faq" className="wide-only">FAQ</Link>
+          <span className="wide-only">
+            <ShareButton className="btn ghost sm compact" />
+          </span>
+          <span className="wide-only">
+            <InstallButton className="btn ghost sm compact" />
+          </span>
+          <button className="icon-btn wide-only" onClick={toggle} aria-label={themeLabel(theme)} title={themeLabel(theme)}>
             {theme === "dark" ? "☀️" : "🌙"}
           </button>
-          <Link href="/login">Sign in</Link>
+          <Link href="/login" className="wide-only">Sign in</Link>
           {/* the app signs visitors in as a guest by itself: no form needed to start */}
           <Link className="btn sm" href="/app">
             Open app
           </Link>
+          <button type="button" className="icon-btn site-menu-btn" onClick={() => setMenu(true)} aria-label="Open menu" aria-expanded={menu}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+              <path d="M4 7h16M4 12h16M4 17h16" />
+            </svg>
+          </button>
         </nav>
       </div>
+      <SiteMenu open={menu} onClose={() => setMenu(false)} theme={theme} onTheme={toggle} />
     </header>
+  );
+}
+
+/** Small screens: everything the header and footer offer, in one menu sheet (same look as the app's menu). */
+function SiteMenu({ open, onClose, theme, onTheme }) {
+  const path = usePathname();
+  useEffect(() => onClose(), [path]); // a link was followed
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKey = (e) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+  if (!open) return null;
+  // drawn on <body>: the header's blur effect would otherwise trap a fixed-position sheet inside the 64px header
+  return createPortal(<SiteMenuSheet onClose={onClose} theme={theme} onTheme={onTheme} />, document.body);
+}
+
+function SiteMenuSheet({ onClose, theme, onTheme }) {
+  const item = (href, icon, color, label, sub, external = false) => (
+    <Link key={href} href={href} onClick={onClose} className="mmenu-link" style={{ "--c": color }}
+      {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}>
+      <span className="nav-ico"><Icon name={icon} size={18} /></span>
+      <span>
+        <b>{label}</b>
+        {sub && <small>{sub}</small>}
+      </span>
+    </Link>
+  );
+
+  return (
+    <div className="mmenu-backdrop" onClick={onClose}>
+      <aside className="mmenu" role="dialog" aria-modal="true" aria-label="Menu" onClick={(e) => e.stopPropagation()}>
+        <header className="mmenu-head">
+          <Link href="/" className="brand" onClick={onClose}>
+            <Logo size={34} /> {SITE_NAME}
+          </Link>
+          <button type="button" className="icon-btn" onClick={onClose} aria-label="Close menu">
+            <Icon name="close" size={20} />
+          </button>
+        </header>
+
+        <div className="site-menu-cta">
+          <Link className="btn block" href="/app" onClick={onClose}>Open the app — no login</Link>
+          <div className="site-menu-auth">
+            <Link className="btn ghost" href="/signup" onClick={onClose}>Create account</Link>
+            <Link className="btn ghost" href="/login" onClick={onClose}>Sign in</Link>
+          </div>
+        </div>
+
+        <div className="mmenu-actions three">
+          <ShareButton label="Share" className="mmenu-share" align="left" />
+          <button type="button" onClick={onTheme}>
+            <Icon name={theme === "dark" ? "sun" : "moon"} size={20} /> {theme === "dark" ? "Light" : "Dark"}
+          </button>
+          <a href="/#faq" onClick={onClose}>
+            <Icon name="bulb" size={20} /> FAQ
+          </a>
+        </div>
+        <InstallButton className="btn block mmenu-install" label="Install the app on this device" />
+
+        <nav aria-label="Site">
+          <section className="mmenu-group">
+            <h3>Learn</h3>
+            {item("/#features", "sparkles", "#2563eb", "All features", "What Presence AI can do")}
+            {item("/#how", "compass", "#0d9488", "How it works", "Three steps to better focus and speaking")}
+            {FEATURES.map((f) => item(`/features/${f.slug}`, FEATURE_ICON[f.slug] ?? "sparkles", TOPICS[f.slug]?.color ?? "#2563eb",
+              f.metaTitle.split(" – ")[0], f.summary.split(/[.—]/)[0]))}
+          </section>
+          {NAV_GROUPS.map(([group, hrefs]) => (
+            <section key={group} className="mmenu-group">
+              <h3>App · {group}</h3>
+              {hrefs.map((href) => item(href, SECTIONS[href].icon, SECTIONS[href].color, SECTIONS[href].label, SECTIONS[href].desc))}
+            </section>
+          ))}
+          <section className="mmenu-group">
+            <h3>Built by {OWNER.name}</h3>
+            {OWNER.portfolio && item(OWNER.portfolio, "globe", "#6366f1", "Portfolio", "Projects and contact", true)}
+            {OWNER.linkedin && item(OWNER.linkedin, "users", "#0a66c2", "LinkedIn", "Connect with the developer", true)}
+            {OWNER.github && item(OWNER.github, "code", "#6e5494", "GitHub", "Source code", true)}
+          </section>
+        </nav>
+      </aside>
+    </div>
   );
 }
 

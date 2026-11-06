@@ -1230,7 +1230,8 @@ video.hidden { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-
 .rt-now-note { margin: 0; color: var(--muted); }
 .rt-now-note b { color: var(--text); }
 .rt-hero-actions { display: flex; flex-wrap: wrap; gap: 10px; }
-.rt-next { margin: 2px 0 0; display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: .92rem; }
+.rt-next { margin: 2px 0 0; color: var(--muted); font-size: .92rem; line-height: 1.5; }
+.rt-next svg { vertical-align: -2px; margin-right: 4px; }
 .rt-next b { color: var(--text); }
 .rt-stats { display: flex; align-items: center; gap: 18px; }
 .rt-streak { display: grid; justify-items: center; gap: 2px; padding: 14px 20px; border-radius: 14px; background: var(--inset);
@@ -1512,3 +1513,26 @@ img, video, canvas, svg { max-width: 100%; }
   color: #a21caf; background: color-mix(in srgb, #c026d3 12%, transparent); border: 1px solid color-mix(in srgb, #c026d3 35%, transparent); }
 :root[data-theme="dark"] .ps-pill { color: #f0abfc; }
 .ps-pill.ok { color: var(--ok); background: color-mix(in srgb, var(--ok) 12%, transparent); border-color: color-mix(in srgb, var(--ok) 35%, transparent); }
+
+/* ================= website pages: ☰ menu on small screens (SiteChrome.jsx SiteMenu) ================= */
+.site-menu-btn { display: none; }
+@media (max-width: 860px) {
+  .nav .wide-only { display: none !important; }
+  .site-menu-btn { display: grid; }
+  .nav nav { gap: 10px; }
+}
+.site-menu-cta { display: grid; gap: 8px; }
+.site-menu-auth { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.mmenu-actions.three { grid-template-columns: repeat(3, 1fr); }
+.mmenu-actions > a { display: grid; justify-items: center; gap: 4px; padding: 10px 4px; border-radius: 12px; border: 1px solid var(--line);
+  background: var(--surface2); color: var(--text); font-size: .72rem; font-weight: 650; }
+
+/* phones: tabs stay one swipeable row; stat tiles two per row */
+@media (max-width: 560px) {
+  .tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: -4px; padding-inline: 4px; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tabs button { flex: none; white-space: nowrap; }
+  .grid.g5 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .grid.g5 > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+}
+.site-menu-auth .btn { padding-inline: 10px; white-space: nowrap; }
