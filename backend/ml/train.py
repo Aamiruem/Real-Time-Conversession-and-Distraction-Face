@@ -10,10 +10,13 @@ on a held-out test split and writes ml/artifacts/{fatigue_model.joblib, model_ca
 import argparse
 import json
 import os
+import sys
 
-# joblib counts CPU cores with `wmic`, which newer Windows versions no longer have: tell it the count instead of
-# printing a long warning on every training run
-os.environ.setdefault("LOKY_MAX_CPU_COUNT", str(os.cpu_count() or 1))
+# joblib counts physical CPU cores with `wmic`, which newer Windows versions no longer have, and prints a long
+# warning on every run. A worker count below the logical core count skips that check: use the usual physical
+# count (half the logical cores, as with hyper-threading).
+if sys.platform == "win32":
+    os.environ.setdefault("LOKY_MAX_CPU_COUNT", str(max(1, (os.cpu_count() or 2) // 2)))
 from datetime import datetime, timezone
 from pathlib import Path
 
