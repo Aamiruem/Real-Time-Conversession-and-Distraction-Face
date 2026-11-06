@@ -139,7 +139,13 @@ export function CameraDock({ running, source, title, metrics = null, roomId = nu
   useEffect(() => {
     if (!menu) return;
     const r = gear.current?.getBoundingClientRect();
-    if (r) setMenuPos({ right: Math.max(8, window.innerWidth - r.right), bottom: window.innerHeight - r.top + 10 });
+    // line up with the gear, but never past either edge of the screen (phones are narrower than the menu's reach)
+    const width = Math.min(280, window.innerWidth - 16);
+    if (r) setMenuPos({
+      right: Math.min(Math.max(8, window.innerWidth - r.right), window.innerWidth - 8 - width),
+      bottom: window.innerHeight - r.top + 10,
+      width,
+    });
     const hide = () => setMenu(null);
     window.addEventListener("resize", hide);
     window.addEventListener("scroll", hide, true);
@@ -169,7 +175,7 @@ export function CameraDock({ running, source, title, metrics = null, roomId = nu
       className={`vid-settings ${inFull ? "" : "floating"}`}
       role="menu"
       aria-label="Camera settings"
-      style={inFull || !menuPos ? undefined : { right: menuPos.right, bottom: menuPos.bottom }}
+      style={inFull || !menuPos ? undefined : { right: menuPos.right, bottom: menuPos.bottom, minWidth: menuPos.width }}
     >
       {menu === "main" ? (
         Object.entries(SETTINGS).map(([key, def]) => (
