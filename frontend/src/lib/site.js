@@ -2,9 +2,10 @@
 export const SITE_URL = (import.meta.env.VITE_SITE_URL || "http://localhost:3000").replace(/\/$/, "");
 export const SITE_NAME = "Presence AI";
 export const TAGLINE = "Focus, Speak & Interview with Confidence";
+// ≤160 characters so Google shows it whole; the brand name first for "Presence AI" searches
 export const DESCRIPTION =
-  "Free AI focus tracker and interview coach: real-time distraction & drowsiness detection, mock interviews " +
-  "with body-language feedback, an AI speech and conversation coach, and machine-learning fatigue prediction.";
+  "Presence AI: free AI focus tracker and interview coach. Live distraction detection, mock interviews, " +
+  "a speech coach and video meetings, in your browser.";
 
 /** Each feature's thumbnail scene, colour (same as its app section) and the app page its button opens. */
 export const TOPICS = {

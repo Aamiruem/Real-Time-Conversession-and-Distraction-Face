@@ -860,7 +860,13 @@ kbd { font: 700 .75rem ui-monospace, Consolas, monospace; padding: 1px 6px; bord
 }
 @media (max-width: 560px) {
   .status-pill { font-size: 0; gap: 0; padding: 8px; }
-  .topbar { gap: 8px; }
+  /* phones: the page title gets its own row, the buttons sit underneath (they used to overlap the title) */
+  .topbar { gap: 8px; flex-wrap: wrap; row-gap: 8px; }
+  .topbar-title { flex: 1 1 100%; }
+  .topbar-title b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .topbar-title .nav-ico.lg { width: 34px; height: 34px; }
+  .topbar-actions { flex: 1 1 100%; justify-content: space-between; gap: 6px; }
+  input[type=checkbox] { width: 18px; height: 18px; }
   .g2, .g3, .g4, .g5 { grid-template-columns: 1fr; }
   .row { flex-direction: column; }
   .split-rooms { grid-template-columns: minmax(0, 1fr); }

@@ -1,6 +1,6 @@
 import { useId } from "react";
 import Link from "@/components/Link";
-import { DESCRIPTION, FEATURES, OWNER, SITE_NAME, TOPICS } from "@/lib/site";
+import { FEATURES, OWNER, SITE_NAME, TOPICS } from "@/lib/site";
 import { InstallButton } from "@/lib/pwa";
 import { BrandIcon } from "./BrandIcons";
 import { Icon } from "./Icons";
@@ -160,7 +160,7 @@ export function SiteFooter() {
           <Link className="brand" href="/">
             <Logo /> {SITE_NAME}
           </Link>
-          <p>{DESCRIPTION.split(":")[0]} — focus tracking, speech and interview coaching, right in your browser.</p>
+          <p>Free AI focus tracker and interview coach — focus tracking, speech and interview coaching, right in your browser.</p>
           <ul className="footer-badges" aria-label="Highlights">
             {BADGES.map((b) => (
               <li key={b}>

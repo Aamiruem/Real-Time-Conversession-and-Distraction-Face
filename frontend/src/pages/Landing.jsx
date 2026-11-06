@@ -1,6 +1,6 @@
 import Link from "@/components/Link";
 import { SiteFooter, SiteHeader } from "@/components/SiteChrome";
-import { DESCRIPTION, FEATURES, HOME_FAQ, jsonLd, SITE_NAME, SITE_URL, TOPICS } from "@/lib/site";
+import { DESCRIPTION, FEATURES, HOME_FAQ, jsonLd, OWNER, SITE_NAME, SITE_URL, TOPICS } from "@/lib/site";
 import { TopicThumb } from "@/components/CameraPoster";
 
 // Pre-rendered to static HTML at build time (scripts/prerender.mjs), so crawlers get complete HTML instantly.
@@ -17,7 +17,20 @@ const structuredData = {
       offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
       featureList: FEATURES.map((f) => f.title),
     },
-    { "@type": "Organization", name: SITE_NAME, url: `${SITE_URL}/`, logo: `${SITE_URL}/icon.svg` },
+    {
+      "@type": "Organization",
+      name: SITE_NAME,
+      url: `${SITE_URL}/`,
+      logo: `${SITE_URL}/icon-512.png`,
+      sameAs: [OWNER.github && `${OWNER.github}/Real-Time-Conversession-and-Distraction-Face`].filter(Boolean),
+      founder: {
+        "@type": "Person",
+        name: OWNER.name,
+        jobTitle: OWNER.role,
+        url: OWNER.portfolio,
+        sameAs: [OWNER.linkedin, OWNER.github, OWNER.portfolio].filter(Boolean),
+      },
+    },
     // name + alternateName: Google shows "Presence AI" as the site name in results and matches "PresenceAI" too
     { "@type": "WebSite", name: SITE_NAME, alternateName: ["PresenceAI", "Presence AI app"], url: `${SITE_URL}/` },
     {

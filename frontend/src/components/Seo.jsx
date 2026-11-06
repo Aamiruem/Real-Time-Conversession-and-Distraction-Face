@@ -30,6 +30,8 @@ export function SeoSync() {
       }
       link.href = t.canonical;
     } else link?.remove();
+    // Google Analytics (when GA_MEASUREMENT_ID is set): the app changes pages without reloading, so report each one
+    window.gtag?.("event", "page_view", { page_path: pathname, page_title: m.title, page_location: window.location.href });
   }, [pathname]);
   return null;
 }

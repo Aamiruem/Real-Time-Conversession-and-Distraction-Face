@@ -1,7 +1,7 @@
 // Per-page SEO: title, description, canonical URL, robots and social tags.
 // Used twice so they always agree: scripts/prerender.mjs writes them into the static HTML (what crawlers read),
 // and components/Seo.jsx updates <head> on client-side navigation.
-import { DESCRIPTION, FEATURES, SITE_NAME, SITE_URL, TAGLINE } from "./site";
+import { DESCRIPTION, FEATURES, OWNER, SITE_NAME, SITE_URL, TAGLINE } from "./site";
 
 const KEYWORDS = [
   "focus tracker",
@@ -74,6 +74,10 @@ export function metaTags(m) {
       "twitter:title": m.title,
       "twitter:description": m.description,
       "twitter:image": `${SITE_URL}/twitter-image.png`,
+      "twitter:image:alt": `${SITE_NAME} — AI focus tracker and interview coach`,
+      author: OWNER.name,
+      "application-name": SITE_NAME,
+      "apple-mobile-web-app-title": SITE_NAME,
     },
     property: {
       "og:type": m.type,
@@ -81,6 +85,10 @@ export function metaTags(m) {
       "og:title": m.title,
       "og:description": m.description,
       "og:image": `${SITE_URL}/opengraph-image.png`,
+      "og:image:width": "1200",
+      "og:image:height": "630",
+      "og:image:alt": `${SITE_NAME} — AI focus tracker and interview coach`,
+      "og:locale": "en_IN",
       ...(url ? { "og:url": url } : {}),
     },
     canonical: url,
