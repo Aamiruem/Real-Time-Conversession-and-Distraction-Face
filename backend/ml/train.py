@@ -10,6 +10,10 @@ on a held-out test split and writes ml/artifacts/{fatigue_model.joblib, model_ca
 import argparse
 import json
 import os
+
+# joblib counts CPU cores with `wmic`, which newer Windows versions no longer have: tell it the count instead of
+# printing a long warning on every training run
+os.environ.setdefault("LOKY_MAX_CPU_COUNT", str(os.cpu_count() or 1))
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -75,7 +79,7 @@ def train(with_db: bool = False, quiet: bool = False) -> dict:
     cv = StratifiedKFold(5, shuffle=True, random_state=7)
     scores = {name: float(cross_val_score(make(), X_tr, y_tr, cv=cv, scoring="f1_macro").mean())
             for name, make in CANDIDATES.items()}
-    best = max(scores, key=scores.get)
+    best = max(scores, key=lambda name: scores[name])
     model = CANDIDATES[best]()
     model.fit(X_tr, y_tr, clf__sample_weight=w_tr)
 
@@ -88,13 +92,13 @@ def train(with_db: bool = False, quiet: bool = False) -> dict:
         "algorithm": best,
         "cv_f1_macro": {k: round(v, 4) for k, v in scores.items()},
         "test": {
-            "accuracy": round(accuracy_score(y_te, pred), 4),
-            "f1_macro": round(f1_score(y_te, pred, average="macro"), 4),
+            "accuracy": round(float(accuracy_score(y_te, pred)), 4),
+            "f1_macro": round(float(f1_score(y_te, pred, average="macro")), 4),
             "confusion_matrix": confusion_matrix(y_te, pred).tolist(),
             "report": classification_report(y_te, pred, target_names=LABELS, output_dict=True),
         },
         "feature_importance": dict(sorted(
-            {f: round(float(v), 4) for f, v in zip(FEATURES, imp.importances_mean)}.items(),
+            {f: round(float(v), 4) for f, v in zip(FEATURES, imp["importances_mean"])}.items(),
             key=lambda kv: -kv[1])),
         "features": FEATURES,
         "labels": LABELS,
@@ -103,7 +107,7 @@ def train(with_db: bool = False, quiet: bool = False) -> dict:
         "limitations": "Bootstrapped on simulated sessions; predictions become personal only as users "
                     "label real sessions. Not a medical assessment.",
     }
-    ARTIFACTS.mkdir(exist_ok=True)
+    ARTIFACTS.mkdir(parents=True, exist_ok=True)
     joblib.dump(model, MODEL_PATH)
     CARD_PATH.write_text(json.dumps(card, indent=2))
     if not quiet:
