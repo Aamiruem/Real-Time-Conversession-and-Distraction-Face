@@ -1890,3 +1890,10 @@ table.t tbody tr:hover { background: var(--hover); }
 .topbar .avatar { width: var(--tile); height: var(--tile); color: #fff; background: #db2777; }
 /* where the bar carries the title (phones, Meet) it also carries the section's tile */
 .topbar-title .nav-ico.lg { display: grid; width: var(--tile); height: var(--tile); border-radius: var(--radius-sm); color: #fff; background: var(--c, var(--accent)); }
+
+/* website header: "Open app" is always on show; on the narrowest phones it keeps its icon and drops the words */
+.nav-open { flex: none; white-space: nowrap; }
+@media (max-width: 380px) {
+  .btn.sm.nav-open { width: 44px; min-height: 44px; padding: 0; }
+  .nav-open span { display: none; }
+}

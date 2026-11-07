@@ -57,8 +57,8 @@ export function SiteHeader() {
           </button>
           <Link href="/login" className="wide-only">Sign in</Link>
           {/* the app signs visitors in as a guest by itself: no form needed to start */}
-          <Link className="btn sm wide-only" href="/app">
-            Open app
+          <Link className="btn sm nav-open" href="/app" aria-label="Open app">
+            <Icon name="dashboard" size={16} /> <span>Open app</span>
           </Link>
           <button type="button" className="icon-btn site-menu-btn" onClick={() => setMenu(true)} aria-label="Open menu" aria-expanded={menu}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
