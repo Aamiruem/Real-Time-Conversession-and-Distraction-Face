@@ -198,3 +198,55 @@ def sync_in_background(engine: Engine):
                         e.__class__.__name__)
 
     threading.Thread(target=run, name="mongo-sync", daemon=True).start()
+
+
+# ---------- video files (GridFS): Presence Studio recordings ----------
+# Unlike the mirror above, this is the only copy of these files, so full_sync must never clean them up: pointed at a
+# different SQL database, it would see every video as an orphan and erase it.
+
+VIDEO_BUCKET = "recording_videos"
+
+
+def _videos():
+    if not enabled():
+        raise RuntimeError("MongoDB is off (MONGODB_URI)")
+    from gridfs import GridFSBucket
+
+    return GridFSBucket(database(), bucket_name=VIDEO_BUCKET)
+
+
+def has_room_for_video(size: int) -> bool:
+    """False once MONGO_VIDEO_QUOTA_MB would be passed. Raises when MongoDB can't be reached."""
+    quota = settings.MONGO_VIDEO_QUOTA_MB * 1024 * 1024
+    if not quota:
+        return True
+    rows = database()[f"{VIDEO_BUCKET}.files"].aggregate([{"$group": {"_id": None, "total": {"$sum": "$length"}}}])
+    return next(rows, {}).get("total", 0) + size <= quota
+
+
+def save_video(stream, filename: str, *, user_id: int, mime_type: str) -> str:
+    """Store a video and return its key (the GridFS file id, as text)."""
+    file_id = _videos().upload_from_stream(filename, stream, metadata={"user_id": user_id, "mime_type": mime_type})
+    return str(file_id)
+
+
+def open_video(key: str):
+    """A readable stream with .length and .read(). FileNotFoundError when the video is gone."""
+    from bson import ObjectId
+    from gridfs.errors import NoFile
+
+    try:
+        return _videos().open_download_stream(ObjectId(key))
+    except NoFile as exc:
+        raise FileNotFoundError(key) from exc
+
+
+def delete_video(key: str):
+    """Remove a video and all its chunks; one that's already gone is fine."""
+    from bson import ObjectId
+    from gridfs.errors import NoFile
+
+    try:
+        _videos().delete(ObjectId(key))
+    except NoFile:
+        pass

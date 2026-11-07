@@ -9,7 +9,7 @@
 #       - DATABASE_URL: free PostgreSQL that never expires - Neon (neon.tech) or Supabase. Render's own free
 #         database is deleted after 30 days. Left empty = a temporary SQLite file that is lost on every restart.
 #       - MONGODB_URI:  free MongoDB Atlas M0 cluster (mirror of all data)
-#       - recordings:   saved on the server's temporary disk unless AWS S3 is turned on (AWS_ENABLED)
+#       - recordings:   Presence Studio videos go to MongoDB; the rest to the server's temporary disk unless AWS S3 is on
 # Paid upgrade later: plan: starter, WHISPER_MODEL=base.en, WHISPER_ALLOW_LARGER=true, and a disk for recordings
 #   (disk: {name: recordings, mountPath: /data/recordings, sizeGB: 5} + RECORDINGS_DIR=/data/recordings).
 services:
@@ -28,6 +28,8 @@ services:
         sync: false
       - key: MONGODB_DB
         value: presence_ai
+      - key: MONGO_VIDEO_QUOTA_MB # Atlas M0 holds 512 MB in all: leave room for the mirror
+        value: 400
       - key: SECRET_KEY
         generateValue: true
       - key: APP_NAME

@@ -152,7 +152,7 @@ class Message(Base):
 
 
 class Recording(Base):
-    """A saved camera recording: the video file lives in S3 (AWS_ENABLED) or backend/recordings/, the details here."""
+    """A saved camera recording: the video file lives in MongoDB, S3 or backend/recordings/, the details here."""
 
     __tablename__ = "recordings"
 
@@ -169,7 +169,7 @@ class Recording(Base):
     avg_focus: Mapped[float | None] = mapped_column(Float, nullable=True)
     focused_pct: Mapped[float | None] = mapped_column(Float, nullable=True)
     timeline: Mapped[str] = mapped_column(Text, default="[]")  # [{t, focus, state}] one sample a second
-    storage: Mapped[str] = mapped_column(String(10), default="local")  # local | s3
+    storage: Mapped[str] = mapped_column(String(10), default="local")  # local | s3 | mongo
     storage_key: Mapped[str] = mapped_column(String(300), default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
 

@@ -87,6 +87,9 @@ class Settings:
     # MongoDB mirror: every saved record is also kept in MongoDB (one collection per table). Empty = off.
     MONGODB_URI: str = os.getenv("MONGODB_URI", "").strip()
     MONGODB_DB: str = os.getenv("MONGODB_DB", "presence_ai").strip()
+    # Presence Studio videos are kept in MongoDB (GridFS). Total size allowed, in MB: past it new videos go to S3 / disk.
+    # 0 = no limit. Set it on small plans: a full Atlas M0 (512 MB) also stops the mirror above.
+    MONGO_VIDEO_QUOTA_MB: int = int(os.getenv("MONGO_VIDEO_QUOTA_MB", "0"))
 
     AWS_ENABLED: bool = _bool("AWS_ENABLED")
     AWS_REGION: str = os.getenv("AWS_REGION", "ap-south-1")

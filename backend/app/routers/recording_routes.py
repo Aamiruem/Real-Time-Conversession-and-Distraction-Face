@@ -1,8 +1,9 @@
 """Camera recordings: upload, list, play back and delete.
 
 The details (duration, quality, focus timeline...) are a row in the SQL database (SQLite locally, PostgreSQL on
-AWS RDS), which the MongoDB mirror copies like every other table. The video itself goes to S3 when AWS_ENABLED,
-otherwise to RECORDINGS_DIR on the backend's disk.
+AWS RDS), which the MongoDB mirror copies like every other table. Presence Studio videos go to MongoDB (GridFS); every
+other video, and those too when MongoDB is off, unreachable or full, goes to S3 when AWS_ENABLED, otherwise to
+RECORDINGS_DIR on the backend's disk.
 """
 import json
 import logging
@@ -11,6 +12,7 @@ import tempfile
 import uuid
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
@@ -32,6 +34,9 @@ QUALITIES = {"low", "medium", "high"}
 SPEEDS = {"eco", "balanced", "realtime"}
 TYPES = {"video/webm": "webm", "video/mp4": "mp4"}
 CHUNK = 1024 * 1024
+# Only these go to MongoDB: Presence recordings stop at 2 minutes (about 40 MB), Focus Room ones can reach RECORDING_MAX_MB
+MONGO_SOURCES = {"presence"}
+MONGO_VIDEO_MAX = 64 * CHUNK
 
 
 class RecordingOut(BaseModel):
@@ -63,7 +68,8 @@ def saved_to(r: Recording) -> list[str]:
     where = [db["engine"] if db["location"] == "local" else f"{db['engine']} ({db['location']})"]
     if mongo.enabled():
         where.append("mongodb")
-    where.append("s3" if r.storage == "s3" else "disk")
+    if r.storage != "mongo":
+        where.append("s3" if r.storage == "s3" else "disk")
     return where
 
 
@@ -87,6 +93,20 @@ def _parse_timeline(raw: str) -> list[dict]:
             out.append({"t": float(s.get("t", 0)), "focus": round(float(s["focus"]), 1),
                         "state": str(s.get("state", ""))[:20]})
     return out
+
+
+def _to_mongo(tmp, name: str, user_id: int, mime: str, size: int) -> str | None:
+    """Keep the video in MongoDB and return its key; None when it can't, so the caller uses S3 / disk instead."""
+    if not mongo.enabled():
+        return None
+    try:
+        if mongo.has_room_for_video(size):
+            return mongo.save_video(tmp, name, user_id=user_id, mime_type=mime)
+        log.warning("MongoDB video storage is full (MONGO_VIDEO_QUOTA_MB), saving this recording elsewhere")
+    except Exception as exc:  # noqa: BLE001 - MongoDB down: the recording still has to be saved
+        log.warning("MongoDB video save failed, saving this recording elsewhere: %s", exc.__class__.__name__)
+    tmp.seek(0)
+    return None
 
 
 @router.post("", response_model=RecordingOut)
@@ -123,7 +143,9 @@ def upload(
 
         key = f"user_{user.id}/{uuid.uuid4().hex}.{TYPES[mime]}"
         storage, client = "local", s3()
-        if client is not None:
+        if source in MONGO_SOURCES and size <= MONGO_VIDEO_MAX and (stored := _to_mongo(tmp, key, user.id, mime, size)):
+            storage, key = "mongo", stored
+        elif client is not None:
             try:
                 client.upload_fileobj(tmp, settings.S3_BUCKET, f"recordings/{key}", ExtraArgs={"ContentType": mime})
                 storage = "s3"
@@ -163,6 +185,7 @@ def _save_row(db: Session, user: User, samples: list[dict], *, title, source, ro
 
 class UploadUrlIn(BaseModel):
     mime_type: str
+    source: str = ""
 
 
 @router.post("/upload-url")
@@ -172,6 +195,8 @@ def upload_url(data: UploadUrlIn, user: User = Depends(get_current_user)):
     mime = data.mime_type.split(";")[0].strip()
     if mime not in TYPES:
         raise HTTPException(415, "Upload a webm or mp4 video")
+    if data.source in MONGO_SOURCES and mongo.enabled():
+        raise HTTPException(409, "This video goes to MongoDB: send it to POST /recordings")
     client = s3()
     if client is None:
         raise HTTPException(409, "Direct upload needs AWS S3 (AWS_ENABLED)")
@@ -215,10 +240,13 @@ def register(
 
 
 @router.get("", response_model=list[RecordingOut])
-def list_recordings(limit: int = 50, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Your recordings, newest first."""
-    rows = db.scalars(select(Recording).where(Recording.user_id == user.id)
-                      .order_by(Recording.created_at.desc()).limit(min(max(limit, 1), 200)))
+def list_recordings(limit: int = 50, source: str | None = None, user: User = Depends(get_current_user),
+                    db: Session = Depends(get_db)):
+    """Your recordings, newest first; `source` keeps one page's (e.g. presence)."""
+    query = select(Recording).where(Recording.user_id == user.id)
+    if source:
+        query = query.where(Recording.source == source)
+    rows = db.scalars(query.order_by(Recording.created_at.desc()).limit(min(max(limit, 1), 200)))
     return [to_out(r) for r in rows]
 
 
@@ -243,6 +271,17 @@ def download(rec_id: int, user: User = Depends(get_current_user), db: Session = 
     """The video file (streamed through the API, so S3 needs no public access or CORS rules)."""
     rec = _own(rec_id, user, db)
     name = f"{rec.title} {rec.created_at:%Y-%m-%d %H-%M}.{TYPES.get(rec.mime_type, 'webm')}"
+    if rec.storage == "mongo":
+        try:
+            video = mongo.open_video(rec.storage_key)
+        except FileNotFoundError as exc:
+            raise HTTPException(404, "Recording file not found") from exc
+        except Exception as exc:  # noqa: BLE001
+            raise HTTPException(503, "MongoDB is not reachable right now, try again in a moment") from exc
+        # "identity" keeps the GZip middleware off: video is already compressed, and it would drop Content-Length
+        return StreamingResponse(iter(lambda: video.read(CHUNK), b""), media_type=rec.mime_type, headers={
+            "Content-Length": str(video.length), "Content-Encoding": "identity",
+            "Content-Disposition": f"attachment; filename*=UTF-8''{quote(name)}"})
     if rec.storage == "s3":
         client = s3()
         if client is None:
@@ -260,10 +299,12 @@ def download(rec_id: int, user: User = Depends(get_current_user), db: Session = 
 
 
 def remove_files(recordings: list[Recording]):
-    """Delete the video files behind these recordings (S3 or disk); missing files are fine."""
+    """Delete the video files behind these recordings (MongoDB, S3 or disk); missing files are fine."""
     for rec in recordings:
         try:
-            if rec.storage == "s3":
+            if rec.storage == "mongo":
+                mongo.delete_video(rec.storage_key)
+            elif rec.storage == "s3":
                 if client := s3():
                     client.delete_object(Bucket=settings.S3_BUCKET, Key=f"recordings/{rec.storage_key}")
             else:
@@ -275,7 +316,14 @@ def remove_files(recordings: list[Recording]):
 @router.delete("/{rec_id}")
 def delete_recording(rec_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     rec = _own(rec_id, user, db)
-    remove_files([rec])
+    if rec.storage == "mongo":
+        # not best-effort: "deleted" must never leave someone's video sitting in MongoDB, so the row stays for a retry
+        try:
+            mongo.delete_video(rec.storage_key)
+        except Exception as exc:  # noqa: BLE001
+            raise HTTPException(503, "MongoDB is not reachable, so the video wasn't deleted. Try again.") from exc
+    else:
+        remove_files([rec])
     db.delete(rec)
     db.commit()
     return {"ok": True}

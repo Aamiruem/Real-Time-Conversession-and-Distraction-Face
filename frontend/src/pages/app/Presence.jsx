@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { CameraDock } from "@/components/CameraDock";
 import { CameraPoster } from "@/components/CameraPoster";
+import { Icon } from "@/components/Icons";
 import { Gauge, PageHead } from "@/components/ui";
+import { api, apiBlob, toDate } from "@/lib/api";
 import { CameraRecorder } from "@/lib/cameraRecorder";
 import { canRecord } from "@/lib/meetRecorder";
 import { presenceReport, TRAITS } from "@/lib/personality";
@@ -44,6 +46,7 @@ export default function Presence() {
   const [secs, setSecs] = useState(null); // null = not analysing
   const [report, setReport] = useState(null);
   const [saved, setSaved] = useState("");
+  const [savedCount, setSavedCount] = useState(0); // bumped after each save, so My recordings reloads
   const [err, setErr] = useState("");
   const [history, setHistory] = useState(readHistory);
   const voice = useRef(null);
@@ -101,19 +104,22 @@ export default function Presence() {
     } catch {
       /* private mode */
     }
-    // keep the video with its score, to watch later (Focus Rooms → My recordings)
+    // keep the video and voice with the score, to watch or delete later in My recordings
     const r = rec.current;
     rec.current = null;
-    if (r) {
-      const { blob, durationSec, timeline } = await r.stop();
-      const title = `Presence ${result.overall} · ${PROMPTS[prompt][0]}`;
-      try {
-        await saveRecording(blob, { title, source: "presence", durationSec, timeline });
-        setSaved("Video saved to your account — find it in Focus Rooms → My recordings.");
-      } catch {
-        downloadBlob(blob, title);
-        setSaved("Video downloaded to this device.");
-      }
+    if (!r) return setSaved("This browser can't record video, so only your scores were kept.");
+    setSaved("Saving your video…");
+    const { blob, durationSec, timeline } = await r.stop();
+    const title = `Presence ${result.overall} · ${PROMPTS[prompt][0]}`;
+    try {
+      const out = await saveRecording(blob, { title, source: "presence", durationSec, timeline });
+      setSaved(out.storage === "mongo"
+        ? "Video and voice saved to MongoDB. Play or delete it in My recordings below."
+        : "MongoDB wasn't available, so your video was saved on the server instead. Find it in My recordings below.");
+      setSavedCount((n) => n + 1);
+    } catch {
+      downloadBlob(blob, title);
+      setSaved("Couldn't save to your account, so the video was downloaded to this device.");
     }
   }
 
@@ -206,7 +212,8 @@ export default function Presence() {
           </div>
           {analysing && secs < MIN_SECONDS && <p className="small muted">Keep talking — at least {MIN_SECONDS} seconds (about a minute is best).</p>}
           {(err || cam.error) && <div className="alert error">{err || cam.error}</div>}
-          {saved && <p className="small muted">{saved}</p>}
+          {saved && <p className="small muted" role="status">{saved}</p>}
+          <Recordings refresh={savedCount} />
         </div>
 
         <div className="ps-side">
@@ -220,7 +227,7 @@ export default function Presence() {
                 <li>Talk to the camera for about a minute, as if to a person.</li>
                 <li>Press <b>Stop &amp; analyse</b> — you get scores for your face, body and voice, your personality impression and what to improve first.</li>
               </ol>
-              <p className="small muted">🔒 The analysis runs on your device. The video is saved only to your own account.</p>
+              <p className="small muted">🔒 The analysis runs on your device. Your video and voice are saved only to your own account, and you can delete them any time.</p>
             </div>
           )}
           {history.length > 0 && (
@@ -338,4 +345,94 @@ function Report({ report: r, onAgain }) {
       </details>
     </>
   );
+}
+
+const SCORED_TITLE = /^Presence (\d+) · (.+)$/; // how finish() names a recording
+
+/** The saved videos: play them back with their voice, download them, or delete them for good. */
+function Recordings({ refresh }) {
+  const [items, setItems] = useState(null); // null = still loading
+  const [playing, setPlaying] = useState(null); // { id, url }
+  const [busy, setBusy] = useState(null); // the recording being opened or deleted
+  const [err, setErr] = useState("");
+
+  useEffect(() => {
+    let alive = true;
+    api("/recordings?source=presence&limit=200")
+      .then((rows) => alive && setItems(rows))
+      .catch((e) => alive && setErr(e.message));
+    return () => {
+      alive = false;
+    };
+  }, [refresh]);
+  useEffect(() => () => playing && URL.revokeObjectURL(playing.url), [playing]);
+
+  async function act(rec, work) {
+    setErr("");
+    setBusy(rec.id);
+    try {
+      await work();
+    } catch (e) {
+      setErr(e.message);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  const play = (rec) => {
+    if (playing?.id === rec.id) return setPlaying(null);
+    return act(rec, async () => setPlaying({ id: rec.id, url: URL.createObjectURL(await apiBlob(`/recordings/${rec.id}/file`)) }));
+  };
+  const download = (rec) => act(rec, async () => downloadBlob(await apiBlob(`/recordings/${rec.id}/file`), rec.title));
+  const remove = (rec) => {
+    if (!window.confirm(`Delete "${rec.title}"? The video and voice are removed for good.`)) return;
+    act(rec, async () => {
+      await api(`/recordings/${rec.id}`, { method: "DELETE" });
+      if (playing?.id === rec.id) setPlaying(null);
+      setItems((rows) => rows.filter((r) => r.id !== rec.id));
+    });
+  };
+
+  return (
+    <section className="card ps-recs" aria-label="My recordings">
+      <h3>My recordings {items?.length > 0 && <span className="ps-recs-count">{items.length}</span>}</h3>
+      {err && <div className="alert error">{err}</div>}
+      {items?.length === 0 && <p className="small muted">No recordings yet. Press Start, and your video and voice are saved here.</p>}
+      {items?.map((rec) => {
+        const [, score, topic] = rec.title.match(SCORED_TITLE) ?? [null, null, rec.title];
+        const open = playing?.id === rec.id;
+        return (
+          <article key={rec.id} className="ps-rec">
+            <b className="ps-rec-score" title="Overall presence">{score ?? "—"}</b>
+            <span className="ps-rec-text">
+              <strong>{topic}</strong>
+              <small>
+                {toDate(rec.created_at).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })} · {clock(rec.duration_sec)} ·{" "}
+                {(rec.size_bytes / 1e6).toFixed(1)} MB{rec.storage === "mongo" && " · MongoDB"}
+              </small>
+            </span>
+            <span className="ps-rec-actions">
+              <button type="button" className="btn ghost sm" onClick={() => play(rec)} disabled={busy === rec.id} aria-expanded={open}>
+                <Icon name={open ? "close" : "play"} size={15} /> {open ? "Close" : "Play"}
+              </button>
+              <button type="button" className="btn ghost sm" onClick={() => download(rec)} disabled={busy === rec.id} aria-label={`Download ${topic}`}>
+                <Icon name="download" size={15} />
+              </button>
+              <button type="button" className="btn ghost sm ps-rec-del" onClick={() => remove(rec)} disabled={busy === rec.id} aria-label={`Delete ${topic}`}>
+                <Icon name="trash" size={15} /> Delete
+              </button>
+            </span>
+            {open && <video src={playing.url} controls autoPlay playsInline onLoadedMetadata={fixDuration} />}
+          </article>
+        );
+      })}
+    </section>
+  );
+}
+
+/** Browser-recorded webm files don't state their length, which breaks the seek bar: jump past the end so the player works it out. */
+function fixDuration({ currentTarget: video }) {
+  if (video.duration !== Infinity) return;
+  video.addEventListener("timeupdate", () => (video.currentTime = 0), { once: true });
+  video.currentTime = 1e7;
 }

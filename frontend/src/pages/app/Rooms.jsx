@@ -396,6 +396,7 @@ export default function Rooms() {
                     {clock(rec.duration_sec)} · {QUALITY_LABELS[rec.quality] ?? rec.quality}
                     {rec.avg_focus != null && ` · focus ${rec.avg_focus.toFixed(0)}%`}
                     {rec.storage === "s3" && " · S3"}
+                    {rec.storage === "mongo" && " · MongoDB"}
                   </div>
                 </div>
                 <div className="rec-actions">

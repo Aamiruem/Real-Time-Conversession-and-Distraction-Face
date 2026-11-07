@@ -1,6 +1,6 @@
 // Save a camera recording to the user's account: the details go to the database (SQL, mirrored to MongoDB), the
-// video to S3. With S3 set up the browser uploads the video straight to S3 (any size); otherwise it goes through
-// the API, which serverless hosts cap (Vercel: 4.5 MB), so a too-big video is downloaded to the device instead.
+// video to MongoDB (Presence Studio) or S3. With S3 set up the browser uploads straight to it (any size); otherwise
+// the video goes through the API, which serverless hosts cap (Vercel: 4.5 MB), so a too-big one is downloaded instead.
 import { api } from "./api";
 
 const ext = (blob) => (blob.type.includes("mp4") ? "mp4" : "webm");
@@ -18,7 +18,7 @@ export async function saveRecording(blob, { title, source, roomId, durationSec, 
 
   let direct = null;
   try {
-    direct = await api("/recordings/upload-url", { method: "POST", json: { mime_type: blob.type } });
+    direct = await api("/recordings/upload-url", { method: "POST", json: { mime_type: blob.type, source } });
   } catch (e) {
     // 409 = no S3 on this server; 404 / 405 = an older server without direct upload: upload through the API below
     if (![404, 405, 409].includes(e.status)) throw e;
