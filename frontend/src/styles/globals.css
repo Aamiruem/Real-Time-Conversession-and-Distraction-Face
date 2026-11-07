@@ -1869,3 +1869,23 @@ table.t tbody tr:hover { background: var(--hover); }
 /* website */
 .hero h1 { font-weight: 400; letter-spacing: -.01em; }
 .section > h2 { font-weight: 400; }
+
+/* top bar in colour: the background is a soft tint of the current section's colour, so it follows the sidebar item you're on,
+   and every action is a solid tile with a white icon, the same language as the sidebar. Hues are the sidebar's 600 steps. */
+.topbar { --tile: 36px; border-bottom-color: color-mix(in srgb, var(--c, var(--accent)) 24%, var(--line));
+  background: linear-gradient(90deg, color-mix(in srgb, var(--c, var(--accent)) 16%, var(--surface)), color-mix(in srgb, var(--c, var(--accent)) 7%, var(--surface))); }
+.topbar .icon-btn, .topbar .btn.compact { --i: #d97706; width: var(--tile); height: var(--tile); min-height: var(--tile); margin-inline: 2px; color: #fff; background: var(--i); }
+.topbar .share .btn.compact { --i: #16a34a; }
+.topbar .btn.compact { --i: #7c3aed; }
+.topbar .icon-btn.menu-btn { --i: var(--c, var(--accent)); margin-inline: 0 4px; }
+.topbar .icon-btn:hover, .topbar .btn.compact:hover { color: #fff; background: var(--i); box-shadow: var(--elev-1); filter: brightness(.92); }
+.topbar svg { stroke-width: 2.25; }
+.topbar-search svg { color: var(--accent); }
+.topbar-search, .topbar-search:hover { background: var(--surface); }
+.status-pill.ok, .status-pill { color: var(--text); }
+.coach-btn, .coach-btn:hover { border: 0; color: #fff; background: #1967d2; }
+.coach-btn:hover { box-shadow: var(--elev-1); filter: brightness(.92); }
+.coach-btn svg { color: #fff; }
+.topbar .avatar { width: var(--tile); height: var(--tile); color: #fff; background: #db2777; }
+/* where the bar carries the title (phones, Meet) it also carries the section's tile */
+.topbar-title .nav-ico.lg { display: grid; width: var(--tile); height: var(--tile); border-radius: var(--radius-sm); color: #fff; background: var(--c, var(--accent)); }
