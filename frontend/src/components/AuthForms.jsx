@@ -1,3 +1,4 @@
+import { Icon } from "./Icons";
 import Link from "@/components/Link";
 import { useRouter, useSearchParams } from "@/lib/navigation";
 import { useEffect, useState } from "react";
@@ -53,7 +54,7 @@ function MeetingInvite() {
   return (
     <div className="invite">
       <div className="invite-icon" aria-hidden="true">
-        📹
+        <Icon name="video" size={22} />
       </div>
       <div>
         <b>You&apos;re invited to a meeting</b>
@@ -67,7 +68,7 @@ function MeetingInvite() {
 }
 
 /** Try everything without an account (a fresh guest user; you can create a real account later). */
-export function GuestButton({ label = "👤 Continue as guest", compact = false }) {
+export function GuestButton({ label = "Continue as guest", compact = false }) {
   const finish = useFinish();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -109,7 +110,7 @@ function DevCodes({ codes }) {
   if (!codes || !Object.keys(codes).length) return null;
   return (
     <div className="alert dev">
-      🧪 Test mode — no email / SMS service is connected yet, so your codes are shown here instead of being sent.{" "}
+      Test mode — no email / SMS service is connected yet, so your codes are shown here instead of being sent.{" "}
       {Object.entries(codes).map(([k, v]) => (
         <b key={k} style={{ marginRight: 10 }}>
           {k === "email" ? "Email" : "SMS"}: {v}
@@ -130,8 +131,8 @@ function Verify({ pending, onDone, onBack }) {
   const [busy, setBusy] = useState("");
 
   const channels = [
-    { key: "email", label: "📧 Email", target: state.email, done: state.email_verified },
-    ...(state.phone ? [{ key: "sms", label: "📱 Mobile", target: state.phone, done: state.phone_verified }] : []),
+    { key: "email", label: "Email", target: state.email, done: state.email_verified },
+    ...(state.phone ? [{ key: "sms", label: "Mobile", target: state.phone, done: state.phone_verified }] : []),
   ];
 
   async function verify(channel) {
@@ -166,7 +167,7 @@ function Verify({ pending, onDone, onBack }) {
 
   return (
     <div>
-      <h2 style={{ marginTop: 0 }}>✉️ Verify your account</h2>
+      <h2 style={{ marginTop: 0 }}>Verify your account</h2>
       <p className="muted">Enter the 6-digit codes we sent you.</p>
       <DevCodes codes={state.dev} />
       {channels.map((c) => (
@@ -271,9 +272,9 @@ export function LoginForm() {
       {expired && <div className="alert info" role="status">Your session expired. Sign in again to get back to your data: it's safe.</div>}
       <div className="tabs" role="tablist">
         {[
-          ["password", "🔐 Password"],
-          ["otp", "📲 One-time code"],
-          ["reset", "🔑 Forgot password"],
+          ["password", "Password"],
+          ["otp", "One-time code"],
+          ["reset", "Forgot password"],
         ].map(([k, l]) => (
           <button
             key={k}
@@ -572,7 +573,7 @@ export function SignupForm() {
         <p className="muted small">You&apos;ll confirm your email and mobile with one-time codes next.</p>
       )}
       {err && <div className="alert error">{err}</div>}
-      <GuestButton label="👤 Skip sign-up — continue as guest" />
+      <GuestButton label="Skip sign-up — continue as guest" />
       <p className="muted small" style={{ marginTop: 18 }}>
         Already have an account? <Link href="/login">Sign in</Link>
       </p>

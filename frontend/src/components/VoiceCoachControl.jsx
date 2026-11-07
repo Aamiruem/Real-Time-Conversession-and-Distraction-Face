@@ -1,3 +1,4 @@
+import { Icon } from "./Icons";
 import { useVoiceCoach, voiceCoach } from "@/lib/voiceCoach";
 
 /** What the coach just said, on screen too (noisy rooms, muted speakers, hard of hearing). */
@@ -5,7 +6,7 @@ export function VoiceCaption() {
   const { on, lastText } = useVoiceCoach();
   return (
     <p className="voice-caption" aria-live="polite" hidden={!on || !lastText}>
-      <span aria-hidden="true">🔊</span> {lastText}
+      <Icon name="volume" size={16} /> {lastText}
     </p>
   );
 }
@@ -27,7 +28,7 @@ export function VoiceCoachControl({ greeting = "Hi! I'm your voice coach. I'll g
         }}
         title="Spoken guidance: framing, posture, focus and feedback on your answers"
       >
-        {vc.on ? "🔊 Voice coach on" : "🔇 Voice coach off"}
+        <Icon name={vc.on ? "volume" : "mute"} size={16} /> {vc.on ? "Voice coach on" : "Voice coach off"}
       </button>
       {vc.on && (
         <>

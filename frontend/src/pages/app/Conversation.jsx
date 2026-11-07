@@ -1,3 +1,4 @@
+import { Icon } from "@/components/Icons";
 import { useEffect, useState } from "react";
 import { CameraDock } from "@/components/CameraDock";
 import { ConversationFeedback } from "@/components/ConversationFeedback";
@@ -12,11 +13,11 @@ import { SECTIONS } from "@/lib/sections";
 const fmt = (s) => new Date(s * 1000).toISOString().slice(14, 19);
 
 const MEASURES = [
-  ["🌊", "Fluency", "fillers, pauses, pace and clear words"],
-  ["💬", "Word confidence", "hedging vs. decisive wording"],
-  ["👀", "Focus", "eye contact with the camera"],
-  ["🤝", "Interaction", "questions, “you / we”, acknowledging"],
-  ["🎚️", "Voice modulation", "pitch variety, volume, projection"],
+  ["pulse", "Fluency", "fillers, pauses, pace and clear words"],
+  ["chat", "Word confidence", "hedging vs. decisive wording"],
+  ["eye", "Focus", "eye contact with the camera"],
+  ["users", "Interaction", "questions, “you / we”, acknowledging"],
+  ["volume", "Voice modulation", "pitch variety, volume, projection"],
 ];
 
 export default function ConversationCoach() {
@@ -101,7 +102,6 @@ export default function ConversationCoach() {
               setPromptIdx(0);
             }}
           >
-            <span className="ico">{t.icon}</span>
             {t.label}
           </button>
         ))}
@@ -109,17 +109,17 @@ export default function ConversationCoach() {
 
       <div className="grid split-3-2">
         <div>
-          <div className="card" style={{ marginBottom: 12, borderLeft: "4px solid var(--accent)" }}>
+          <div className="card" style={{ marginBottom: 12 }}>
             <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
               <div className="eyebrow">
-                {current?.icon} {current?.label ?? "Loading…"} · scenario
+                {current?.label ?? "Loading…"} · scenario
               </div>
               <button
                 className="btn ghost sm"
                 disabled={recording || !!custom.trim()}
                 onClick={() => setPromptIdx((i) => i + 1)}
               >
-                🔀 New scenario
+                New scenario
               </button>
             </div>
             <div style={{ fontSize: "1.15rem", marginTop: 6 }}>{prompt}</div>
@@ -135,7 +135,7 @@ export default function ConversationCoach() {
               <span className={`chip ${recording ? "live" : ""}`}>
                 <span className="dot" /> {recording ? `Recording ${fmt(mic.seconds)}` : "Ready"}
               </span>
-              <span className="chip">{useCamera ? "🎥 Camera + 🎙️ mic" : "🎙️ Voice only"}</span>
+              <span className="chip">{useCamera ? "Camera + mic" : "Voice only"}</span>
             </div>
             {useCamera ? (
               <>
@@ -157,7 +157,7 @@ export default function ConversationCoach() {
               </>
             ) : (
               <div className="voice-stage">
-                <div className="voice-orb" style={{ "--lvl": recording ? levelPct(mic.level) / 100 : 0 }}>🎙️</div>
+                <div className="voice-orb" style={{ "--lvl": recording ? levelPct(mic.level) / 100 : 0 }}><Icon name="mic" size={40} /></div>
                 <div className="muted small">{recording ? "Listening…" : "Press Record and allow the microphone"}</div>
               </div>
             )}
@@ -220,7 +220,7 @@ export default function ConversationCoach() {
               <div className="card-title">Live</div>
               <div className="timer">{fmt(mic.seconds)}</div>
               <div className="small" style={{ display: "flex", justifyContent: "space-between" }}>
-                <span>🎙️ Mic level</span>
+                <span>Mic level</span>
                 <b>{mic.level.toFixed(0)} dB</b>
               </div>
               <div className="bar" style={{ margin: "6px 0 12px" }}>
@@ -229,7 +229,7 @@ export default function ConversationCoach() {
               {useCamera && (
                 <>
                   <div className="small" style={{ display: "flex", justifyContent: "space-between" }}>
-                    <span>👀 Eye contact</span>
+                    <span>Eye contact</span>
                     <b>{m.focusPct.toFixed(0)}%</b>
                   </div>
                   <div className="bar" style={{ margin: "6px 0 12px" }}>
@@ -239,12 +239,12 @@ export default function ConversationCoach() {
               )}
               <p className="small" style={{ margin: 0 }}>
                 {useCamera && m.state !== "Focused"
-                  ? "👉 Look at the camera lens while you speak."
+                  ? "Look at the camera lens while you speak."
                   : mic.seconds > 3 && mic.level < -50
-                    ? "🔈 I can barely hear you — speak up or move closer."
+                    ? "I can barely hear you — speak up or move closer."
                     : mic.seconds < 30
-                      ? "✅ Good — keep going, aim for at least 30 seconds."
-                      : "✅ Great length — press Stop & analyse when you're done."}
+                      ? "Good — keep going, aim for at least 30 seconds."
+                      : "Great length — press Stop & analyse when you're done."}
               </p>
             </div>
           ) : (
@@ -253,7 +253,7 @@ export default function ConversationCoach() {
               <div style={{ display: "grid", gap: 10 }}>
                 {MEASURES.map(([icon, label, desc]) => (
                   <div key={label} style={{ display: "flex", gap: 10, alignItems: "baseline" }}>
-                    <span>{icon}</span>
+                    <span><Icon name={icon} size={18} /></span>
                     <span>
                       <b>{label}</b> <span className="small muted">— {desc}</span>
                     </span>
@@ -273,7 +273,7 @@ export default function ConversationCoach() {
           <p className="muted small">
             {result.when
               ? `Your last conversation analysis · ${toDate(result.when).toLocaleString()}`
-              : `✅ Saved as speech session #${result.id} — see your progress in Analytics.`}
+              : `Saved as speech session #${result.id} — see your progress in Analytics.`}
           </p>
           <ConversationFeedback report={result.report} audioUrl={result.audioUrl} />
         </section>

@@ -17,10 +17,10 @@ export function AuthLayout({ children }) {
             conversations — in one place.
           </p>
           <ul>
-            <li>🎥 Live focus %, blink rate, yawns, head pose &amp; gaze — video never leaves your device</li>
-            <li>🗣️ Pronunciation, pace, filler words &amp; confidence coaching</li>
-            <li>🧠 Machine-learning fatigue risk that learns from you</li>
-            <li>💬 Chat rooms with live focus, sentiment &amp; confidence analysis</li>
+            <li>Live focus %, blink rate, yawns, head pose &amp; gaze — video never leaves your device</li>
+            <li>Pronunciation, pace, filler words &amp; confidence coaching</li>
+            <li>Machine-learning fatigue risk that learns from you</li>
+            <li>Chat rooms with live focus, sentiment &amp; confidence analysis</li>
           </ul>
         </section>
         <section className="card" style={{ padding: 28 }}>

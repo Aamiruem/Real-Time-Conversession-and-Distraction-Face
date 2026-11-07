@@ -32,10 +32,9 @@ export function ChartCard({ title, sub, action, children, className = "", icon, 
   );
 }
 
-export function EmptyChart({ icon, text, href, cta }) {
+export function EmptyChart({ text, href, cta }) {
   return (
     <div className="empty-chart">
-      <span>{icon}</span>
       <p>{text}</p>
       {href && (
         <Link href={href} className="btn sm">

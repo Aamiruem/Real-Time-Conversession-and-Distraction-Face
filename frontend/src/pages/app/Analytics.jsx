@@ -80,11 +80,11 @@ export default function Analytics() {
       )}
       <div className="tabs">
         {[
-          ["focus", "🎯 Focus history"],
-          ["speech", "🗣️ Speech progress"],
-          ["live", "⏱️ Live samples"],
-          ["board", "🏆 Leaderboard"],
-          ["nlp", "🧠 Conversation insights"],
+          ["focus", "Focus history"],
+          ["speech", "Speech progress"],
+          ["live", "Live samples"],
+          ["board", "Leaderboard"],
+          ["nlp", "Conversation insights"],
         ].map(([k, l]) => (
           <button key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>
             {l}
@@ -131,7 +131,7 @@ export default function Analytics() {
                     <td>{s.distracted_pct}%</td>
                     <td>{s.drowsy_pct}%</td>
                     <td>{s.total_blinks}</td>
-                    <td>{s.self_fatigue == null ? "—" : ["😀", "😐", "😫"][s.self_fatigue]}</td>
+                    <td>{s.self_fatigue == null ? "—" : ["Fresh", "A bit tired", "Exhausted"][s.self_fatigue]}</td>
                     <td>
                       {s.report_url ? (
                         <a href={s.report_url} target="_blank" rel="noreferrer">
@@ -269,10 +269,10 @@ export default function Analytics() {
                 </div>
                 <div className="card">
                   <p>
-                    <b>📝 AI summary:</b> {ins.summary}
+                    <b>AI summary:</b> {ins.summary}
                   </p>
                   <p style={{ marginTop: 8 }}>
-                    <b>🔑 Top keywords:</b>{" "}
+                    <b>Top keywords:</b>{" "}
                     {ins.top_keywords.map((k) => (
                       <span key={k} className="pill" style={{ marginRight: 6 }}>
                         {k}

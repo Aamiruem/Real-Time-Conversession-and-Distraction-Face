@@ -7,11 +7,11 @@ const clamp = (v) => Math.max(0, Math.min(100, Math.round(v)));
 const band = (v, lo, hi, span) => (v == null ? 60 : v < lo ? 100 - ((lo - v) / span) * 100 : v > hi ? 100 - ((v - hi) / span) * 100 : 100);
 
 export const TRAITS = {
-  confident: { label: "Confident", icon: "💪", text: "steady eye contact, upright posture and a clear voice" },
-  warm: { label: "Warm", icon: "😊", text: "smiles, a lively face and a friendly, varied tone" },
-  energetic: { label: "Energetic", icon: "⚡", text: "gestures, vocal energy and a lively pitch" },
-  composed: { label: "Composed", icon: "🧘", text: "calm hands, a steady head and well-placed pauses" },
-  engaged: { label: "Engaged", icon: "🎯", text: "you stay in frame, look at the camera and keep talking" },
+  confident: { label: "Confident", text: "steady eye contact, upright posture and a clear voice" },
+  warm: { label: "Warm", text: "smiles, a lively face and a friendly, varied tone" },
+  energetic: { label: "Energetic", text: "gestures, vocal energy and a lively pitch" },
+  composed: { label: "Composed", text: "calm hands, a steady head and well-placed pauses" },
+  engaged: { label: "Engaged", text: "you stay in frame, look at the camera and keep talking" },
 };
 
 /**

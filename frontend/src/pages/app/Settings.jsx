@@ -1,3 +1,4 @@
+import { Icon } from "@/components/Icons";
 import { useState } from "react";
 import { PageHead } from "@/components/ui";
 import { api } from "@/lib/api";
@@ -8,8 +9,8 @@ function Section({ icon, title, sub, children, danger }) {
   return (
     <section className={`card settings-card ${danger ? "danger-zone" : ""}`}>
       <header>
-        <span className="nav-ico" style={{ "--c": danger ? "#ef4444" : "#38bdf8" }}>
-          {icon}
+        <span className="nav-ico" style={{ "--c": danger ? "var(--bad)" : "var(--accent)" }}>
+          <Icon name={icon} size={18} />
         </span>
         <div>
           <h3>{title}</h3>
@@ -48,7 +49,7 @@ export default function Settings() {
     <>
       <PageHead eyebrow="Account" title="Account settings" highlight="settings" sub="Your profile, password and data." />
       <div className="settings">
-        <Section icon="👤" title="Profile" sub={`@${user.username} · ${user.email}`}>
+        <Section icon="user" title="Profile" sub={`@${user.username} · ${user.email}`}>
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -69,7 +70,7 @@ export default function Settings() {
           </form>
         </Section>
 
-        <Section icon="🔑" title="Password" sub="At least 8 characters with letters and numbers.">
+        <Section icon="key" title="Password" sub="At least 8 characters with letters and numbers.">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -99,7 +100,7 @@ export default function Settings() {
           </form>
         </Section>
 
-        <Section icon="🗑️" title="Delete account" sub="Permanently removes your account and everything stored about you." danger>
+        <Section icon="trash" title="Delete account" sub="Permanently removes your account and everything stored about you." danger>
           <p className="small">
             This deletes your focus sessions, recordings' results, interview answers, chat messages and the rooms you
             created. It can't be undone.

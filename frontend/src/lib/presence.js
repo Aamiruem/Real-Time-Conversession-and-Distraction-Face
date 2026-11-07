@@ -129,10 +129,10 @@ export function cameraCheck(live, height) {
     !live.faceSize ? "No face" : live.faceSize < 0.16 ? "Move closer" : live.faceSize > 0.45 ? "Move back" : live.offset > 0.1 ? "Centre yourself" : "Good";
   const res = height >= 720 ? `HD ${height}p` : height ? `${height}p — low` : "—";
   return [
-    ["💡", "Lighting", light, light === "Good"],
-    ["🔍", "Sharpness", sharp, sharp !== "Blurry"],
-    ["🖼️", "Framing", frame, frame === "Good"],
-    ["📷", "Resolution", res, height >= 720],
-    ["😊", "Smile", live.smiling ? "Smiling" : "Neutral", true],
+    ["Lighting", light, light === "Good"],
+    ["Sharpness", sharp, sharp !== "Blurry"],
+    ["Framing", frame, frame === "Good"],
+    ["Resolution", res, height >= 720],
+    ["Smile", live.smiling ? "Smiling" : "Neutral", true],
   ];
 }

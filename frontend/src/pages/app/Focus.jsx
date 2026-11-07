@@ -1,9 +1,10 @@
+import { Icon } from "@/components/Icons";
 import { useEffect, useRef, useState } from "react";
 import { CameraDock } from "@/components/CameraDock";
 import { VoiceCaption, VoiceCoachControl } from "@/components/VoiceCoachControl";
 import { Donut, Gauge, Metric, PageHead, RiskCard } from "@/components/ui";
 import { api, toDate } from "@/lib/api";
-import { livePayload, sessionPayload, STATE_COLORS, STATE_EMOJI, THRESHOLDS } from "@/lib/attention";
+import { livePayload, sessionPayload, STATE_COLORS, STATE_ICON, THRESHOLDS } from "@/lib/attention";
 import { useFaceTracker } from "@/lib/useFaceTracker";
 import { focusCue, TiltBaseline, useVoiceCoachLifecycle } from "@/lib/voiceCoach";
 import { CameraPoster } from "@/components/CameraPoster";
@@ -116,9 +117,9 @@ export default function FocusMonitor() {
       />
       {running && m.alarm && (
         <div className="alarm-banner" role="alert">
-          <span>🚨 Drowsiness alarm — look at the camera to stop it</span>
+          <span>Drowsiness alarm — look at the camera to stop it</span>
           <button className="btn ghost sm" style={{ color: "inherit" }} onClick={() => setAlarmOn((a) => !a)}>
-            {alarmOn ? "🔇 Mute" : "🔔 Unmute"}
+            {alarmOn ? "Mute" : "Unmute"}
           </button>
         </div>
       )}
@@ -187,7 +188,7 @@ export default function FocusMonitor() {
         </div>
         <div style={{ display: "grid", gap: 12, alignContent: "start" }}>
           <div className="card state-card" style={{ "--state": STATE_COLORS[state] }}>
-            <span className="emoji">{STATE_EMOJI[state]}</span>
+            <span className="state-ico"><Icon name={STATE_ICON[state]} size={26} /></span>
             <div style={{ flex: 1 }}>
               <div className="name">{state}</div>
               <div className="small muted">Focus score {shown.focusPct.toFixed(0)}%</div>
@@ -257,7 +258,7 @@ export default function FocusMonitor() {
 
       {saved && final && (
         <section style={{ marginTop: 26 }}>
-          <div className="alert ok">✅ Saved as session #{saved.id} — see it in Analytics.</div>
+          <div className="alert ok">Saved as session #{saved.id} — see it in Analytics.</div>
           <div className="grid g3" style={{ alignItems: "start" }}>
             <div className="card" style={{ textAlign: "center" }}>
               <Gauge value={final.focusPct} label="Focus this session" />
@@ -267,7 +268,7 @@ export default function FocusMonitor() {
               <h3>How tired do you actually feel?</h3>
               <p>Your answer becomes a training label for the fatigue model.</p>
               <div className="row" style={{ marginTop: 12 }}>
-                {["😀 Fresh", "😐 A bit tired", "😫 Exhausted"].map((l, i) => (
+                {["Fresh", "A bit tired", "Exhausted"].map((l, i) => (
                   <button
                     key={l}
                     className={`btn sm ${saved.self_fatigue === i ? "" : "ghost"}`}
@@ -287,7 +288,7 @@ export default function FocusMonitor() {
                   setFatigue(null);
                 }}
               >
-                🗑️ Delete this session
+                Delete this session
               </button>
             </div>
           </div>
@@ -295,8 +296,8 @@ export default function FocusMonitor() {
       )}
       {!running && !saved && last && (
         <p className="muted small" style={{ marginTop: 16 }}>
-          Last session · {toDate(last.started_at).toLocaleString()} · {(last.duration_sec / 60).toFixed(1)} min · 🎯{" "}
-          {last.focus_pct.toFixed(0)}% focused · 👀 {last.distracted_pct.toFixed(0)}% distracted · 😴{" "}
+          Last session · {toDate(last.started_at).toLocaleString()} · {(last.duration_sec / 60).toFixed(1)} min · {" "}
+          {last.focus_pct.toFixed(0)}% focused · {last.distracted_pct.toFixed(0)}% distracted · {" "}
           {last.drowsy_pct.toFixed(0)}% drowsy
         </p>
       )}

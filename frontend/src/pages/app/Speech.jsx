@@ -81,7 +81,7 @@ export default function SpeechCoach() {
       />
       <div className="grid split-3-2">
         <div>
-          <div className="card" style={{ marginBottom: 12, borderLeft: "4px solid var(--accent)" }}>
+          <div className="card" style={{ marginBottom: 12 }}>
             <div className="eyebrow">{mode === "free" ? "Talk about" : "Read this aloud, clearly"}</div>
             <div style={{ fontSize: "1.1rem", marginTop: 4 }}>{prompt}</div>
           </div>
@@ -125,10 +125,10 @@ export default function SpeechCoach() {
           <div className="card">
             <div className="tabs" style={{ marginBottom: 12 }}>
               <button className={mode === "free" ? "on" : ""} onClick={() => setMode("free")} disabled={running}>
-                🎤 Free talk
+                Free talk
               </button>
               <button className={mode === "read" ? "on" : ""} onClick={() => setMode("read")} disabled={running}>
-                📖 Read aloud
+                Read aloud
               </button>
             </div>
             {mode === "free" ? (
@@ -137,7 +137,7 @@ export default function SpeechCoach() {
                   className="btn ghost sm"
                   onClick={() => setTopic(TOPICS[(TOPICS.indexOf(topic) + 1) % TOPICS.length])}
                 >
-                  🔀 New topic
+                  New topic
                 </button>
                 <label className="field" style={{ marginTop: 12 }}>
                   <span>…or your own topic</span>
@@ -174,7 +174,7 @@ export default function SpeechCoach() {
               <StateBadge state={m.state} focus={m.focusPct} />
               <div className="card">
                 <div className="small">
-                  🎙️ Mic level {level.toFixed(0)} dB · ⏺️ {seconds.toFixed(0)} s · 👀 eye contact{" "}
+                  Mic level {level.toFixed(0)} dB · {seconds.toFixed(0)} s · eye contact{" "}
                   {m.focusPct.toFixed(0)}%
                 </div>
                 <div className="bar" style={{ marginTop: 8 }}>
@@ -187,10 +187,10 @@ export default function SpeechCoach() {
                 </div>
                 <p className="small" style={{ marginTop: 8 }}>
                   {m.state !== "Focused"
-                    ? "👉 Look at the camera lens while you speak."
+                    ? "Look at the camera lens while you speak."
                     : seconds > 3 && level < -50
-                      ? "🔈 I can barely hear you — speak up."
-                      : "✅ Good — keep going."}
+                      ? "I can barely hear you — speak up."
+                      : "Good — keep going."}
                 </p>
               </div>
             </>
@@ -202,7 +202,7 @@ export default function SpeechCoach() {
           <p className="muted small">
             {result.when
               ? `Your last analysis · ${toDate(result.when).toLocaleString()}`
-              : `✅ Saved as speech session #${result.id} — see your progress in Analytics.`}
+              : `Saved as speech session #${result.id} — see your progress in Analytics.`}
           </p>
           <SpeechResult r={result.report} audioUrl={result.audioUrl} />
         </section>

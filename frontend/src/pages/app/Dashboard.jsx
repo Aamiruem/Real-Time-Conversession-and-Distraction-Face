@@ -29,7 +29,6 @@ import { useAuth } from "@/lib/auth";
 import { SECTIONS } from "@/lib/sections";
 import { Icon } from "@/components/Icons";
 
-const FEATURES = ["/app/routine", "/app/focus", "/app/speech", "/app/conversation", "/app/interview", "/app/meet", "/app/rooms", "/app/vision", "/app/lab"];
 
 // time-of-day advice ("you focus best in the evening") uses the viewer's own clock
 const TZ = -new Date().getTimezoneOffset();
@@ -113,7 +112,7 @@ export default function Dashboard() {
   if (err && !d)
     return (
       <div className="card empty-state">
-        <span aria-hidden="true">📉</span>
+        <span aria-hidden="true"><Icon name="chart" size={40} /></span>
         <h2>Your dashboard didn't load</h2>
         <p className="muted">{err}</p>
         <button className="btn" onClick={() => location.reload()}>
@@ -305,7 +304,7 @@ export default function Dashboard() {
               </ResponsiveContainer>
             </div>
           ) : (
-            <EmptyChart icon="🎥" text="No focus sessions yet." href="/app/focus" cta="Start one" />
+            <EmptyChart text="No focus sessions yet." href="/app/focus" cta="Start one" />
           )}
         </ChartCard>
         <ChartCard icon="pie" color="#0d9488" title="Where your time goes" sub="Average across all focus sessions">
@@ -323,7 +322,7 @@ export default function Dashboard() {
               </div>
             </div>
           ) : (
-            <EmptyChart icon="🍩" text="Your focus / distracted / drowsy split appears here." />
+            <EmptyChart text="Your focus / distracted / drowsy split appears here." />
           )}
         </ChartCard>
         <ChartCard icon="award" color="#7c3aed" title="Speaking skills" sub="Average across your recordings">
@@ -340,7 +339,7 @@ export default function Dashboard() {
               </ResponsiveContainer>
             </div>
           ) : (
-            <EmptyChart icon="🗣️" text="Record a speech to map your skills." href="/app/speech" cta="Speech Coach" />
+            <EmptyChart text="Record a speech to map your skills." href="/app/speech" cta="Speech Coach" />
           )}
         </ChartCard>
       </div>
@@ -362,7 +361,7 @@ export default function Dashboard() {
               </ResponsiveContainer>
             </div>
           ) : (
-            <EmptyChart icon="🎙️" text="Your confidence trend appears after your first recording." href="/app/speech" cta="Record now" />
+            <EmptyChart text="Your confidence trend appears after your first recording." href="/app/speech" cta="Record now" />
           )}
         </ChartCard>
         <ChartCard
@@ -396,13 +395,13 @@ export default function Dashboard() {
               </ResponsiveContainer>
             </div>
           ) : (
-            <EmptyChart icon="💼" text="Answer a mock-interview question to track your readiness." href="/app/interview" cta="Start" />
+            <EmptyChart text="Answer a mock-interview question to track your readiness." href="/app/interview" cta="Start" />
           )}
         </ChartCard>
       </div>
 
-      {/* ---------------------------------------------------------------- recent + explore */}
-      <div className="grid split-2-1 dash-row">
+      {/* ---------------------------------------------------------------- recent */}
+      <div className="dash-row">
         <ChartCard icon="clock" color="#0284c7" title="Recent activity">
           {d.recent.length ? (
             <ul className="feed">
@@ -424,24 +423,8 @@ export default function Dashboard() {
               ))}
             </ul>
           ) : (
-            <EmptyChart icon="📭" text="Nothing yet — your sessions and practice show up here." />
+            <EmptyChart text="Nothing yet — your sessions and practice show up here." />
           )}
-        </ChartCard>
-        <ChartCard icon="compass" color="#4f46e5" title="Explore">
-          <div className="explore">
-            {FEATURES.map((href) => {
-              const f = SECTIONS[href];
-              return (
-                <Link key={href} href={href} style={{ "--c": f.color }}>
-                  <span className="nav-ico">
-                    <Icon name={f.icon} size={17} />
-                  </span>
-                  <b>{f.label}</b>
-                  <small>{f.desc}</small>
-                </Link>
-              );
-            })}
-          </div>
         </ChartCard>
       </div>
     </div>

@@ -116,7 +116,7 @@ export function CameraDock({ running, source, title, metrics = null, roomId = nu
         timeline,
       });
       onSaved?.(saved);
-      setStatus(`✅ Saved (${(saved.size_bytes / 1e6).toFixed(1)} MB) — see "My recordings" in Focus Rooms`);
+      setStatus(`Saved (${(saved.size_bytes / 1e6).toFixed(1)} MB) — see "My recordings" in Focus Rooms`);
     } catch (e) {
       downloadBlob(blob, name);
       setStatus(`Downloaded to this device instead (${e.message})`);

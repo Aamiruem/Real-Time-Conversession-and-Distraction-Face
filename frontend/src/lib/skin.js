@@ -216,12 +216,12 @@ export const DAILY_ROUTINE = [
 ];
 
 export const LIFESTYLE = [
-  ["💧", "Water", "6–8 glasses a day; more in heat or after exercise."],
-  ["😴", "Sleep", "7–9 hours — skin repairs overnight; dark circles and dullness follow short sleep."],
-  ["🥗", "Food", "Vegetables, fruit, nuts, fish/flaxseed (omega-3); less sugar and fried food."],
-  ["☀️", "Sun", "Daily sunscreen and shade at midday — the main cause of early ageing and uneven tone."],
-  ["🚭", "Smoking", "Smoking speeds up wrinkles and dull skin; quitting helps within months."],
-  ["🧘", "Stress", "Stress can trigger breakouts and flare-ups — breathing and yoga below help."],
+  ["Water", "6–8 glasses a day; more in heat or after exercise."],
+  ["Sleep", "7–9 hours — skin repairs overnight; dark circles and dullness follow short sleep."],
+  ["Food", "Vegetables, fruit, nuts, fish/flaxseed (omega-3); less sugar and fried food."],
+  ["Sun", "Daily sunscreen and shade at midday — the main cause of early ageing and uneven tone."],
+  ["Smoking", "Smoking speeds up wrinkles and dull skin; quitting helps within months."],
+  ["Stress", "Stress can trigger breakouts and flare-ups — breathing and yoga below help."],
 ];
 
 export const EXERCISE = [

@@ -79,7 +79,7 @@ function VisionLab() {
             <div className="alert error">No face found — try a well-lit, front-facing photo.</div>
           ) : (
             <div style={{ display: "grid", gap: 12 }}>
-              <h3 style={{ margin: 0 }}>{closed ? "😴 Eyes closed" : away ? "👀 Looking away" : "🎯 Attentive"}</h3>
+              <h3 style={{ margin: 0 }}>{closed ? "Eyes closed" : away ? "Looking away" : "Attentive"}</h3>
               <div className="grid g2">
                 <Metric v={m.ear.toFixed(3)} l={`Eye ratio (closed < ${t.earClosed})`} />
                 <Metric v={m.mar.toFixed(2)} l={`Mouth ratio (yawn > ${t.marYawn})`} />
@@ -130,11 +130,11 @@ function NlpLab() {
         <div style={{ display: "grid", gap: 14, marginTop: 16 }}>
           <div className="grid g4">
             <Metric
-              v={`${{ positive: "😊", negative: "😟", neutral: "😐" }[r.sentiment_label]} ${r.sentiment_label}`}
+              v={r.sentiment_label}
               l={`Sentiment (${r.sentiment_score.toFixed(2)})`}
             />
             <Metric v={`${r.confidence.toFixed(0)}%`} l="Wording confidence" />
-            <Metric v={r.is_toxic ? "⚠️ yes" : "✅ no"} l="Toxic language" />
+            <Metric v={r.is_toxic ? "yes" : "no"} l="Toxic language" />
             <Metric v={`${r.words} / ${r.sentences}`} l="Words / sentences" />
           </div>
           <div className="grid g2">
@@ -160,7 +160,7 @@ function NlpLab() {
             </div>
             <div className="card" style={{ display: "grid", gap: 8 }}>
               <p>
-                <b>🔑 Keywords:</b>{" "}
+                <b>Keywords:</b>{" "}
                 {r.keywords.map((k) => (
                   <span key={k} className="pill" style={{ marginRight: 4 }}>
                     {k}
@@ -168,18 +168,18 @@ function NlpLab() {
                 ))}
               </p>
               <p>
-                <b>🫣 Hedges:</b> {r.hedges.join(", ") || "none"}
+                <b>Hedges:</b> {r.hedges.join(", ") || "none"}
               </p>
               <p>
-                <b>💪 Assertive:</b> {r.assertive.join(", ") || "none"}
+                <b>Assertive:</b> {r.assertive.join(", ") || "none"}
               </p>
               {r.toxic_words.length > 0 && (
                 <p>
-                  <b>⚠️ Flagged:</b> {r.toxic_words.join(", ")}
+                  <b>Flagged:</b> {r.toxic_words.join(", ")}
                 </p>
               )}
               <p>
-                <b>📝 Summary:</b> {r.summary}
+                <b>Summary:</b> {r.summary}
               </p>
             </div>
           </div>
@@ -336,7 +336,7 @@ function MlLab() {
         </div>
       </div>
       <div className="card">
-        <h3>🎛️ Try a prediction</h3>
+        <h3>Try a prediction</h3>
         <div className="grid g3">
           {SLIDERS.map(([k, label, min, max, step]) => (
             <label key={k} className="field">
@@ -416,11 +416,11 @@ export default function Lab() {
       />
       <div className="tabs">
         {[
-          ["cv", "🎥 Computer vision"],
-          ["nlp", "💬 NLP"],
-          ["speech", "🗣️ Speech AI"],
-          ["ml", "🧠 Machine learning"],
-          ["arch", "🏗️ Architecture"],
+          ["cv", "Computer vision"],
+          ["nlp", "NLP"],
+          ["speech", "Speech AI"],
+          ["ml", "Machine learning"],
+          ["arch", "Architecture"],
         ].map(([k, l]) => (
           <button key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>
             {l}

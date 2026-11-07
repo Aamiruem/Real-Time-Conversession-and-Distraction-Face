@@ -1,7 +1,8 @@
+import { Icon } from "./Icons";
 import { PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer } from "recharts";
 import { Gauge, SpeechResult } from "./ui";
 
-const ICONS = { fluency: "🌊", word_confidence: "💬", focus: "👀", interaction: "🤝", voice_modulation: "🎚️" };
+const ICONS = { fluency: "pulse", word_confidence: "chat", focus: "eye", interaction: "users", voice_modulation: "volume" };
 // radar axis labels have little room, so they use one word each
 const SHORT = {
   fluency: "Fluency",
@@ -23,7 +24,7 @@ function AreaCard({ a, typeLabel }) {
     <article className="card area" style={{ "--area": st.color }}>
       <header className="area-head">
         <span>
-          {ICONS[a.key]} <b>{a.label}</b>
+          <Icon name={ICONS[a.key]} size={16} /> <b>{a.label}</b>
         </span>
         <span className="status-chip">{a.status}</span>
       </header>
@@ -36,7 +37,7 @@ function AreaCard({ a, typeLabel }) {
       </div>
       <div className="split-legend">
         <span>✓ {a.score.toFixed(0)}% strong</span>
-        <span>⚠ {a.needs_improvement.toFixed(0)}% needs improvement</span>
+        <span>{a.needs_improvement.toFixed(0)}% needs improvement</span>
       </div>
       <ul className="evidence">
         {a.evidence.map((e) => (
@@ -49,7 +50,7 @@ function AreaCard({ a, typeLabel }) {
           <li key={s}>{s}</li>
         ))}
       </ol>
-      {a.drill && <div className="drill">🏋️ {a.drill}</div>}
+      {a.drill && <div className="drill">{a.drill}</div>}
       <footer className="small muted">
         Counts {a.weight}% of your score for {typeLabel.toLowerCase()}
       </footer>
@@ -78,13 +79,13 @@ export function ConversationFeedback({ report, audioUrl }) {
           <div className="row" style={{ flexWrap: "wrap" }}>
             <div className="metric">
               <div className="v">
-                {ICONS[best.key]} {best.score.toFixed(0)}%
+                <Icon name={ICONS[best.key]} size={16} /> {best.score.toFixed(0)}%
               </div>
               <div className="l">Strongest · {best.label}</div>
             </div>
             <div className="metric">
               <div className="v" style={{ color: "#eab308" }}>
-                {ICONS[worst.key]} {worst.needs_improvement.toFixed(0)}%
+                <Icon name={ICONS[worst.key]} size={16} /> {worst.needs_improvement.toFixed(0)}%
               </div>
               <div className="l">To improve · {worst.label}</div>
             </div>
@@ -113,11 +114,11 @@ export function ConversationFeedback({ report, audioUrl }) {
 
       <div className="grid g2">
         <div className="card">
-          <h3>📝 What you said</h3>
+          <h3>What you said</h3>
           <p style={{ lineHeight: 1.8 }}>{report.transcript}</p>
         </div>
         <div className="card">
-          <h3>✨ Say it like this</h3>
+          <h3>Say it like this</h3>
           <p style={{ lineHeight: 1.8, color: "var(--text)" }}>{report.improved || "—"}</p>
           <p className="small" style={{ marginTop: 8 }}>
             Your own words without fillers and hedges — read it aloud, pause at each full stop.

@@ -9,13 +9,13 @@
 // Models take turns (one or two per frame) so the camera stays smooth with everything on.
 
 export const MODELS = [
-  { id: "objects", label: "Object detection", icon: "📦", color: "#38bdf8" },
-  { id: "refine", label: "Fine names (1,000 types)", icon: "🔎", color: "#f59e0b" },
-  { id: "scene", label: "Scene recognition", icon: "🖼️", color: "#a78bfa" },
-  { id: "hands", label: "Hands + gestures", icon: "✋", color: "#f472b6" },
-  { id: "pose", label: "Body pose", icon: "🧍", color: "#4ade80" },
-  { id: "face", label: "Face mesh + expressions", icon: "🙂", color: "#2dd4bf" },
-  { id: "segment", label: "Person segmentation", icon: "✂️", color: "#818cf8" },
+  { id: "objects", label: "Object detection", color: "#38bdf8" },
+  { id: "refine", label: "Fine names (1,000 types)", color: "#f59e0b" },
+  { id: "scene", label: "Scene recognition", color: "#a78bfa" },
+  { id: "hands", label: "Hands + gestures", color: "#f472b6" },
+  { id: "pose", label: "Body pose", color: "#4ade80" },
+  { id: "face", label: "Face mesh + expressions", color: "#2dd4bf" },
+  { id: "segment", label: "Person segmentation", color: "#818cf8" },
 ];
 
 export const GESTURES = {

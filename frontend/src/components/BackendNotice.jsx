@@ -1,3 +1,4 @@
+import { Icon } from "./Icons";
 import { useState } from "react";
 import { checkBackend, REQUIRED_API_VERSION, useBackendStatus } from "@/lib/backend";
 
@@ -7,7 +8,7 @@ const COMMAND = `powershell -ExecutionPolicy Bypass -File "${ROOT ? `${ROOT}\\` 
 
 const COPY = {
   outdated: {
-    icon: "🔄",
+    icon: "refresh",
     tone: "warn",
     title: "Your backend is running an older version",
     text: (v) =>
@@ -16,14 +17,14 @@ const COPY = {
     note: "Until then the dashboard is built from the data the old backend can still provide.",
   },
   offline: {
-    icon: "🔌",
+    icon: "plug",
     tone: "bad",
     title: "Can't reach the backend",
     text: () => "The FastAPI server isn't answering on port 8010. Start it from the project folder:",
     note: "Pages that need data will fill in automatically as soon as it is running.",
   },
   database: {
-    icon: "🗄️",
+    icon: "database",
     tone: "bad",
     title: "The backend can't reach its database",
     text: () =>
@@ -33,7 +34,7 @@ const COPY = {
     note: "This clears by itself as soon as the database answers again.",
   },
   setup: {
-    icon: "🛠️",
+    icon: "wrench",
     tone: "bad",
     title: "The server needs a setting before it can open",
     text: (_, problems) => problems.join(" · ") || "The hosted API reports a setup problem.",
@@ -45,7 +46,7 @@ const COPY = {
 // On the public site visitors can't start a backend: plain words instead of developer commands
 const HOSTED_COPY = {
   offline: {
-    icon: "⏳",
+    icon: "timer",
     tone: "warn",
     title: "The server is starting up",
     text: () => "It can take up to a minute after a quiet period. This page connects by itself — no need to refresh.",
@@ -53,7 +54,7 @@ const HOSTED_COPY = {
     note: "",
   },
   outdated: {
-    icon: "🔄",
+    icon: "refresh",
     tone: "warn",
     title: "An update is being installed",
     text: () => "The site is switching to its newest version. This page continues by itself in a moment.",
@@ -61,7 +62,7 @@ const HOSTED_COPY = {
     note: "",
   },
   database: {
-    icon: "🗄️",
+    icon: "database",
     tone: "bad",
     title: "The database isn't answering right now",
     text: () => "Your data is safe. This page reconnects by itself as soon as the database is back.",
@@ -103,7 +104,7 @@ export function BackendNotice() {
   return (
     <section className={`notice notice-${c.tone}`} role="status" aria-live="polite">
       <div className="notice-icon" aria-hidden="true">
-        {c.icon}
+        <Icon name={c.icon} size={24} />
       </div>
       <div className="notice-body">
         <h2>{c.title}</h2>

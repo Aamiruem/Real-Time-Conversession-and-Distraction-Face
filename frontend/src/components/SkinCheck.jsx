@@ -34,10 +34,10 @@ function AdviceCard({ a, level }) {
       </div>
       {a.habits?.map((t) => (
         <p key={t} className="small muted">
-          💡 {t}
+          {t}
         </p>
       ))}
-      {a.doctor && <p className="skin-doctor small">🩺 {a.doctor}</p>}
+      {a.doctor && <p className="skin-doctor small">{a.doctor}</p>}
     </article>
   );
 }
@@ -177,7 +177,7 @@ export function SkinCheck({ running, faceOn, getFrame, onZones }) {
               </div>
             </>
           ) : (
-            <p className="skin-good">✨ Nothing stands out on camera. Keep the basics: cleanse, moisturise, sunscreen, sleep and water.</p>
+            <p className="skin-good">Nothing stands out on camera. Keep the basics: cleanse, moisturise, sunscreen, sleep and water.</p>
           )}
         </>
       )}
@@ -187,7 +187,7 @@ export function SkinCheck({ running, faceOn, getFrame, onZones }) {
 
       <div className="skin-more">
         <details>
-          <summary>🧴 Daily skincare routine</summary>
+          <summary>Daily skincare routine</summary>
           <dl className="skin-dl">
             {DAILY_ROUTINE.map(([k, v]) => (
               <div key={k}>
@@ -199,12 +199,12 @@ export function SkinCheck({ running, faceOn, getFrame, onZones }) {
           <p className="small muted">Try one new product at a time, and patch-test it on your inner arm for 2 days first.</p>
         </details>
         <details>
-          <summary>🥗 Whole body: water, sleep, food, sun</summary>
+          <summary>Whole body: water, sleep, food, sun</summary>
           <dl className="skin-dl">
-            {LIFESTYLE.map(([icon, k, v]) => (
+            {LIFESTYLE.map(([k, v]) => (
               <div key={k}>
                 <dt>
-                  {icon} {k}
+                  {k}
                 </dt>
                 <dd>{v}</dd>
               </div>
@@ -212,7 +212,7 @@ export function SkinCheck({ running, faceOn, getFrame, onZones }) {
           </dl>
         </details>
         <details>
-          <summary>🏃 Exercise &amp; 🧘 yoga</summary>
+          <summary>Exercise &amp; yoga</summary>
           <dl className="skin-dl">
             {[...EXERCISE, ...YOGA].map(([k, dose, why]) => (
               <div key={k}>
@@ -226,7 +226,7 @@ export function SkinCheck({ running, faceOn, getFrame, onZones }) {
           <p className="small muted">Stop any pose that hurts. With a medical condition, injury or pregnancy, ask your doctor first.</p>
         </details>
         <details open={findings.some((t) => t.level === "high")}>
-          <summary>🩺 When to see a doctor — always</summary>
+          <summary>When to see a doctor — always</summary>
           <ul className="skin-flags">
             {SEE_A_DOCTOR.map((t) => (
               <li key={t}>{t}</li>

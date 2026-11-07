@@ -1,3 +1,4 @@
+import { Icon } from "@/components/Icons";
 import Link from "@/components/Link";
 import { useParams } from "react-router";
 import { SiteFooter, SiteHeader } from "@/components/SiteChrome";
@@ -78,7 +79,7 @@ export default function FeaturePage() {
             <div className="grid g2">
               {others.map((o) => (
                 <Link key={o.slug} href={`/features/${o.slug}`} className="card feature-card">
-                  <div className="ic">{o.icon}</div>
+                  <div className="ic"><Icon name={TOPICS[o.slug].icon} size={24} /></div>
                   <h3>{o.metaTitle.split(" – ")[0]}</h3>
                   <p>{o.summary}</p>
                 </Link>

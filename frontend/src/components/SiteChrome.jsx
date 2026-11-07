@@ -347,7 +347,7 @@ export function AppFooter() {
           </a>
         </span>
         <span className="af-meta">
-          <span>🔒 Video never leaves your device</span>
+          <span><Icon name="lock" size={14} /> Video never leaves your device</span>
           <button type="button" className="to-top" onClick={toTop} aria-label="Back to top">
             ↑ Top
           </button>

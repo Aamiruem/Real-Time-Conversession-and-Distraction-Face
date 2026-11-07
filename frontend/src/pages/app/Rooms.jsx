@@ -1,14 +1,14 @@
+import { Icon } from "@/components/Icons";
 import { useEffect, useRef, useState } from "react";
 import { Gauge, PageHead } from "@/components/ui";
 import { api, apiBlob, getToken, toDate, wsBase } from "@/lib/api";
-import { livePayload, STATE_COLORS, STATE_EMOJI } from "@/lib/attention";
+import { livePayload, STATE_COLORS } from "@/lib/attention";
 import { useAuth } from "@/lib/auth";
 import { CAMERA_QUALITY, useFaceTracker } from "@/lib/useFaceTracker";
 import { CameraDock } from "@/components/CameraDock";
 import { CameraPoster } from "@/components/CameraPoster";
 import { SECTIONS } from "@/lib/sections";
 
-const SENTIMENT = { positive: "😊", negative: "😟", neutral: "😐" };
 const QUALITY_LABELS = Object.fromEntries(Object.entries(CAMERA_QUALITY).map(([k, q]) => [k, q.label]));
 // backend "saved_to" values, as shown to the user
 const STORED_IN = { sqlite: "SQL", postgresql: "SQL", "postgresql (aws-rds)": "AWS RDS", mongodb: "MongoDB", s3: "S3", disk: "disk" };
@@ -189,7 +189,7 @@ export default function Rooms() {
         <div className="rooms-col">
           <section className="card room-card">
             <header className="panel-head">
-              <b>🏠 Rooms</b>
+              <b>Rooms</b>
               <span className="pill">{rooms.length}</span>
             </header>
             <ul className="room-list">
@@ -209,7 +209,7 @@ export default function Rooms() {
               {!rooms.length && <li className="muted small">No rooms yet — create the first one.</li>}
             </ul>
             <details className="new-room" open={!rooms.length}>
-              <summary>➕ New room</summary>
+              <summary>New room</summary>
               <form onSubmit={createRoom}>
                 <input
                   placeholder="Room name"
@@ -230,7 +230,7 @@ export default function Rooms() {
 
           <section className="card cam-card">
             <header className="panel-head">
-              <b>📷 My camera</b>
+              <b>My camera</b>
               <span className={`pill ${cam.status === "running" ? "ok" : ""}`}>
                 {cam.status === "running" ? "Sharing focus" : cam.status === "loading" ? "Starting…" : "Off"}
               </span>
@@ -259,7 +259,7 @@ export default function Rooms() {
                 roomId={roomId}
                 onSaved={(saved) => {
                   const where = saved.saved_to?.map((w) => STORED_IN[w] ?? w).join(" + ");
-                  setRecStatus(`✅ Saved (${(saved.size_bytes / 1e6).toFixed(1)} MB)${where ? ` to ${where}` : ""}`);
+                  setRecStatus(`Saved (${(saved.size_bytes / 1e6).toFixed(1)} MB)${where ? ` to ${where}` : ""}`);
                   loadRecordings();
                 }}
               />
@@ -274,7 +274,7 @@ export default function Rooms() {
                 </div>
               ) : (
                 <button className="btn sm block" onClick={cam.start} disabled={cam.status === "loading"}>
-                  📷 Share my live focus
+                  Share my live focus
                 </button>
               )}
               {recStatus && <p className="small muted cam-status">{recStatus}</p>}
@@ -287,7 +287,7 @@ export default function Rooms() {
         <section className="card chat-card">
           <header className="panel-head">
             <div>
-              <b>💬 {room?.name ?? "Conversation"}</b>
+              <b>{room?.name ?? "Conversation"}</b>
               <div className="small muted">
                 {people.length} online · {messages.length} message{messages.length === 1 ? "" : "s"}
               </div>
@@ -313,11 +313,11 @@ export default function Rooms() {
                     <div className="meta">
                       {!mine && <b>{msg.username}</b>}
                       <span>{toDate(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
-                      <span title={`Sentiment: ${msg.sentiment_label}`}>{SENTIMENT[msg.sentiment_label]}</span>
-                      {msg.sender_focus != null && <span className="focus-tag">🎯 {msg.sender_focus.toFixed(0)}%</span>}
+                      <span>{msg.sentiment_label}</span>
+                      {msg.sender_focus != null && <span className="focus-tag">{msg.sender_focus.toFixed(0)}%</span>}
                     </div>
                     <div className="msg-text">{msg.content}</div>
-                    {msg.is_toxic && <div className="small flag">⚠️ flagged as possibly offensive</div>}
+                    {msg.is_toxic && <div className="small flag">flagged as possibly offensive</div>}
                     {msg.keywords.length > 0 && (
                       <div className="tags">
                         {msg.keywords.map((k) => (
@@ -329,14 +329,14 @@ export default function Rooms() {
                 </div>
               );
             })}
-            {!messages.length && <p className="muted chat-empty">No messages yet — say hello 👋</p>}
+            {!messages.length && <p className="muted chat-empty">No messages yet — say hello </p>}
             <div ref={chatEnd} />
           </div>
-          <p className="small muted chat-typing">{typers.length ? `✍️ ${typers.join(", ")} typing…` : ""}</p>
+          <p className="small muted chat-typing">{typers.length ? `${typers.join(", ")} typing…` : ""}</p>
           <form className="composer" onSubmit={send}>
             <input value={text} onChange={(e) => onType(e.target.value)} placeholder="Type a message…" maxLength={2000} />
             <button className="btn" disabled={!roomId || !text.trim()}>
-              Send ➤
+              Send
             </button>
           </form>
         </section>
@@ -345,7 +345,7 @@ export default function Rooms() {
         <div className="rooms-col">
           <section className="card">
             <header className="panel-head">
-              <b>👥 Online</b>
+              <b>Online</b>
               <span className="pill">{people.length}</span>
             </header>
             {focusVals.length > 0 && (
@@ -362,7 +362,7 @@ export default function Rooms() {
                   </span>
                   <span className="person">
                     <span>
-                      {p.username} <small>{STATE_EMOJI[p.state] ?? ""} {p.state ?? ""}</small>
+                      {p.username} <small>{p.state ?? ""}</small>
                     </span>
                     <span className="r-bar">
                       <i style={{ width: `${p.focus_pct ?? 0}%`, background: STATE_COLORS[p.state] ?? "var(--line-strong)" }} />
@@ -377,7 +377,7 @@ export default function Rooms() {
 
           <section className="card">
             <header className="panel-head">
-              <b>🎬 My recordings</b>
+              <b>My recordings</b>
               <span className="pill">{recordings.length}</span>
             </header>
             {storage && (
@@ -407,13 +407,13 @@ export default function Rooms() {
                     ⬇
                   </button>
                   <button className="btn ghost sm" onClick={() => deleteRec(rec)} title="Delete">
-                    🗑
+                    <Icon name="trash" size={16} />
                   </button>
                 </div>
                 {playing?.id === rec.id && <video className="rec-player" src={playing.url} controls autoPlay playsInline />}
               </div>
             ))}
-            {!recordings.length && <p className="muted small">No recordings yet — start the camera and press 🔴 Record.</p>}
+            {!recordings.length && <p className="muted small">No recordings yet — start the camera and press Record.</p>}
           </section>
         </div>
       </div>

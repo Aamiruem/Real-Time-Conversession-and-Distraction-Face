@@ -1,11 +1,10 @@
-import { STATE_COLORS, STATE_EMOJI } from "@/lib/attention";
+import { STATE_COLORS, STATE_ICON } from "@/lib/attention";
 import { Icon } from "./Icons";
 
-export function PageHead({ eyebrow, title, highlight, sub }) {
+export function PageHead({ title, highlight, sub }) {
   const parts = highlight ? title.split(highlight) : [title];
   return (
     <header className="page-head">
-      <div className="eyebrow">{eyebrow}</div>
       <h1>
         {parts[0]}
         {highlight && <span className="grad">{highlight}</span>}
@@ -81,8 +80,8 @@ export function Donut({ segments, size = 150, label, center, caption }) {
       <text x="70" y="72" textAnchor="middle" fill="var(--text)" fontSize="24" fontWeight="800">
         {center ?? `${(segments[0]?.[1] ?? 0).toFixed(1)}%`}
       </text>
-      <text x="70" y="92" textAnchor="middle" fill="var(--muted)" fontSize="10" letterSpacing="1.5">
-        {(caption ?? segments[0]?.[0] ?? "").toUpperCase()}
+      <text x="70" y="92" textAnchor="middle" fill="var(--muted)" fontSize="10">
+        {caption ?? segments[0]?.[0] ?? ""}
       </text>
     </svg>
   );
@@ -91,7 +90,7 @@ export function Donut({ segments, size = 150, label, center, caption }) {
 export function StateBadge({ state, focus }) {
   return (
     <div className="badge" style={{ background: STATE_COLORS[state] ?? "#334155" }}>
-      {STATE_EMOJI[state]} {state}
+      <Icon name={STATE_ICON[state]} size={16} /> {state}
       <div style={{ fontSize: ".8rem", fontWeight: 400 }}>Focus score {focus.toFixed(0)}%</div>
     </div>
   );
@@ -217,11 +216,11 @@ export function SpeechResult({ r, audioUrl }) {
       {r.reading && <Metric v={`${r.reading.accuracy.toFixed(0)}%`} l="Reading accuracy" />}
       {r.strengths.length > 0 && (
         <div className="alert ok">
-          💪 <b>Strengths:</b> {r.strengths.join(" · ")}
+          <b>Strengths:</b> {r.strengths.join(" · ")}
         </div>
       )}
       <div className="card">
-        <h3>🧭 How to sound more confident</h3>
+        <h3>How to sound more confident</h3>
         <ol style={{ paddingLeft: 20, margin: 0 }}>
           {r.tips.map((t) => (
             <li key={t.title} style={{ marginBottom: 8 }}>
@@ -232,7 +231,7 @@ export function SpeechResult({ r, audioUrl }) {
       </div>
       <div className="grid g2">
         <div className="card">
-          <h3>📝 What you said</h3>
+          <h3>What you said</h3>
           <div className="transcript">
             {r.words.map((w, i) => (
               <span
@@ -245,11 +244,11 @@ export function SpeechResult({ r, audioUrl }) {
             ))}
           </div>
           <p className="small muted" style={{ marginTop: 6 }}>
-            🟧 filler word · 〰️ unclear pronunciation (hover a word for its clarity)
+            Highlighted: filler word · Wavy underline: unclear pronunciation (hover a word for its clarity)
           </p>
         </div>
         <div className="card">
-          <h3>✨ Say it like this</h3>
+          <h3>Say it like this</h3>
           <div className="alert info" style={{ fontSize: "1rem" }}>
             {r.improved || "—"}
           </div>
@@ -261,7 +260,7 @@ export function SpeechResult({ r, audioUrl }) {
       </div>
       {r.reading && r.reading.misread.length > 0 && (
         <div className="card">
-          <h3>🔤 Pronunciation practice</h3>
+          <h3>Pronunciation practice</h3>
           <table className="t">
             <thead>
               <tr>

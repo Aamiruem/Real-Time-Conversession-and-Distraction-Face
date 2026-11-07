@@ -26,9 +26,9 @@ const TARGET_SECONDS = 60;
 const HISTORY_KEY = "presence.studio.history";
 const clock = (s) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 const AREAS = [
-  ["face", "Face & eye contact", "🙂"],
-  ["body", "Body language", "🧍"],
-  ["voice", "Voice & delivery", "🎙️"],
+  ["face", "Face & eye contact", "eye"],
+  ["body", "Body language", "user"],
+  ["voice", "Voice & delivery", "mic"],
 ];
 
 function readHistory() {
@@ -189,7 +189,7 @@ export default function Presence() {
           {analysing && (
             <div className="ps-live" aria-live="polite">
               <span><b>{Math.round(m.focusPct)}%</b> eye contact</span>
-              <span><b>{live?.smiling ? "😊" : "😐"}</b> {live?.smiling ? "smiling" : "neutral"}</span>
+              <span>{live?.smiling ? "Smiling" : "Neutral"}</span>
               <span><b>{bodyLive?.posture ?? "—"}</b> posture</span>
               <span className="ps-level" title="Your voice level"><i style={{ width: `${levelPct}%` }} /></span>
             </div>
@@ -227,7 +227,7 @@ export default function Presence() {
                 <li>Talk to the camera for about a minute, as if to a person.</li>
                 <li>Press <b>Stop &amp; analyse</b> — you get scores for your face, body and voice, your personality impression and what to improve first.</li>
               </ol>
-              <p className="small muted">🔒 The analysis runs on your device. Your video and voice are saved only to your own account, and you can delete them any time.</p>
+              <p className="small muted">The analysis runs on your device. Your video and voice are saved only to your own account, and you can delete them any time.</p>
             </div>
           )}
           {history.length > 0 && (
@@ -262,7 +262,7 @@ function Report({ report: r, onAgain }) {
           <h2>{r.impression}</h2>
           <div className="ps-tags">
             {r.topTraits.map((k) => (
-              <span key={k} className="ps-pill">{TRAITS[k].icon} {TRAITS[k].label}</span>
+              <span key={k} className="ps-pill">{TRAITS[k].label}</span>
             ))}
           </div>
         </div>
@@ -271,7 +271,7 @@ function Report({ report: r, onAgain }) {
       <div className="ps-areas">
         {AREAS.map(([k, label, icon]) => (
           <div key={k} className="card ps-area">
-            <span className="ps-area-ico" aria-hidden="true">{icon}</span>
+            <span className="ps-area-ico" aria-hidden="true"><Icon name={icon} size={20} /></span>
             <b>{r.areas[k]}</b>
             <small>{label}</small>
           </div>
@@ -282,7 +282,7 @@ function Report({ report: r, onAgain }) {
         <h3>Personality impression</h3>
         {Object.entries(r.traits).map(([k, v]) => (
           <div key={k} className="ps-trait">
-            <span>{TRAITS[k].icon} {TRAITS[k].label}</span>
+            <span>{TRAITS[k].label}</span>
             <span className="ps-bar"><i style={{ width: `${v}%` }} /></span>
             <b>{v}</b>
           </div>

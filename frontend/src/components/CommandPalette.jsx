@@ -1,22 +1,23 @@
+import { Icon } from "./Icons";
 import { useRouter } from "@/lib/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 // Every page and the most useful actions, searchable from anywhere with Ctrl/⌘+K.
 const COMMANDS = [
-  ["🏠", "Dashboard", "/app", "home overview stats goals"],
-  ["🎥", "Start a focus session", "/app/focus", "focus monitor camera attention drowsy"],
-  ["🗣️", "Speech Coach", "/app/speech", "speech confidence pronunciation record"],
-  ["🗨️", "Conversation Coach", "/app/conversation", "conversation fluency tone interaction modulation"],
-  ["💼", "Mock interview", "/app/interview", "interview practice record answer"],
-  ["📘", "Interview prep guide", "/app/interview?tab=guide", "dress posture eye contact first impression how to get interview"],
-  ["❓", "Interview question bank", "/app/interview?tab=bank", "questions star answers"],
-  ["📖", "Vocabulary & voice tips", "/app/interview?tab=vocab", "words swaps power verbs tone"],
-  ["💬", "Focus Rooms", "/app/rooms", "chat room messages"],
-  ["📊", "Analytics", "/app/analytics", "history leaderboard progress"],
-  ["🧪", "AI Lab", "/app/lab", "nlp ml model computer vision"],
-  ["🕒", "Daily routine", "/app/routine", "schedule day plan namaz prayer salah sleep gym yoga coding reading timetable"],
-  ["⚙️", "Account settings", "/app/settings", "profile name password delete account"],
-  ["🌐", "Website home", "/", "landing seo features"],
+  ["dashboard", "Dashboard", "/app", "home overview stats goals"],
+  ["focus", "Start a focus session", "/app/focus", "focus monitor camera attention drowsy"],
+  ["mic", "Speech Coach", "/app/speech", "speech confidence pronunciation record"],
+  ["chat", "Conversation Coach", "/app/conversation", "conversation fluency tone interaction modulation"],
+  ["briefcase", "Mock interview", "/app/interview", "interview practice record answer"],
+  ["book", "Interview prep guide", "/app/interview?tab=guide", "dress posture eye contact first impression how to get interview"],
+  ["help", "Interview question bank", "/app/interview?tab=bank", "questions star answers"],
+  ["book", "Vocabulary & voice tips", "/app/interview?tab=vocab", "words swaps power verbs tone"],
+  ["users", "Focus Rooms", "/app/rooms", "chat room messages"],
+  ["chart", "Analytics", "/app/analytics", "history leaderboard progress"],
+  ["flask", "AI Lab", "/app/lab", "nlp ml model computer vision"],
+  ["clock", "Daily routine", "/app/routine", "schedule day plan namaz prayer salah sleep gym yoga coding reading timetable"],
+  ["settings", "Account settings", "/app/settings", "profile name password delete account"],
+  ["globe", "Website home", "/", "landing seo features"],
 ];
 
 export function CommandPalette({ open, onClose, onLogout }) {
@@ -26,8 +27,8 @@ export function CommandPalette({ open, onClose, onLogout }) {
   const input = useRef(null);
 
   const items = useMemo(() => {
-    const all = [["✨", "Ask the AI coach", "coach", "assistant help question advice recommend"], ...COMMANDS,
-      ["🚪", "Log out", "logout", "sign out exit"]];
+    const all = [["sparkles", "Ask the AI coach", "coach", "assistant help question advice recommend"], ...COMMANDS,
+      ["logout", "Log out", "logout", "sign out exit"]];
     const words = q.toLowerCase().split(/\s+/).filter(Boolean);
     return all.filter(([, label, , kw]) => words.every((w) => `${label} ${kw}`.toLowerCase().includes(w)));
   }, [q]);
@@ -73,7 +74,7 @@ export function CommandPalette({ open, onClose, onLogout }) {
           {items.map((it, n) => (
             <li key={it[1]}>
               <button className={n === i ? "on" : ""} onMouseEnter={() => setI(n)} onClick={() => go(it)}>
-                <span>{it[0]}</span>
+                <span><Icon name={it[0]} size={18} /></span>
                 {it[1]}
               </button>
             </li>

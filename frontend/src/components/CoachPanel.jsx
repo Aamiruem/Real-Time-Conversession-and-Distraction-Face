@@ -1,3 +1,4 @@
+import { Icon } from "./Icons";
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 
@@ -65,7 +66,7 @@ export function CoachPanel() {
     <aside className="coach" role="dialog" aria-label="AI coach">
       <header className="coach-head">
         <div>
-          <b>✨ AI Coach</b>
+          <b>AI Coach</b>
           <span className="small muted">Answers from your own data and the interview guide</span>
         </div>
         <button className="icon-btn" onClick={() => setOpen(false)} aria-label="Close coach">
@@ -75,7 +76,7 @@ export function CoachPanel() {
       <div className="coach-list" ref={listRef}>
         {!turns.length && (
           <div className="coach-empty">
-            <span>🧭</span>
+            <span><Icon name="sparkles" size={32} /></span>
             <p>Ask about your progress, what to practise next, or how to handle any interview question.</p>
           </div>
         )}

@@ -13,13 +13,13 @@ export const STATE_COLORS = {
   "No Face": "#94a3b8",
   "Offline cam": "#64748b",
 };
-export const STATE_EMOJI = {
-  Focused: "🎯",
-  Distracted: "👀",
-  Drowsy: "😴",
-  Yawning: "🥱",
-  "No Face": "❔",
-  "Offline cam": "📷",
+export const STATE_ICON = {
+  Focused: "target",
+  Distracted: "eye",
+  Drowsy: "moon",
+  Yawning: "moon",
+  "No Face": "user",
+  "Offline cam": "camera",
 };
 
 export const THRESHOLDS = {

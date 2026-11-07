@@ -1,6 +1,6 @@
 // Presence AI service worker: makes the app installable, opens instantly on repeat visits and shows the app
 // shell offline. Never caches the API, WebSockets or anything personal.
-const VERSION = "presence-v2"; // bump to drop every cached file from older versions
+const VERSION = "presence-v3"; // bump to drop every cached file from older versions
 const SHELL = ["/app.html", "/icon.svg", "/icon-192.png", "/manifest.webmanifest"];
 
 self.addEventListener("install", (e) => {

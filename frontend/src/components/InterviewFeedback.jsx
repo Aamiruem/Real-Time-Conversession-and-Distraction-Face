@@ -1,7 +1,8 @@
+import { Icon } from "./Icons";
 import { ConversationFeedback } from "./ConversationFeedback";
 import { Gauge } from "./ui";
 
-const SECTION_ICONS = { content: "🧠", delivery: "🎙️", presence: "🎥", body: "🧍" };
+const SECTION_ICONS = { content: "bulb", delivery: "mic", presence: "video", body: "user" };
 const color = (v) => (v >= 85 ? "#22c55e" : v >= 70 ? "#38bdf8" : v >= 50 ? "#eab308" : "#ef4444");
 
 function Section({ s }) {
@@ -9,7 +10,7 @@ function Section({ s }) {
     <article className="card iv-section" style={{ "--area": color(s.score) }}>
       <header className="area-head">
         <span>
-          {SECTION_ICONS[s.key]} <b>{s.label}</b>
+          <Icon name={SECTION_ICONS[s.key]} size={16} /> <b>{s.label}</b>
         </span>
         <span className="area-score" style={{ fontSize: "1.6rem", margin: 0 }}>
           {s.score.toFixed(0)}
@@ -76,7 +77,7 @@ export function InterviewFeedback({ report, audioUrl }) {
 
       <div className="grid g3" style={{ alignItems: "start" }}>
         <div className="card">
-          <h3>🧩 {iv.framework.label} structure</h3>
+          <h3>{iv.framework.label} structure</h3>
           <ul className="checklist">
             {iv.structure.map((p) => (
               <li key={p.part} className={p.done ? "done" : ""}>
@@ -94,7 +95,7 @@ export function InterviewFeedback({ report, audioUrl }) {
           </ol>
         </div>
         <div className="card">
-          <h3>📖 Vocabulary</h3>
+          <h3>Vocabulary</h3>
           {iv.swaps.length ? (
             <table className="swaps">
               <tbody>
@@ -119,14 +120,14 @@ export function InterviewFeedback({ report, audioUrl }) {
           </div>
         </div>
         <div className="card">
-          <h3>⚠️ Avoid</h3>
+          <h3>Avoid</h3>
           <ul className="suggestions" style={{ paddingLeft: 18 }}>
             {iv.question.pitfalls.map((p) => (
               <li key={p}>{p}</li>
             ))}
           </ul>
           <div className="card-title" style={{ margin: "14px 0 6px" }}>
-            👔 Dress for {iv.field_label.toLowerCase()}
+            Dress for {iv.field_label.toLowerCase()}
           </div>
           <p className="small">{iv.dress}</p>
         </div>

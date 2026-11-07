@@ -51,16 +51,16 @@ function UserMenu({ user, onLogout }) {
             </span>
           </div>
           <Link href="/app/settings" role="menuitem" onClick={() => setOpen(false)}>
-            ⚙️ Account settings
+            Account settings
           </Link>
           <Link href="/app/analytics" role="menuitem" onClick={() => setOpen(false)}>
-            📊 My progress
+            My progress
           </Link>
           <Link href="/" role="menuitem" onClick={() => setOpen(false)}>
-            🌐 Website
+            Website
           </Link>
           <button role="menuitem" onClick={onLogout}>
-            🚪 Log out
+            Log out
           </button>
         </div>
       )}
@@ -211,7 +211,7 @@ export function AppShell({ children }) {
           ))}
         </nav>
         <div className="side-spacer" />
-        <p className="side-foot small muted">🔒 Video never leaves your device.</p>
+        <p className="side-foot small muted">Video never leaves your device.</p>
       </aside>
 
       <div className="workspace">

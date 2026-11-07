@@ -148,7 +148,7 @@ export default function Vision() {
             aria-pressed={enabled[m.id]}
             onClick={() => setEnabled((e) => ({ ...e, [m.id]: !e[m.id] }))}
           >
-            {m.icon} {m.label}
+            {m.label}
             {running && enabled[m.id] && s?.ms?.[m.id] != null && <small>{s.ms[m.id]} ms</small>}
           </button>
         ))}
@@ -189,19 +189,19 @@ export default function Vision() {
               </button>
             )}
             <button className="btn ghost" onClick={speak} disabled={!running}>
-              🔊 Describe what I see
+              Describe what I see
             </button>
             <button className="btn ghost" onClick={snapshot} disabled={!running}>
-              📸 Snapshot
+              Snapshot
             </button>
           </div>
-          {said && <p className="voice-caption">🔊 {said}</p>}
+          {said && <p className="voice-caption">{said}</p>}
           {error && <div className="alert error">{error}</div>}
         </div>
 
         <div className="vs-panels">
           <div className="card">
-            <div className="card-title">📦 Objects in view</div>
+            <div className="card-title">Objects in view</div>
             {!s?.objects.length ? (
               <p className="muted small">{running ? "Hold something up to the camera — a phone, cup, book, bottle, keyboard…" : "Start the camera to see objects by name."}</p>
             ) : (
@@ -218,7 +218,7 @@ export default function Vision() {
             )}
           </div>
           <div className="card">
-            <div className="card-title">🖼️ Scene — top 5 of 1,000 names</div>
+            <div className="card-title">Scene — top 5 of 1,000 names</div>
             {!s?.scene.length ? (
               <p className="muted small">—</p>
             ) : (
@@ -235,7 +235,7 @@ export default function Vision() {
           </div>
           <div className="card vs-grid2">
             <div>
-              <div className="card-title">✋ Hands</div>
+              <div className="card-title">Hands</div>
               {s?.hands.length ? (
                 s.hands.map((h, i) => (
                   <p key={i} className="vs-line">
@@ -247,7 +247,7 @@ export default function Vision() {
               )}
             </div>
             <div>
-              <div className="card-title">🙂 Face</div>
+              <div className="card-title">Face</div>
               {s?.faces ? (
                 (s.expressions[0]?.length ? s.expressions[0] : [{ label: "Neutral", score: 1 }]).slice(0, 3).map((e) => (
                   <p key={e.label} className="vs-line">
@@ -259,11 +259,11 @@ export default function Vision() {
               )}
             </div>
             <div>
-              <div className="card-title">🧍 Body</div>
+              <div className="card-title">Body</div>
               <p className="vs-line">{s?.people ? `${s.people} ${s.people > 1 ? "people" : "person"} · 33 points each` : "—"}</p>
             </div>
             <div>
-              <div className="card-title">✂️ Segmentation</div>
+              <div className="card-title">Segmentation</div>
               <p className="vs-line">{s?.personShare != null ? `You fill ${pct(s.personShare)} of the frame` : "—"}</p>
             </div>
           </div>

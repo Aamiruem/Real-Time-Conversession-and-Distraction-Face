@@ -1,3 +1,4 @@
+import { Icon } from "@/components/Icons";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CameraDock } from "@/components/CameraDock";
 import { InterviewFeedback } from "@/components/InterviewFeedback";
@@ -14,10 +15,10 @@ import { CameraPoster } from "@/components/CameraPoster";
 import { SECTIONS } from "@/lib/sections";
 
 const TABS = [
-  ["mock", "🎬 Mock interview"],
-  ["guide", "📘 Prep guide"],
-  ["bank", "❓ Question bank"],
-  ["vocab", "📖 Vocabulary & voice"],
+  ["mock", "Mock interview"],
+  ["guide", "Prep guide"],
+  ["bank", "Question bank"],
+  ["vocab", "Vocabulary & voice"],
 ];
 const SHORTCUTS = [
   ["R", "record / stop"],
@@ -259,7 +260,7 @@ export default function InterviewPrep() {
       <select value={field} onChange={(e) => setField(e.target.value)} disabled={recording}>
         {fields.map((x) => (
           <option key={x.key} value={x.key}>
-            {x.icon} {x.label}
+            {x.label}
           </option>
         ))}
       </select>
@@ -283,29 +284,23 @@ export default function InterviewPrep() {
       </div>
 
       <div className="cmd-bar" role="toolbar" aria-label="Interview commands">
-        <button className={`cmd ${camOn ? "on" : ""}`} onClick={() => run("toggleCamera")} disabled={recording || busy || cam.status === "loading"} title="Camera on / off (C)">
-          📷 <span>{camOn ? "Camera off" : "Camera check"}</span>
-        </button>
-        <button className={`cmd primary ${recording ? "rec" : ""}`} onClick={() => run("toggleRecord")} disabled={busy || !q || cam.status === "loading"} title="Record / stop (R)">
-          {recording ? "■" : "●"} <span>{recording ? `Stop · ${fmt(mic.seconds)}` : "Record answer"}</span>
-        </button>
         <button className="cmd" onClick={() => run("next")} disabled={recording || !questions.length} title="Next question (N)">
-          ⏭️ <span>Next</span>
+          <Icon name="next" size={16} /> <span>Next</span>
         </button>
         <button className="cmd" onClick={() => run("random")} disabled={recording || !questions.length} title="Random question">
-          🔀 <span>Random</span>
+          <Icon name="shuffle" size={16} /> <span>Random</span>
         </button>
         <button className={`cmd ${hints ? "on" : ""}`} onClick={() => { setTab("mock"); run("toggleHints"); }} disabled={recording || !q} title="Hints (H)">
-          💡 <span>Hints</span>
+          <Icon name="bulb" size={16} /> <span>Hints</span>
         </button>
         <span className="cmd-sep" />
         {voice.supported && (
           <button className={`cmd ${voice.enabled ? "on listening" : ""}`} onClick={voice.toggle} title="Voice commands (V)">
-            🎙️ <span>{voice.enabled ? "Listening…" : "Voice commands"}</span>
+            <Icon name="mic" size={16} /> <span>{voice.enabled ? "Listening…" : "Voice commands"}</span>
           </button>
         )}
         <button className={`cmd ${showKeys ? "on" : ""}`} onClick={() => setShowKeys((v) => !v)} title="Keyboard shortcuts (?)">
-          ⌨️ <span>Shortcuts</span>
+          <Icon name="keyboard" size={16} /> <span>Shortcuts</span>
         </button>
       </div>
       <div style={{ margin: "-4px 0 14px" }}>
@@ -325,7 +320,7 @@ export default function InterviewPrep() {
           )}
           {voice.enabled && (
             <p className="small">
-              🎙️ Say {VOICE_EXAMPLES}. While you answer, only “stop recording” counts.{" "}
+              Say {VOICE_EXAMPLES}. While you answer, only “stop recording” counts.{" "}
               {voice.heard && <b>Heard: {voice.heard}</b>}
               <span className="muted"> Voice commands use your browser's speech recognition service.</span>
             </p>
@@ -363,7 +358,7 @@ export default function InterviewPrep() {
                       <span>Eye contact</span>
                       <b>{m.focusPct.toFixed(0)}%</b>
                       <span>Smile</span>
-                      <b>{live.smiling ? "yes 😊" : "neutral"}</b>
+                      <b>{live.smiling ? "yes" : "neutral"}</b>
                       <span>Light</span>
                       <b>{live.brightness.toFixed(0)}</b>
                       <span>Tilt</span>
@@ -393,7 +388,7 @@ export default function InterviewPrep() {
                   <>
                     {!camOn && (
                       <button className="btn ghost" onClick={() => cam.start()} disabled={cam.status === "loading" || busy}>
-                        📷 Camera check
+                        Camera check
                       </button>
                     )}
                     <button className="btn" onClick={onRecord} disabled={busy || !q || cam.status === "loading"}>
@@ -454,7 +449,7 @@ export default function InterviewPrep() {
                   <div className="card-title">Live</div>
                   <div className="timer">{fmt(mic.seconds)}</div>
                   <div className="small" style={{ display: "flex", justifyContent: "space-between" }}>
-                    <span>🎙️ Voice</span>
+                    <span>Voice</span>
                     <b>{mic.level.toFixed(0)} dB</b>
                   </div>
                   <div className="bar" style={{ margin: "6px 0 12px" }}>
@@ -462,24 +457,24 @@ export default function InterviewPrep() {
                   </div>
                   <p className="small" style={{ margin: 0 }}>
                     {m.state !== "Focused"
-                      ? "👉 Look at the camera lens."
+                      ? "Look at the camera lens."
                       : mic.seconds > 3 && mic.level < -50
-                        ? "🔈 Speak up a little."
+                        ? "Speak up a little."
                         : mic.seconds < 45
-                          ? "✅ Good — give an example and a result (aim for 45–120 s)."
+                          ? "Good — give an example and a result (aim for 45–120 s)."
                           : mic.seconds > 120
-                            ? "⏱️ Wrap up with your result."
-                            : "✅ Great length — finish with your result and stop."}
+                            ? "Wrap up with your result."
+                            : "Great length — finish with your result and stop."}
                   </p>
                 </div>
               ) : camOn && live ? (
                 <div className="card">
                   <div className="card-title">Camera check</div>
                   <div className="iv-check">
-                    {cameraCheck(live, cam.videoRef.current?.videoHeight ?? 0).map(([icon, label, value, ok]) => (
+                    {cameraCheck(live, cam.videoRef.current?.videoHeight ?? 0).map(([label, value, ok]) => (
                       <div key={label} className={ok ? "ok" : "warn"}>
                         <span>
-                          {icon} {label}
+                          {label}
                         </span>
                         <b>{value}</b>
                       </div>
@@ -505,20 +500,19 @@ export default function InterviewPrep() {
                   <div className="card-title">Body language · live</div>
                   <div className="iv-check">
                     {[
-                      ["🧍", "Posture", bodyLive.posture, bodyLive.posture === "Upright"],
-                      ["📐", "Shoulders", `${bodyLive.tilt.toFixed(0)}° tilt`, bodyLive.tilt <= 8],
-                      ["✋", "Hands", bodyLive.touching ? "touching face" : bodyLive.hands, !bodyLive.touching && bodyLive.hands !== "hidden"],
-                      ["👐", "Gestures", bodyLive.gesture, bodyLive.gesture === "natural"],
+                      ["Posture", bodyLive.posture, bodyLive.posture === "Upright"],
+                      ["Shoulders", `${bodyLive.tilt.toFixed(0)}° tilt`, bodyLive.tilt <= 8],
+                      ["Hands", bodyLive.touching ? "touching face" : bodyLive.hands, !bodyLive.touching && bodyLive.hands !== "hidden"],
+                      ["Gestures", bodyLive.gesture, bodyLive.gesture === "natural"],
                       [
-                        "📱",
                         "In frame",
                         [...(bodyLive.named ?? bodyLive.objects), bodyLive.people > 1 ? `${bodyLive.people} people` : ""].filter(Boolean).join(", ") || "clear",
                         !bodyLive.objects.includes("cell phone") && bodyLive.people <= 1,
                       ],
-                    ].map(([icon, label, value, ok]) => (
+                    ].map(([label, value, ok]) => (
                       <div key={label} className={ok ? "ok" : "warn"}>
                         <span>
-                          {icon} {label}
+                          {label}
                         </span>
                         <b>{value}</b>
                       </div>
@@ -532,7 +526,7 @@ export default function InterviewPrep() {
               {f && (
                 <div className="card">
                   <div className="card-title">
-                    {f.icon} {f.label}
+                    {f.label}
                   </div>
                   <p className="small">
                     <b>Dress:</b> {f.dress}
@@ -552,7 +546,7 @@ export default function InterviewPrep() {
               <p className="muted small">
                 {result.when
                   ? `Your last mock-interview answer · ${toDate(result.when).toLocaleString()}`
-                  : `✅ Saved as session #${result.id} — see your progress in Analytics.`}
+                  : `Saved as session #${result.id} — see your progress in Analytics.`}
               </p>
               <InterviewFeedback report={result.report} audioUrl={result.audioUrl} />
             </section>
@@ -566,11 +560,11 @@ export default function InterviewPrep() {
             <div className="card iv-field">
               <div style={{ maxWidth: 320 }}>{fieldPicker}</div>
               <div>
-                <div className="card-title">👔 Dress code</div>
+                <div className="card-title">Dress code</div>
                 <p className="small">{f.dress}</p>
               </div>
               <div>
-                <div className="card-title">🎯 Skills they test</div>
+                <div className="card-title">Skills they test</div>
                 <div className="tags">
                   {f.skills.map((s) => (
                     <span key={s}>{s}</span>
@@ -583,7 +577,7 @@ export default function InterviewPrep() {
             {guide.sections.map((s) => (
               <article key={s.id} className="card">
                 <h3>
-                  {s.icon} {s.title}
+                  {s.title}
                 </h3>
                 <p>{s.intro}</p>
                 <ul className="suggestions" style={{ paddingLeft: 18, marginTop: 10 }}>
@@ -618,7 +612,7 @@ export default function InterviewPrep() {
                       </summary>
                       <QuestionDetails q={x} frameworks={guide?.frameworks} />
                       <button className="btn sm" style={{ marginTop: 12 }} onClick={() => practise(x.id)}>
-                        🎬 Practise this question
+                        Practise this question
                       </button>
                     </details>
                   ))}
@@ -631,7 +625,7 @@ export default function InterviewPrep() {
       {tab === "vocab" && guide && (
         <div className="grid split-3-2" style={{ alignItems: "start" }}>
           <div className="card">
-            <h3>🔁 Say this, not that</h3>
+            <h3>Say this, not that</h3>
             <table className="swaps">
               <thead>
                 <tr>
@@ -655,7 +649,7 @@ export default function InterviewPrep() {
           </div>
           <div style={{ display: "grid", gap: 12 }}>
             <div className="card">
-              <h3>💪 Power verbs</h3>
+              <h3>Power verbs</h3>
               <div className="tags">
                 {[...new Set([...(f?.power_words ?? []), ...guide.power_verbs])].slice(0, 36).map((v) => (
                   <span key={v}>{v}</span>
@@ -667,7 +661,7 @@ export default function InterviewPrep() {
               .map((s) => (
                 <div key={s.id} className="card">
                   <h3>
-                    {s.icon} {s.title}
+                    {s.title}
                   </h3>
                   <ul className="suggestions" style={{ paddingLeft: 18 }}>
                     {s.tips.map((t) => (
