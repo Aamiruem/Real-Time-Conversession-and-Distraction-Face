@@ -47,7 +47,7 @@ export function ShareButton({ path = "/", label = "Share", className = "btn ghos
 
   return (
     <div className="share" ref={box}>
-      <button className={className} onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-haspopup="menu">
+      <button className={className} onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-haspopup="menu" aria-label={label} title={label}>
         <Icon name="share" size={16} /> <span className="btn-label">{label}</span>
       </button>
       {open && (

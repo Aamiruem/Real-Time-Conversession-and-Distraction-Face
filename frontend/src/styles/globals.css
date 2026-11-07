@@ -1729,3 +1729,27 @@ input:focus, select:focus, textarea:focus { box-shadow: 0 0 0 3px color-mix(in s
 .cam-poster.small .cam-poster-play { width: 48px; height: 48px; margin: 0 10px 10px 0; }
 .cam-poster .cam-poster-hint { left: 14px; bottom: 16px; transform: none; max-width: calc(100% - 104px); text-align: left; }
 .cam-poster.small .cam-poster-hint { left: 10px; bottom: 12px; max-width: calc(100% - 76px); }
+
+/* top bar: white and quiet. Title left, search centre, actions right; every icon the same size and line weight */
+.topbar { min-height: 60px; }
+.topbar-title b { font-size: 1rem; }
+.topbar-title .small { font-size: .8rem; }
+.topbar-search { flex: 1 1 320px; max-width: 440px; min-width: 0; margin-inline: auto; height: 38px; padding: 0 12px;
+  border-radius: 999px; border: 1px solid var(--line); background: var(--surface); }
+.topbar-search:hover { background: var(--surface); border-color: var(--line-strong); }
+.topbar-search kbd { border: 0; background: none; color: var(--muted); font: 500 .75rem var(--font-inter), system-ui, sans-serif; }
+.topbar-actions { margin-left: 0; gap: 4px; }
+.topbar svg { stroke-width: 1.75; }
+.topbar .icon-btn svg, .topbar .btn.compact svg, .topbar-search svg, .coach-btn svg { width: 18px; height: 18px; }
+.topbar .icon-btn, .topbar .btn.compact { width: 38px; height: 38px; min-height: 38px; padding: 0; display: grid; place-items: center;
+  border: 0; border-radius: 50%; background: none; color: var(--muted); }
+.topbar .icon-btn:hover, .topbar .btn.compact:hover { background: var(--hover); color: var(--text); }
+.topbar .btn.compact .btn-label { display: none; }
+.coach-btn { height: 38px; margin-right: 4px; padding: 0 14px 0 12px; border: 1px solid var(--line); border-radius: 999px; background: none;
+  color: var(--text); font-size: .875rem; font-weight: 500; }
+.coach-btn svg { color: var(--accent); }
+.coach-btn:hover { background: var(--hover); border-color: var(--line-strong); }
+.status-pill.ok { color: var(--muted); }
+.status-pill { margin-right: 8px; font-size: .8rem; }
+.topbar .avatar { width: 34px; height: 34px; margin-left: 6px; font-size: .875rem; color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 13%, transparent); }

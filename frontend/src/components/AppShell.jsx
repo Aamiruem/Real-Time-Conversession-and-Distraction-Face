@@ -228,16 +228,16 @@ export function AppShell({ children }) {
               <span className="small muted">{page.desc}</span>
             </div>
           </div>
+          <button className="topbar-search desk-only" onClick={() => setPalette(true)} aria-label="Search pages and actions">
+            <Icon name="search" size={16} /> <span>Search…</span>
+            <kbd>Ctrl K</kbd>
+          </button>
           <div className="topbar-actions">
             <span className={`status-pill desk-only ${tone}`} title="Backend status (re-checked automatically)">
               <span className="dot" /> {label}
             </span>
             <button className="coach-btn desk-only" onClick={() => openCoach()} aria-label="Open the AI coach">
               <Icon name="sparkles" size={17} /> <span>Coach</span>
-            </button>
-            <button className="topbar-search desk-only" onClick={() => setPalette(true)} aria-label="Search pages and actions">
-              <Icon name="search" size={16} /> <span>Search…</span>
-              <kbd>Ctrl K</kbd>
             </button>
             <span className="desk-only">
               <ShareButton className="btn ghost sm compact" label="Share app" />

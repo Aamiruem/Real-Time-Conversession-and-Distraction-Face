@@ -59,7 +59,7 @@ export function InstallButton({ className = "btn ghost sm", label = "Install app
   useEffect(() => setIos(isIOS() && !installed()), []);
   if (canInstall) {
     return (
-      <button className={className} onClick={install} title="Install Presence AI as an app on this device">
+      <button className={className} onClick={install} aria-label={label} title="Install Presence AI as an app on this device">
         <Icon name="download" size={16} /> <span className="btn-label">{label}</span>
       </button>
     );
@@ -67,7 +67,7 @@ export function InstallButton({ className = "btn ghost sm", label = "Install app
   if (!ios) return null;
   return (
     <span className="install-ios">
-      <button className={className} onClick={() => setTip((v) => !v)} aria-expanded={tip}>
+      <button className={className} onClick={() => setTip((v) => !v)} aria-expanded={tip} aria-label={label} title={label}>
         <Icon name="download" size={16} /> <span className="btn-label">{label}</span>
       </button>
       {tip && (
