@@ -33,10 +33,6 @@ export function Logo({ size = 30 }) {
   );
 }
 
-// the feature pages' icons, matching their app sections
-const FEATURE_ICON = { "focus-tracker": "focus", "speech-coach": "mic", "fatigue-prediction": "flask",
-  "interview-preparation": "briefcase", "conversation-coach": "chat" };
-
 export function SiteHeader() {
   const { theme, toggle } = useTheme();
   const [menu, setMenu] = useState(false);
@@ -61,7 +57,7 @@ export function SiteHeader() {
           </button>
           <Link href="/login" className="wide-only">Sign in</Link>
           {/* the app signs visitors in as a guest by itself: no form needed to start */}
-          <Link className="btn sm" href="/app">
+          <Link className="btn sm wide-only" href="/app">
             Open app
           </Link>
           <button type="button" className="icon-btn site-menu-btn" onClick={() => setMenu(true)} aria-label="Open menu" aria-expanded={menu}>
@@ -97,20 +93,25 @@ function SiteMenu({ open, onClose, theme, onTheme }) {
 }
 
 function SiteMenuSheet({ onClose, theme, onTheme }) {
-  const item = (href, icon, color, label, sub, external = false) => (
+  const item = (href, icon, color, label, external = false) => (
     <Link key={href} href={href} onClick={onClose} className="mmenu-link" style={{ "--c": color }}
       {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}>
       <span className="nav-ico"><Icon name={icon} size={18} /></span>
-      <span>
-        <b>{label}</b>
-        {sub && <small>{sub}</small>}
-      </span>
+      <b>{label}</b>
     </Link>
+  );
+  const fold = (title, children) => (
+    <details className="mmenu-fold">
+      <summary>
+        {title} <Icon name="forward" size={16} />
+      </summary>
+      <div>{children}</div>
+    </details>
   );
 
   return (
     <div className="mmenu-backdrop" onClick={onClose}>
-      <aside className="mmenu" role="dialog" aria-modal="true" aria-label="Menu" onClick={(e) => e.stopPropagation()}>
+      <aside className="mmenu right" role="dialog" aria-modal="true" aria-label="Menu" onClick={(e) => e.stopPropagation()}>
         <header className="mmenu-head">
           <Link href="/" className="brand" onClick={onClose}>
             <Logo size={34} /> {SITE_NAME}
@@ -128,37 +129,27 @@ function SiteMenuSheet({ onClose, theme, onTheme }) {
           </div>
         </div>
 
-        <div className="mmenu-actions three">
+        <div className="mmenu-actions two">
           <ShareButton label="Share" className="mmenu-share" align="left" />
           <button type="button" onClick={onTheme}>
             <Icon name={theme === "dark" ? "sun" : "moon"} size={20} /> {theme === "dark" ? "Light" : "Dark"}
           </button>
-          <a href="/#faq" onClick={onClose}>
-            <Icon name="bulb" size={20} /> FAQ
-          </a>
         </div>
         <InstallButton className="btn block mmenu-install" label="Install the app on this device" />
 
-        <nav aria-label="Site">
-          <section className="mmenu-group">
-            <h3>Learn</h3>
-            {item("/#features", "sparkles", "#2563eb", "All features", "What Presence AI can do")}
-            {item("/#how", "compass", "#0d9488", "How it works", "Three steps to better focus and speaking")}
-            {FEATURES.map((f) => item(`/features/${f.slug}`, FEATURE_ICON[f.slug] ?? "sparkles", TOPICS[f.slug]?.color ?? "#2563eb",
-              f.metaTitle.split(" – ")[0], f.summary.split(/[.—]/)[0]))}
-          </section>
-          {NAV_GROUPS.map(([group, hrefs]) => (
-            <section key={group} className="mmenu-group">
-              <h3>App · {group}</h3>
-              {hrefs.map((href) => item(href, SECTIONS[href].icon, SECTIONS[href].color, SECTIONS[href].label, SECTIONS[href].desc))}
-            </section>
-          ))}
-          <section className="mmenu-group">
-            <h3>Built by {OWNER.name}</h3>
-            {OWNER.portfolio && item(OWNER.portfolio, "globe", "#6366f1", "Portfolio", "Projects and contact", true)}
-            {OWNER.linkedin && item(OWNER.linkedin, "users", "#0a66c2", "LinkedIn", "Connect with the developer", true)}
-            {OWNER.github && item(OWNER.github, "code", "#6e5494", "GitHub", "Source code", true)}
-          </section>
+        {/* the three main links stay open; the longer lists fold away so the whole menu fits on one screen */}
+        <nav aria-label="Site" className="mmenu-nav">
+          {item("/#features", "sparkles", "#2563eb", "Features")}
+          {item("/#how", "compass", "#0d9488", "How it works")}
+          {item("/#faq", "bulb", "#d97706", "FAQ")}
+          {fold("Feature guides", FEATURES.map((f) => item(`/features/${f.slug}`, TOPICS[f.slug].icon, TOPICS[f.slug].color, f.label)))}
+          {fold("App sections", NAV_GROUPS.flatMap(([, hrefs]) => hrefs).map((href) =>
+            item(href, SECTIONS[href].icon, SECTIONS[href].color, SECTIONS[href].label)))}
+          {fold(`Built by ${OWNER.name}`, [
+            OWNER.portfolio && item(OWNER.portfolio, "globe", "#6366f1", "Portfolio", true),
+            OWNER.linkedin && item(OWNER.linkedin, "users", "#0a66c2", "LinkedIn", true),
+            OWNER.github && item(OWNER.github, "code", "#6e5494", "GitHub", true),
+          ])}
         </nav>
       </aside>
     </div>
@@ -279,7 +270,7 @@ export function SiteFooter() {
           <h3>Features</h3>
           {FEATURES.map((f) => (
             <Link key={f.slug} href={`/features/${f.slug}`} className="footer-feature" style={{ "--dot": TOPICS[f.slug]?.color }}>
-              {f.metaTitle.split(" – ")[0]}
+              {f.label}
             </Link>
           ))}
         </nav>

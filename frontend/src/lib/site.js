@@ -9,11 +9,11 @@ export const DESCRIPTION =
 
 /** Each feature's thumbnail scene, colour (same as its app section) and the app page its button opens. */
 export const TOPICS = {
-  "focus-tracker": { kind: "focus", color: "#16a34a", app: "/app/focus", open: "Open Focus Monitor" },
-  "speech-coach": { kind: "speech", color: "#7c3aed", app: "/app/speech", open: "Open Speech Coach" },
-  "fatigue-prediction": { kind: "fatigue", color: "#ea580c", app: "/app/lab", open: "Try the fatigue model" },
-  "interview-preparation": { kind: "interview", color: "#d97706", app: "/app/interview", open: "Start a mock interview" },
-  "conversation-coach": { kind: "conversation", color: "#db2777", app: "/app/conversation", open: "Open Conversation Coach" },
+  "focus-tracker": { kind: "focus", color: "#16a34a", icon: "focus", app: "/app/focus", open: "Open Focus Monitor" },
+  "speech-coach": { kind: "speech", color: "#7c3aed", icon: "mic", app: "/app/speech", open: "Open Speech Coach" },
+  "fatigue-prediction": { kind: "fatigue", color: "#ea580c", icon: "flask", app: "/app/lab", open: "Try the fatigue model" },
+  "interview-preparation": { kind: "interview", color: "#d97706", icon: "briefcase", app: "/app/interview", open: "Start a mock interview" },
+  "conversation-coach": { kind: "conversation", color: "#db2777", icon: "chat", app: "/app/conversation", open: "Open Conversation Coach" },
 };
 
 /** Who built Presence AI, shown in the footer. A contact button appears only for each detail filled in. */
@@ -30,6 +30,8 @@ export const OWNER = {
 export const FEATURES = [
   {
     slug: "focus-tracker",
+    label: "AI Focus Tracker",
+    tagline: "Know second by second if you're focused, distracted, drowsy or away.",
     icon: "🎥",
     title: "AI focus tracker with webcam distraction & drowsiness detection",
     metaTitle: "AI Focus Tracker – Webcam Distraction Detection",
@@ -65,6 +67,8 @@ export const FEATURES = [
   },
   {
     slug: "speech-coach",
+    label: "AI Speech Coach",
+    tagline: "Talk for a minute and get a confidence score with specific tips.",
     icon: "🗣️",
     title: "AI speech coach for confident speaking and clear pronunciation",
     metaTitle: "AI Speech Coach – Speak With Confidence",
@@ -106,6 +110,8 @@ export const FEATURES = [
   },
   {
     slug: "fatigue-prediction",
+    label: "Fatigue Prediction",
+    tagline: "See your fatigue risk after each session, and what's driving it.",
     icon: "🧠",
     title: "Fatigue prediction with machine learning",
     metaTitle: "Fatigue Prediction with Machine Learning",
@@ -135,6 +141,8 @@ export const FEATURES = [
   },
   {
     slug: "interview-preparation",
+    label: "AI Mock Interviews",
+    tagline: "Answer real questions on camera and get a readiness score.",
     icon: "💼",
     title: "AI interview preparation with mock interviews and body-language feedback",
     metaTitle: "AI Mock Interview Practice – Interview Preparation for Any Job",
@@ -181,6 +189,8 @@ export const FEATURES = [
   },
   {
     slug: "conversation-coach",
+    label: "AI Conversation Coach",
+    tagline: "Practise ten conversation types and see where to improve.",
     icon: "🗨️",
     title: "Conversation coach for fluency, confidence and voice modulation",
     metaTitle: "AI Conversation Coach – Fluency, Confidence & Tone Feedback",
@@ -239,7 +249,7 @@ export const HOME_FAQ = [
     q: "Can I practise job interviews?",
     a: "Yes. Mock interviews for 15 job fields score your answer, delivery, eye contact, posture and gestures, with a full preparation guide.",
   },
-  { q: "Is Presence AI free?", a: "Yes — create an account with your email and start a session in seconds." },
+  { q: "Is Presence AI free?", a: "Yes — open the app and start a session in seconds. No account needed." },
 ];
 
 export function jsonLd(data) {

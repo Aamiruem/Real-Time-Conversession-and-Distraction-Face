@@ -2,6 +2,7 @@ import Link from "@/components/Link";
 import { SiteFooter, SiteHeader } from "@/components/SiteChrome";
 import { DESCRIPTION, FEATURES, HOME_FAQ, jsonLd, OWNER, SITE_NAME, SITE_URL, TOPICS } from "@/lib/site";
 import { TopicThumb } from "@/components/CameraPoster";
+import { Icon } from "@/components/Icons";
 
 // Pre-rendered to static HTML at build time (scripts/prerender.mjs), so crawlers get complete HTML instantly.
 const structuredData = {
@@ -44,22 +45,47 @@ const structuredData = {
   ],
 };
 
-const EXTRA = [
+// Every card on the home page: the feature pages first, then the sections that have no page of their own.
+const CARDS = [
+  ...FEATURES.map((f) => ({ title: f.label, text: f.tagline, topic: TOPICS[f.slug], more: `/features/${f.slug}` })),
   {
-    title: "Focus rooms",
-    text: "Real-time chat where everyone sees each other's live focus score, with sentiment and confidence analysis.",
-    topic: { kind: "rooms", color: "#0d9488", app: "/app/rooms", open: "Join a focus room" },
+    title: "Focus Rooms",
+    text: "Chat and work alongside others, with everyone's live focus score.",
+    topic: { kind: "rooms", icon: "users", color: "#0d9488", app: "/app/rooms" },
   },
   {
     title: "Analytics",
-    text: "Focus history, speaking progress, leaderboard and conversation insights in one dashboard.",
-    topic: { kind: "analytics", color: "#0284c7", app: "/app/analytics", open: "See your analytics" },
+    text: "Your focus history, speaking progress and leaderboard in one place.",
+    topic: { kind: "analytics", icon: "chart", color: "#0284c7", app: "/app/analytics" },
   },
   {
-    title: "Secure accounts",
-    text: "Bcrypt-hashed passwords, optional email + mobile OTP verification, data on AWS RDS and S3.",
-    topic: { kind: "secure", color: "#4f46e5", app: "/signup", open: "Create a free account" },
+    title: "Secure Accounts",
+    text: "Hashed passwords, with optional email and mobile OTP verification.",
+    topic: { kind: "secure", icon: "lock", color: "#4f46e5", app: "/signup", go: "Create account" },
   },
+];
+
+const STATS = [
+  ["478", "face landmarks per frame"],
+  ["7", "speaking-confidence signals"],
+  ["3", "fatigue risk levels"],
+  ["0", "videos uploaded"],
+];
+
+const STEPS = [
+  ["Open the app", "No sign-up needed. Start as a guest, or create a free account to keep your history."],
+  ["Turn on your camera", "Start a focus session or a speaking exercise. Analysis runs live."],
+  ["Get feedback", "See your focus %, fatigue risk, speaking confidence and concrete tips."],
+  ["Improve over time", "Track progress in analytics. The AI personalises as you give feedback."],
+];
+
+const TECH = [
+  ["Computer vision", "MediaPipe Face Landmarker in the browser (WebAssembly + GPU)"],
+  ["Natural language processing", "VADER / Amazon Comprehend sentiment, keywords, summaries"],
+  ["Speech AI", "faster-whisper speech-to-text, pitch & loudness analysis"],
+  ["Machine learning", "scikit-learn model selection, cross-validation, model card"],
+  ["Backend & real time", "FastAPI, WebSockets, JWT, SQLAlchemy"],
+  ["Cloud", "AWS RDS, S3, SES email, SNS SMS, Comprehend, EC2 + Docker"],
 ];
 
 export default function Home() {
@@ -69,36 +95,28 @@ export default function Home() {
       <SiteHeader />
       <main className="container">
         <section className="hero">
-          <p className="eyebrow">Computer vision · NLP · Speech AI · Machine learning</p>
+          <p className="eyebrow">Free · Private · No sign-up</p>
           <h1>
             Stay focused. <span className="grad">Speak with confidence.</span>
           </h1>
           <p className="lead">
-            {SITE_NAME} detects distraction and drowsiness through your webcam, coaches your speaking voice, predicts
-            fatigue before it hits and lets you work alongside others in focus-aware rooms.
+            {SITE_NAME} spots distraction through your webcam, coaches your speaking voice and predicts fatigue before
+            it hits.
           </p>
           <div className="cta">
             {/* the app signs you in as a guest by itself (and reuses this device's login) */}
             <Link className="btn" href="/app">
               Open the app — no login
             </Link>
-            <Link className="btn ghost" href="/signup">
-              Create account
-            </Link>
             <Link className="btn ghost" href="#how">
               See how it works
             </Link>
           </div>
-          <ul className="stats" style={{ listStyle: "none", padding: 0 }}>
-            {[
-              ["478", "face landmarks per frame"],
-              ["7", "speaking-confidence signals"],
-              ["3", "fatigue risk levels"],
-              ["0", "videos uploaded"],
-            ].map(([v, l]) => (
-              <li key={l} className="metric">
-                <div className="v">{v}</div>
-                <div className="l">{l}</div>
+          <ul className="stats">
+            {STATS.map(([v, l]) => (
+              <li key={l} className="stat">
+                <b>{v}</b>
+                <span>{l}</span>
               </li>
             ))}
           </ul>
@@ -106,25 +124,33 @@ export default function Home() {
 
         <section id="features" className="section">
           <h2>Everything you need to focus and communicate better</h2>
-          <div className="grid g3">
-            {[
-              ...FEATURES.map((f) => ({ title: f.metaTitle.split(" – ")[0], text: f.summary, topic: TOPICS[f.slug], more: `/features/${f.slug}` })),
-              ...EXTRA,
-            ].map((f) => (
-              <article key={f.title} className="card feature-card" style={{ "--pc": f.topic.color }}>
-                <TopicThumb kind={f.topic.kind} color={f.topic.color} label={f.title} />
-                <h3>{f.title}</h3>
-                <p>{f.text}</p>
-                <div className="feature-actions">
-                  <Link className="btn sm topic-btn" href={f.topic.app}>
-                    {f.topic.open} →
-                  </Link>
-                  {f.more && (
-                    <Link className="feature-more" href={f.more}>
+          <div className="grid g4 home-cards">
+            {CARDS.map((c) => (
+              <article key={c.title} className="card home-card" style={{ "--pc": c.topic.color }}>
+                {/* wide screens show the illustration; small screens a compact icon row */}
+                <TopicThumb kind={c.topic.kind} color={c.topic.color} label={c.title} />
+                <span className="home-card-ico" aria-hidden="true">
+                  <Icon name={c.topic.icon} size={21} />
+                </span>
+                <div className="home-card-text">
+                  <h3>
+                    <Link className="home-card-link" href={c.topic.app}>
+                      {c.title}
+                    </Link>
+                  </h3>
+                  <p>{c.text}</p>
+                </div>
+                <div className="home-card-actions">
+                  <span className="home-card-go" aria-hidden="true">{c.topic.go ?? "Open"} →</span>
+                  {c.more && (
+                    <Link className="feature-more" href={c.more}>
                       Learn more
                     </Link>
                   )}
                 </div>
+                <span className="home-card-chev" aria-hidden="true">
+                  <Icon name="forward" size={18} />
+                </span>
               </article>
             ))}
           </div>
@@ -133,12 +159,7 @@ export default function Home() {
         <section id="how" className="section">
           <h2>How it works</h2>
           <ol className="grid g4 steps">
-            {[
-              ["Create your account", "Sign up with your email in seconds."],
-              ["Turn on your camera", "Start a focus session or a speaking exercise — analysis runs live."],
-              ["Get feedback", "See focus %, fatigue risk, speaking confidence and concrete tips instantly."],
-              ["Improve over time", "Track progress in analytics; the AI personalises as you give feedback."],
-            ].map(([h, p]) => (
+            {STEPS.map(([h, p]) => (
               <li key={h} className="card">
                 <h3>{h}</h3>
                 <p>{p}</p>
@@ -149,21 +170,14 @@ export default function Home() {
 
         <section id="tech" className="section">
           <h2>Built on a complete AI/ML stack</h2>
-          <div className="grid g3">
-            {[
-              ["Computer vision", "MediaPipe Face Landmarker in the browser (WebAssembly + GPU)"],
-              ["Natural language processing", "VADER / Amazon Comprehend sentiment, keywords, summaries"],
-              ["Speech AI", "faster-whisper speech-to-text, pitch & loudness analysis"],
-              ["Machine learning", "scikit-learn model selection, cross-validation, model card"],
-              ["Backend & real time", "FastAPI, WebSockets, JWT, SQLAlchemy"],
-              ["Cloud", "AWS RDS, S3, SES email, SNS SMS, Comprehend, EC2 + Docker"],
-            ].map(([h, p]) => (
-              <div key={h} className="card">
-                <h3>{h}</h3>
-                <p>{p}</p>
+          <dl className="card tech-list">
+            {TECH.map(([h, p]) => (
+              <div key={h}>
+                <dt>{h}</dt>
+                <dd>{p}</dd>
               </div>
             ))}
-          </div>
+          </dl>
         </section>
 
         <section id="faq" className="section">
@@ -175,7 +189,6 @@ export default function Home() {
             </details>
           ))}
         </section>
-
       </main>
       <SiteFooter />
     </>

@@ -212,6 +212,13 @@ const ICONS = {
     </>
   ),
   back: P("m15 18-6-6 6-6"),
+  forward: P("m9 18 6-6-6-6"),
+  lock: (
+    <>
+      <rect x="4" y="11" width="16" height="10" rx="2" />
+      {P("M8 11V7a4 4 0 0 1 8 0v4")}
+    </>
+  ),
   close: (
     <>
       {P("M18 6 6 18")}

@@ -229,7 +229,9 @@ export function AppShell({ children }) {
             <button className="icon-btn desk-only" onClick={toggle} aria-label={themeLabel(theme)} title={themeLabel(theme)}>
               <Icon name={theme === "dark" ? "sun" : "moon"} size={18} />
             </button>
-            <UserMenu user={user} onLogout={logout} />
+            <span className="desk-only">
+              <UserMenu user={user} onLogout={logout} />
+            </span>
           </div>
         </header>
         <main className="main">
