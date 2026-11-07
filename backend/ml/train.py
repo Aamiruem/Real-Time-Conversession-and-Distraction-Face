@@ -2,6 +2,8 @@
 
     python -m ml.train                 # synthetic bootstrap data only
     python -m ml.train --with-db       # + sessions users labelled (uses DATABASE_URL from backend/.env)
+    python -m ml.train --advanced      # + XGBoost and a PyTorch network in the contest (requirements-advanced.txt)
+    python -m ml.train --mlflow        # record the run in MLflow (backend/mlruns)
 
 Compares two scikit-learn pipelines with 5-fold cross-validation, keeps the best, evaluates it
 on a held-out test split and writes ml/artifacts/{fatigue_model.joblib, model_card.json}.
@@ -41,6 +43,9 @@ ARTIFACTS = Path("/tmp/ml-artifacts") if os.getenv("VERCEL") else Path(__file__)
 MODEL_PATH = ARTIFACTS / "fatigue_model.joblib"
 CARD_PATH = ARTIFACTS / "model_card.json"
 USER_WEIGHT = 5.0  # a real labelled session counts as much as 5 simulated ones
+# An advanced model must beat the plain scikit-learn ones by this much (macro F1): less is noise, and not worth making
+# every server carry PyTorch or XGBoost to load the result.
+MIN_ADVANCED_GAIN = 0.01
 
 CANDIDATES = {
     "logistic_regression": lambda: Pipeline([("scale", StandardScaler()),
@@ -74,17 +79,25 @@ def load_data(with_db: bool) -> pd.DataFrame:
     return pd.concat(frames, ignore_index=True)
 
 
-def train(with_db: bool = False, quiet: bool = False) -> dict:
+def train(with_db: bool = False, quiet: bool = False, advanced: bool = False, track: bool = False) -> dict:
     df = load_data(with_db)
     X, y = df[FEATURES].astype(float), df["label"].astype(int)
     w = np.where(df["source"] == "user", USER_WEIGHT, 1.0)
     X_tr, X_te, y_tr, y_te, w_tr, _ = train_test_split(X, y, w, test_size=0.2, stratify=y, random_state=7)
 
     cv = StratifiedKFold(5, shuffle=True, random_state=7)
+    from ml.advanced import candidates as advanced_candidates, log_run
+
+    extra = advanced_candidates() if advanced else {}
+    contest = {**CANDIDATES, **extra}
     scores = {name: float(cross_val_score(make(), X_tr, y_tr, cv=cv, scoring="f1_macro").mean())
-            for name, make in CANDIDATES.items()}
-    best = max(scores, key=lambda name: scores[name])
-    model = CANDIDATES[best]()
+            for name, make in contest.items()}
+    best = max(CANDIDATES, key=lambda name: scores[name])
+    if extra:
+        challenger = max(extra, key=lambda name: scores[name])
+        if scores[challenger] - scores[best] >= MIN_ADVANCED_GAIN:
+            best = challenger
+    model = contest[best]()
     model.fit(X_tr, y_tr, clf__sample_weight=w_tr)
 
     pred = model.predict(X_te)
@@ -117,13 +130,17 @@ def train(with_db: bool = False, quiet: bool = False) -> dict:
     ARTIFACTS.mkdir(parents=True, exist_ok=True)
     joblib.dump(model, MODEL_PATH)
     CARD_PATH.write_text(json.dumps(card, indent=2))
+    run_id = log_run(card) if track else None
     if not quiet:
         print(f"best={best}  cv_f1={scores}  test_acc={card['test']['accuracy']}  "
-            f"test_f1={card['test']['f1_macro']}  rows={card['data']}")
+            f"test_f1={card['test']['f1_macro']}  rows={card['data']}" + (f"  mlflow_run={run_id}" if run_id else ""))
     return card
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--with-db", action="store_true", help="include user-labelled sessions from the database")
-    train(parser.parse_args().with_db)
+    parser.add_argument("--advanced", action="store_true", help="add XGBoost and PyTorch to the contest")
+    parser.add_argument("--mlflow", action="store_true", help="record this run in MLflow")
+    args = parser.parse_args()
+    train(args.with_db, advanced=args.advanced, track=args.mlflow)

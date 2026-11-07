@@ -247,3 +247,20 @@ def test_fatigue_forecast_with_no_sessions_says_so(client, make_user, monkeypatc
     _use(monkeypatch, fake)
     client.post("/coach/ask", headers=headers, json={"question": "Am I tired?"})
     assert "no focus sessions" in fake.calls[1]["messages"][-1]["content"][0]["content"].lower()
+
+
+@pytest.mark.parametrize("engine", ["graph", "loop"])
+def test_graph_and_plain_loop_behave_the_same(monkeypatch, engine):
+    if engine == "graph":
+        pytest.importorskip("langgraph")
+    monkeypatch.setenv("COACH_GRAPH", "on" if engine == "graph" else "off")
+    fake = _ScriptedMessages(_tool_call("recent_sessions", {"kind": "focus", "limit": 1}), _final("One session so far."))
+    _use(monkeypatch, fake)
+    out = assistant.answer("My sessions?", CTX, tools={"recent_sessions": lambda **_: [{"focus_pct": 80}]})
+    assert out["answer"] == "One session so far." and out["tools_used"] == ["recent_sessions"]
+    assert fake.calls[1]["messages"][-1]["content"][0]["content"] == '[{"focus_pct": 80}]'
+
+    fake = _ScriptedMessages(*[_tool_call("search_guide", {"query": "x"}) for _ in range(assistant.MAX_TOOL_ROUNDS)])
+    _use(monkeypatch, fake)
+    out = assistant.answer("How do I stop saying um?", CTX, tools={"recent_sessions": lambda **_: []})
+    assert out["engine"] == "built-in" and len(fake.calls) == assistant.MAX_TOOL_ROUNDS

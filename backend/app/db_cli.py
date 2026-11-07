@@ -7,6 +7,10 @@ Run from backend/ (or `python db_cli.py ...` inside backend/app):
     python -m app.db_cli copy --to aws          copy every row from the current database to AWS, then verify counts
                                                 (--from local|aws|URL, --replace to overwrite a non-empty target)
     python -m app.db_cli mongo-sync             rebuild the MongoDB mirror (MONGODB_URI) from the SQL database
+                                                (--online fills ONLINE_MONGODB_URI, e.g. Atlas, instead)
+    python -m app.db_cli doctor                 what's connected: SQL, MongoDB, Atlas, AWS, Claude, the AI packages
+    python -m app.db_cli lake-export            write every table as Parquet (Hadoop, Spark, AWS Athena read it)
+                                                (--out DIR, default backend/data-lake; no secrets, no password hashes)
 --db / --from / --to take: local, aws, current (default), or a full SQLAlchemy URL.
 """
 import argparse
@@ -84,6 +88,8 @@ def cmd_status(args):
 
 
 def cmd_mongo_sync(args):
+    if args.online:
+        return sync_online(args)
     if not mongo.enabled():
         sys.exit("MONGODB_URI is not set in backend/.env (e.g. MONGODB_URI=mongodb://localhost:27017/).")
     if mongo.ping() is None:
@@ -144,14 +150,59 @@ def cmd_copy(args):
         print("To use it, set DATABASE=aws in backend/.env (and remove any DATABASE_URL line), then restart the backend.")
 
 
+def sync_online(args):
+    if not settings.ONLINE_MONGODB_URI:
+        sys.exit("ONLINE_MONGODB_URI is not set in backend/.env.")
+    from pymongo import MongoClient
+
+    client = MongoClient(settings.ONLINE_MONGODB_URI, serverSelectionTimeoutMS=5000)
+    synced = mongo.full_sync(connect_or_exit(resolve(args.db)), client[settings.MONGODB_DB])
+    client.close()
+    print(f"Online copy of '{settings.MONGODB_DB}' matches the SQL database ({sum(synced.values())} documents).")
+
+
+def cmd_doctor(_args):
+    from app.status import report
+
+    r = report()
+    for section, rows in (("Connections", r["services"]), ("Advanced AI packages", r["advanced"])):
+        print(section)
+        for name, row in rows.items():
+            print(f"  {name:<26} {row['state']:<11} {row['detail']}")
+
+
+def cmd_lake(args):
+    import pandas as pd
+
+    eng = connect_or_exit(resolve(args.db))
+    out = Path(args.out)
+    written = 0
+    for table in tables():
+        if table.name in mongo.SKIP_TABLES:
+            continue
+        with eng.connect() as conn:
+            df = pd.read_sql(select(table), conn).drop(columns=list(mongo.SKIP_FIELDS.get(table.name, ())))
+        folder = out / table.name
+        folder.mkdir(parents=True, exist_ok=True)
+        df.to_parquet(folder / "part-00000.parquet", index=False)
+        written += len(df)
+        print(f"  {table.name:<20} {len(df)} rows")
+    print(f"Wrote {written} rows to {out}. It holds emails and phone numbers: keep it private.")
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(prog="python -m app.db_cli", description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = p.add_subparsers(dest="command", required=True)
-    for name, fn in (("status", cmd_status), ("init", cmd_init), ("mongo-sync", cmd_mongo_sync)):
+    for name, fn in (("status", cmd_status), ("init", cmd_init), ("mongo-sync", cmd_mongo_sync), ("lake-export", cmd_lake)):
         s = sub.add_parser(name)
         s.add_argument("--db", default="current")
         s.set_defaults(fn=fn)
+        if name == "mongo-sync":
+            s.add_argument("--online", action="store_true", help="fill ONLINE_MONGODB_URI instead of the live mirror")
+        if name == "lake-export":
+            s.add_argument("--out", default=str(Path(__file__).resolve().parents[1] / "data-lake"))
+    sub.add_parser("doctor").set_defaults(fn=cmd_doctor)
     c = sub.add_parser("copy")
     c.add_argument("--from", dest="from_", default="current")
     c.add_argument("--to", required=True)

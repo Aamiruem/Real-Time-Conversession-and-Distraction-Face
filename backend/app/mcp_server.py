@@ -8,7 +8,8 @@ platform data as tools:
     ML         predict_fatigue, fatigue_model_card
     Data       platform_stats, user_overview, list_focus_sessions, speech_history, list_rooms, room_messages,
                room_insights, leaderboard
-    Coaching   recommendations, ask_coach, interview_questions, interview_guide
+    Coaching   recommendations, ask_coach, interview_questions, interview_guide, search_guide
+    System     system_status
 
 Two ways to run it:
     stdio (local):  python -m app.mcp_server            <- add to Claude Desktop / Claude Code
@@ -138,6 +139,24 @@ def predict_fatigue(duration_min: float, hour: int, focus_pct: float, distracted
         duration_min=duration_min, hour=hour, focus_pct=focus_pct, distracted_pct=distracted_pct,
         drowsy_pct=drowsy_pct, no_face_pct=no_face_pct, blinks_per_min=blinks_per_min,
         yawns_per_10min=yawns_per_10min, avg_ear=avg_ear))
+
+
+@mcp.tool()
+def search_guide(query: str, limit: int = 4) -> list[str]:
+    """Search the coaching guide (interviews, speaking, filler words, body language, focus) with the same RAG search the
+    AI coach uses: by meaning when the advanced layer is installed, by keywords otherwise."""
+    from coach.assistant import retrieve
+
+    return retrieve(query, k=min(max(limit, 1), 10))
+
+
+@mcp.tool()
+def system_status() -> dict:
+    """What Presence AI is connected to right now (SQL, MongoDB, Atlas, AWS, Claude) and which advanced AI packages are
+    installed. Never includes passwords, keys or connection strings."""
+    from app.status import report
+
+    return report()
 
 
 @mcp.tool()

@@ -1,0 +1,15 @@
+# Advanced AI layer (optional, about 1.5 GB): local machine or a paid server only.
+# Vercel (500 MB) and Render's free plan can't hold it, so requirements.txt and the Dockerfile leave it out. The app
+# detects each package at run time and carries on without it; `python -m app.db_cli doctor` shows what's active.
+#   pip install --no-cache-dir -r requirements-advanced.txt
+# The constraints stop these packages upgrading what the app runs on: uploads (python-multipart) and MediaPipe (protobuf).
+--extra-index-url https://download.pytorch.org/whl/cpu
+-c requirements.txt
+protobuf<5
+
+xgboost==3.2.0
+mlflow-skinny==3.17.2
+torch==2.15.0+cpu
+sentence-transformers==6.2.0
+langgraph==1.2.20
+pyarrow

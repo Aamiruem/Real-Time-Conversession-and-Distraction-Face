@@ -22,3 +22,7 @@ backend/cv/models/
 
 # Deploy keys (Render / Vercel API tokens) - never commit
 .deploy.env
+
+# Advanced AI layer output (MLflow runs, Parquet data lake: holds personal data)
+backend/mlruns/
+backend/data-lake/

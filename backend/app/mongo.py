@@ -161,14 +161,15 @@ def install():
 
 # ---------- full sync ----------
 
-def full_sync(engine: Engine) -> dict[str, int]:
-    """Make every MongoDB collection match its SQL table exactly. Returns {table: documents}."""
+def full_sync(engine: Engine, target=None) -> dict[str, int]:
+    """Make every MongoDB collection match its SQL table exactly. Returns {table: documents}.
+    `target` is another MongoDB database to fill instead of the live mirror (the online copy)."""
     from pymongo import ReplaceOne
 
     from app.database import Base
     from app import models  # noqa: F401  (register models)
 
-    db, result = database(), {}
+    db, result = (database() if target is None else target), {}
     with engine.connect() as conn:
         for table in Base.metadata.sorted_tables:
             if table.name in SKIP_TABLES:

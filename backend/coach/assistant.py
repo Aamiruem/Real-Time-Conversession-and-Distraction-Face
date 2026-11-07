@@ -15,6 +15,7 @@ import os
 import re
 from collections.abc import Callable
 
+from coach import graph, semantic
 from interview.knowledge import FRAMEWORKS, GENERAL_QUESTIONS, GUIDE, WORD_SWAPS
 
 log = logging.getLogger(__name__)
@@ -63,6 +64,8 @@ def _knowledge() -> list[str]:
 
 _DOCS = _knowledge()
 _INDEX = None
+RRF_K = 60  # the standard reciprocal rank fusion constant
+MIN_SIMILARITY = 0.45  # below this, a question isn't about anything in the guide (see coach/eval_search.py)
 
 
 # everyday words -> the guide's vocabulary, so "how do I stop saying um" finds the filler-word advice
@@ -84,11 +87,8 @@ def _expand(question: str) -> str:
     return " ".join([q] + [extra for pattern, extra in SYNONYMS.items() if re.search(pattern, q)])
 
 
-def retrieve(question: str, k: int = 3) -> list[str]:
-    """Top-k guide passages for a question (TF-IDF cosine similarity; the index is built once).
-
-    Passages scoring well below the best match are dropped, so a weak keyword overlap doesn't make it in.
-    """
+def _keyword_scores(question: str):
+    """TF-IDF cosine similarity of the question to every passage (the index is built once)."""
     global _INDEX
     from sklearn.feature_extraction.text import TfidfVectorizer
     from sklearn.metrics.pairwise import linear_kernel
@@ -97,9 +97,38 @@ def retrieve(question: str, k: int = 3) -> list[str]:
         vec = TfidfVectorizer(stop_words="english", ngram_range=(1, 2), sublinear_tf=True)
         _INDEX = (vec, vec.fit_transform(_DOCS))
     vec, matrix = _INDEX
-    sims = linear_kernel(vec.transform([_expand(question)]), matrix).ravel()
+    return linear_kernel(vec.transform([_expand(question)]), matrix).ravel()
+
+
+def ranked_keywords(question: str) -> list[str]:
+    sims = _keyword_scores(question)
+    return [_DOCS[i] for i in sims.argsort()[::-1] if sims[i] > 0]
+
+
+def ranked_hybrid(question: str) -> list[str]:
+    """Keyword and meaning rankings merged by reciprocal rank fusion: a passage near the top of either list rises."""
+    sims = _keyword_scores(question)
+    fused: dict[int, float] = {}
+    for rank, i in enumerate(sims.argsort()[::-1]):
+        if sims[i] > 0:
+            fused[int(i)] = 1 / (RRF_K + rank)
+    for rank, (i, _) in enumerate(semantic.search(question, _DOCS) or []):
+        fused[i] = fused.get(i, 0) + 1 / (RRF_K + rank)
+    return [_DOCS[i] for i in sorted(fused, key=fused.get, reverse=True)]
+
+
+def retrieve(question: str, k: int = 3) -> list[str]:
+    """Top-k guide passages for a question: keywords and meaning together when the embeddings are available.
+
+    An off-topic question gets nothing, so the coach says it has no guide entry rather than quoting something unrelated.
+    """
+    sims = _keyword_scores(question)
+    matches = semantic.search(question, _DOCS)
+    if matches and matches[0][1] >= MIN_SIMILARITY:
+        return ranked_hybrid(question)[:k]
     order = sims.argsort()[::-1][:k]
     best = sims[order[0]] if len(order) else 0
+    # passages scoring well below the best match are dropped, so a weak keyword overlap doesn't make it in
     return [_DOCS[i] for i in order if sims[i] > 0.05 and sims[i] >= 0.6 * best]
 
 
@@ -154,6 +183,16 @@ def _run_tool(block, tools: dict[str, Callable]) -> dict:
     return result
 
 
+def _loop(ask: Callable, act: Callable, max_rounds: int):
+    """The agent's steps without LangGraph: Claude's final response, or None if it's still calling tools at the limit."""
+    for _ in range(max_rounds):
+        response = ask()
+        if response.stop_reason != "tool_use":
+            return response
+        act(response)
+    return None
+
+
 def _claude(question: str, ctx: dict, history: list[dict], tools: dict[str, Callable] | None) -> tuple[str | None, list[str]]:
     """Claude's answer and the tools it used. The answer is None to use the built-in engine: no key, an API error,
     refused by every model, or still calling tools after MAX_TOOL_ROUNDS.
@@ -177,33 +216,36 @@ def _claude(question: str, ctx: dict, history: list[dict], tools: dict[str, Call
     offered = {} if handlers is None else {"tools": [t for t in TOOLS if t["name"] in handlers]}
     client = anthropic.Anthropic(max_retries=1, timeout=30.0)
     used: list[str] = []
+
+    def ask():
+        return client.beta.messages.create(
+            model=CLAUDE_MODEL,
+            max_tokens=2000,
+            output_config={"effort": "low"},  # short coaching answers: fast and cheap
+            betas=["server-side-fallback-2026-07-01"],
+            fallbacks="default",
+            system=SYSTEM_PROMPT,
+            messages=messages,
+            **offered,
+        )
+
+    def act(response):
+        calls = [b for b in response.content if b.type == "tool_use"]
+        used.extend(c.name for c in calls)
+        # the whole response goes back (thinking blocks included), and all results in one message
+        messages.append({"role": "assistant", "content": response.content})
+        messages.append({"role": "user", "content": [_run_tool(c, handlers or {}) for c in calls]})
+
     try:
-        for _ in range(MAX_TOOL_ROUNDS):
-            response = client.beta.messages.create(
-                model=CLAUDE_MODEL,
-                max_tokens=2000,
-                output_config={"effort": "low"},  # short coaching answers: fast and cheap
-                betas=["server-side-fallback-2026-07-01"],
-                fallbacks="default",
-                system=SYSTEM_PROMPT,
-                messages=messages,
-                **offered,
-            )
-            if response.stop_reason != "tool_use":
-                break
-            calls = [b for b in response.content if b.type == "tool_use"]
-            used += [c.name for c in calls]
-            # the whole response goes back (thinking blocks included), and all results in one message
-            messages.append({"role": "assistant", "content": response.content})
-            messages.append({"role": "user", "content": [_run_tool(c, handlers or {}) for c in calls]})
-        else:
-            log.warning("coach: still calling tools after %s rounds — using the built-in coach", MAX_TOOL_ROUNDS)
-            return None, used
+        response = (graph.run if tools and graph.enabled() else _loop)(ask, act, MAX_TOOL_ROUNDS)
     except anthropic.APIStatusError as e:
         log.warning("coach: Claude API error %s — using the built-in coach", e.status_code)
         return None, used
     except anthropic.APIConnectionError:
         log.warning("coach: Claude unreachable — using the built-in coach")
+        return None, used
+    if response is None:
+        log.warning("coach: still calling tools after %s rounds — using the built-in coach", MAX_TOOL_ROUNDS)
         return None, used
     if response.stop_reason == "refusal":
         return None, used

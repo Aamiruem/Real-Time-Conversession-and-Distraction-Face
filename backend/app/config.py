@@ -87,6 +87,8 @@ class Settings:
     # MongoDB mirror: every saved record is also kept in MongoDB (one collection per table). Empty = off.
     MONGODB_URI: str = os.getenv("MONGODB_URI", "").strip()
     MONGODB_DB: str = os.getenv("MONGODB_DB", "presence_ai").strip()
+    # Online copy of the mirror (e.g. MongoDB Atlas), written only by `python -m app.db_cli mongo-sync --online`
+    ONLINE_MONGODB_URI: str = os.getenv("ONLINE_MONGODB_URI", "").strip()
     # Presence Studio videos are kept in MongoDB (GridFS). Total size allowed, in MB: past it new videos go to S3 / disk.
     # 0 = no limit. Set it on small plans: a full Atlas M0 (512 MB) also stops the mirror above.
     MONGO_VIDEO_QUOTA_MB: int = int(os.getenv("MONGO_VIDEO_QUOTA_MB", "0"))
