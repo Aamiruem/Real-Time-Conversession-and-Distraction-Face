@@ -66,6 +66,11 @@ let renewGuest = null;
 let renewing = null;
 export const setGuestRenewal = (fn) => (renewGuest = fn);
 
+// A login the server no longer accepts, with no guest renewal to fall back on: the auth provider signs the person out so
+// they can sign in again, instead of every page failing with "Invalid or expired token".
+let onLoginRejected = null;
+export const setLoginRejected = (fn) => (onLoginRejected = fn);
+
 export async function api(path, init = {}) {
   if (init.method && init.method !== "GET") cache.clear();
   const headers = new Headers(init.headers);
@@ -86,6 +91,8 @@ export async function api(path, init = {}) {
     renewing ??= renewGuest().finally(() => (renewing = null)); // one renewal for many failing requests
     if (await renewing.catch(() => false)) return api(path, { ...init, renewed: (init.renewed ?? 0) + 1 });
   }
+  // only if this is still the current login: a slow answer to an old one must not end a new session
+  if (res.status === 401 && token && token === getToken() && !path.startsWith("/auth/")) onLoginRejected?.();
   if (!res.ok) {
     let detail = res.statusText;
     try {

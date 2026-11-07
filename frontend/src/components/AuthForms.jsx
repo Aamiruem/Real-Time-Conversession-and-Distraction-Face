@@ -216,6 +216,7 @@ function Verify({ pending, onDone, onBack }) {
 /* ------------------------------------------------------------------ sign in */
 export function LoginForm() {
   const finish = useFinish();
+  const expired = useSearchParams().get("expired");
   const [tab, setTab] = useState("password");
   const [ident, setIdent] = useState("");
   const [password, setPassword] = useState("");
@@ -267,6 +268,7 @@ export function LoginForm() {
     <div>
       <RedirectIfSignedIn />
       <MeetingInvite />
+      {expired && <div className="alert info" role="status">Your session expired. Sign in again to get back to your data: it's safe.</div>}
       <div className="tabs" role="tablist">
         {[
           ["password", "🔐 Password"],

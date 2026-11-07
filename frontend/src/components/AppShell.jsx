@@ -2,7 +2,7 @@ import Link from "@/components/Link";
 import { usePathname, useRouter, useSearchParams } from "@/lib/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
-import { useAuth, wasSignedOut } from "@/lib/auth";
+import { sessionExpired, useAuth, wasSignedOut } from "@/lib/auth";
 import { useBackendStatus } from "@/lib/backend";
 import { themeLabel, useTheme } from "@/lib/theme";
 import { BackendNotice } from "./BackendNotice";
@@ -108,8 +108,8 @@ export function AppShell({ children }) {
     }
     if (!ready || user || offline || guesting.current) return;
     if (wasSignedOut()) {
-      // signed out on purpose: show the login page (it has "Continue as guest") instead of a new guest session
-      router.replace(`/login?next=${encodeURIComponent(path + (query ? `?${query}` : ""))}`);
+      // signed out, or the login expired: show the login page (it has "Continue as guest") instead of a new guest session
+      router.replace(`/login?next=${encodeURIComponent(path + (query ? `?${query}` : ""))}${sessionExpired() ? "&expired=1" : ""}`);
       return;
     }
     if (guestBlocked && backend.status !== "ok") return; // try again once the server reports it's healthy
