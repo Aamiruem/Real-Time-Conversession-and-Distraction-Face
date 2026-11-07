@@ -1750,6 +1750,7 @@ h1, h2, h3, h4 { font-weight: 500; letter-spacing: 0; }
 .page-head p { font-size: .9375rem; max-width: 80ch; }
 @media (min-width: 961px) {
   .workspace:has(.page-head, .dash-hero) .topbar-title { display: none; }
+  .topbar-title { flex: none; } /* the search bar gives way, never the page title */
 }
 @media (max-width: 960px) {
   .page-head h1 { position: absolute; width: 1px; height: 1px; margin: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
@@ -1758,7 +1759,7 @@ h1, h2, h3, h4 { font-weight: 500; letter-spacing: 0; }
 
 /* app frame */
 .topbar { box-shadow: none; gap: 8px; }
-.topbar-search { flex: 0 1 720px; height: 44px; margin-inline: 8px auto; padding: 0 16px; gap: 12px; border: 0; background: var(--inset); font-size: .9375rem; }
+.topbar-search { flex: 0 1 720px; height: 44px; margin-inline: auto 8px; padding: 0 16px; gap: 12px; border: 0; background: var(--inset); font-size: .9375rem; }
 .topbar-search:hover { border: 0; background: var(--surface); box-shadow: var(--elev-1); }
 .side { border-right: 0; background: var(--side); }
 .side a.nav-item { padding: 4px 16px 4px 6px; border-radius: 999px; font-weight: 500; font-size: .875rem; }
