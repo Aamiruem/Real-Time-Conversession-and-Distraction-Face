@@ -34,9 +34,9 @@ QUALITIES = {"low", "medium", "high"}
 SPEEDS = {"eco", "balanced", "realtime"}
 TYPES = {"video/webm": "webm", "video/mp4": "mp4"}
 CHUNK = 1024 * 1024
-# Only these go to MongoDB: Presence recordings stop at 2 minutes (about 40 MB), Focus Room ones can reach RECORDING_MAX_MB
+# Only these go to MongoDB: Presence recordings stop at 2 minutes (about 90 MB at 1080p), Focus Room ones can reach RECORDING_MAX_MB
 MONGO_SOURCES = {"presence"}
-MONGO_VIDEO_MAX = 64 * CHUNK
+MONGO_VIDEO_MAX = 128 * CHUNK
 
 
 class RecordingOut(BaseModel):

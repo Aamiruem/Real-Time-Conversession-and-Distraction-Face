@@ -1715,3 +1715,17 @@ input:focus, select:focus, textarea:focus { box-shadow: 0 0 0 3px color-mix(in s
 /* the current page looks the same in the phone menu as in the sidebar */
 .mmenu-link.on, .mmenu-link.on:hover { background: color-mix(in srgb, var(--accent) 11%, transparent); }
 .mmenu-link.on b { color: var(--accent); }
+
+/* cameras: more of the page on wide screens; below this width the layouts stack and the camera is already full width */
+@media (min-width: 1200px) {
+  .split-3-2:has(.video-wrap) { grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr); }
+  .split-rooms { grid-template-columns: minmax(0, 1.75fr) minmax(0, 2.1fr) minmax(0, 1fr); }
+}
+
+/* camera thumbnails: the picture shows what the page does, so the play button sits in the corner, off the artwork */
+.cam-poster { place-items: end; }
+.cam-poster-art { inset: 13% 8% 15%; width: 84%; height: 72%; }
+.cam-poster-play { width: 64px; height: 64px; margin: 0 14px 14px 0; }
+.cam-poster.small .cam-poster-play { width: 48px; height: 48px; margin: 0 10px 10px 0; }
+.cam-poster .cam-poster-hint { left: 14px; bottom: 16px; transform: none; max-width: calc(100% - 104px); text-align: left; }
+.cam-poster.small .cam-poster-hint { left: 10px; bottom: 12px; max-width: calc(100% - 76px); }

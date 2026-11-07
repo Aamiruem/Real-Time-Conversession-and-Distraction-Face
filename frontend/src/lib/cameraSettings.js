@@ -2,13 +2,12 @@
 // player's ⚙ settings menu (CameraDock); useFaceTracker follows it live.
 import { useSyncExternalStore } from "react";
 
-const KEY = "presence.camera";
-const OLD_KEY = "presence.rooms.camera"; // Focus Rooms kept its own copy before
-const DEFAULTS = { quality: "medium", speed: "realtime" };
+const KEY = "presence.camera.v2"; // v2: the default rose to 1080p, so older saved "720p" settings are left behind
+const DEFAULTS = { quality: "high", speed: "realtime" };
 
 function read() {
   try {
-    return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) ?? localStorage.getItem(OLD_KEY) ?? "{}") };
+    return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) ?? "{}") };
   } catch {
     return DEFAULTS;
   }

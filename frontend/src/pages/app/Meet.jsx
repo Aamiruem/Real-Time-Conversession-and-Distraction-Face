@@ -568,7 +568,7 @@ function Room({ code }) {
   const [mediaReady, setMediaReady] = useState(false);
   const [mic, setMic] = useState(true);
   const [cam, setCam] = useState(true);
-  const [quality, setQuality] = useState(QUALITY[prefs.quality] ? prefs.quality : "hd");
+  const [quality, setQuality] = useState(QUALITY[prefs.quality] ? prefs.quality : "fullhd");
   // your last background (an uploaded picture is restored a moment later, below)
   const [effect, setEffect] = useState(() => ({ ...(prefs.effect ?? {}), id: prefs.effect?.id === "image" ? "none" : (prefs.effect?.id ?? "none") }));
   const [preview, setPreview] = useState(null); // lobby video with the effect applied

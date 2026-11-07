@@ -70,7 +70,7 @@ export default function Presence() {
     voice.current.start(stream);
     if (canRecord()) {
       try {
-        rec.current = new CameraRecorder(cam.videoRef.current, cam.canvasRef.current, () => cam.engine.current.metrics(), "medium", stream);
+        rec.current = new CameraRecorder(cam.videoRef.current, cam.canvasRef.current, () => cam.engine.current.metrics(), "high", stream);
         rec.current.start();
       } catch {
         rec.current = null; // analysis still works without the video file
@@ -179,7 +179,7 @@ export default function Presence() {
             <canvas ref={cam.canvasRef} />
             {analysing && <span className="rec-badge">● {clock(secs)} / {clock(TARGET_SECONDS)}</span>}
             {!running && (
-              <CameraPoster kind="interview" color={SECTIONS["/app/presence"].color} title="Presence Studio"
+              <CameraPoster kind="presence" color={SECTIONS["/app/presence"].color} title="Presence Studio"
                 hint="Press play — allow camera + microphone, then start the analysis"
                 loading={cam.status === "loading"} onStart={cam.start} />
             )}

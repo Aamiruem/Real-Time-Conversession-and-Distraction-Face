@@ -13,6 +13,7 @@ export const CAMERA_QUALITY = {
   low: { label: "480p", width: 854, height: 480 },
   medium: { label: "720p", width: 1280, height: 720 },
   high: { label: "1080p", width: 1920, height: 1080 },
+  ultra: { label: "4K", width: 3840, height: 2160 },
 };
 /** How often the face is analysed for the `speed` option (0 = every camera frame). Lower = less CPU / battery. */
 export const TRACKING_SPEED = {
@@ -76,7 +77,7 @@ export function useFaceTracker({
   const [error, setError] = useState("");
   const minGap = useRef(0);
   minGap.current = TRACKING_SPEED[speed]?.fps ? 1000 / TRACKING_SPEED[speed].fps : 0;
-  const size = CAMERA_QUALITY[quality] ?? CAMERA_QUALITY.medium;
+  const size = CAMERA_QUALITY[quality] ?? CAMERA_QUALITY.high;
 
   const loop = useCallback((landmarker) => {
     let lastUi = 0;

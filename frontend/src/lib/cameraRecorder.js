@@ -5,7 +5,7 @@ import { STATE_COLORS } from "./attention";
 import { TYPES } from "./meetRecorder";
 
 /** Video bitrate for each camera quality (CAMERA_QUALITY keys). */
-const BITRATE = { low: 1_000_000, medium: 2_500_000, high: 5_000_000 };
+const BITRATE = { low: 1_000_000, medium: 4_000_000, high: 8_000_000, ultra: 20_000_000 };
 const FPS = 30;
 
 export class CameraRecorder {
@@ -14,7 +14,7 @@ export class CameraRecorder {
    * @param {(() => {focusPct: number, state: string}) | null} metrics the latest focus metrics (null: no focus HUD)
    * @param {MediaStream | null} audio microphone to record along (null: video only)
    */
-  constructor(video, overlay, metrics, quality = "medium", audio = null) {
+  constructor(video, overlay, metrics, quality = "high", audio = null) {
     this.audio = audio;
     this.video = video;
     this.overlay = overlay;

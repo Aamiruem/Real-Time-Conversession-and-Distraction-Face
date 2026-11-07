@@ -12,8 +12,9 @@ const SETTINGS = {
     label: "Quality",
     icon: "camera",
     options: [
-      ["high", "1080p", "Full HD — sharpest, most data"],
-      ["medium", "720p", "HD — recommended"],
+      ["ultra", "4K", "Ultra HD — if your camera supports it"],
+      ["high", "1080p", "Full HD — recommended"],
+      ["medium", "720p", "HD — less data"],
       ["low", "480p", "Data saver — slow connections"],
     ],
   },

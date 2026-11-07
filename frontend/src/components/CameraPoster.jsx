@@ -14,6 +14,26 @@ function Person({ x, y, s = 1, color, opacity = 1 }) {
 }
 
 const SCENES = {
+  presence: (c) => (
+    <>
+      <rect x="84" y="146" width="150" height="6" rx="3" fill={ink} opacity=".25" />
+      <Person x={150} y={122} s={1.15} color={c} />
+      <path d="M192 74a24 24 0 0 1 0 34" fill="none" stroke={c} strokeWidth="4" strokeLinecap="round" />
+      <path d="M204 64a38 38 0 0 1 0 54" fill="none" stroke={ink} strokeWidth="3" strokeLinecap="round" opacity=".55" />
+      <g transform="translate(68 62)">
+        <circle r="24" fill="none" stroke={ink} strokeOpacity=".2" strokeWidth="5" />
+        <circle r="24" fill="none" stroke={c} strokeWidth="5" strokeLinecap="round" strokeDasharray="126 151" transform="rotate(-90)" />
+        <text y="6" textAnchor="middle" fontSize="16" fontWeight="800" fill={ink}>84</text>
+      </g>
+      {[["Face", 62], ["Body", 46], ["Voice", 54]].map(([label, w], i) => (
+        <g key={label} transform={`translate(232 ${44 + i * 22})`}>
+          <text y="-3" fontSize="9" fontWeight="700" fill={ink}>{label}</text>
+          <rect y="1" width="66" height="5" rx="2.5" fill={ink} opacity=".2" />
+          <rect y="1" width={w} height="5" rx="2.5" fill={c} />
+        </g>
+      ))}
+    </>
+  ),
   focus: (c) => (
     <>
       <rect x="60" y="138" width="200" height="6" rx="3" fill={ink} opacity=".25" />

@@ -4,8 +4,10 @@ import { CameraDock } from "@/components/CameraDock";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { SkinCheck } from "@/components/SkinCheck";
 import { PageHead } from "@/components/ui";
+import { useCameraSettings } from "@/lib/cameraSettings";
 import { skinZones } from "@/lib/skin";
 import { describe, loadVisionModels, MODELS, VisionEngine } from "@/lib/vision";
+import { CAMERA_QUALITY } from "@/lib/useFaceTracker";
 import { voiceCoach } from "@/lib/voiceCoach";
 import { CameraPoster } from "@/components/CameraPoster";
 import { SECTIONS } from "@/lib/sections";
@@ -38,6 +40,14 @@ export default function Vision() {
   enabledRef.current = enabled;
   const [s, setS] = useState(null);
   const [fps, setFps] = useState(0);
+  const { quality } = useCameraSettings();
+  const size = useRef(null);
+  size.current = CAMERA_QUALITY[quality] ?? CAMERA_QUALITY.high;
+  // the ⚙ quality menu also applies to a running camera
+  useEffect(() => {
+    const { width, height } = size.current;
+    stream.current?.getVideoTracks()[0]?.applyConstraints({ width: { ideal: width }, height: { ideal: height } }).catch(() => {});
+  }, [quality]);
   const [said, setSaid] = useState("");
   const showZones = useRef(false);
   const faceLandmarks = () => engine.current?.results.face?.faceLandmarks?.[0];
@@ -57,7 +67,7 @@ export default function Vision() {
     try {
       const [models, media] = await Promise.all([
         loadVisionModels(),
-        navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 }, facingMode: "user" } }),
+        navigator.mediaDevices.getUserMedia({ video: { width: { ideal: size.current.width }, height: { ideal: size.current.height }, frameRate: { ideal: 30 }, facingMode: "user" } }),
       ]);
       engine.current ??= new VisionEngine(models);
       stream.current = media;
