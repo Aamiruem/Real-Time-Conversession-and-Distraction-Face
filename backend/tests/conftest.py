@@ -21,10 +21,11 @@ def _cleanup():
 
 
 _db = Path(_tmp) / "test.db"
-os.environ.update(DATABASE_URL=f"sqlite:///{_db.as_posix()}", AWS_ENABLED="false", OTP_DEV_MODE="true",
+# TEST_DATABASE_URL runs the suite on another database, e.g. a throw-away PostgreSQL
+os.environ.update(DATABASE_URL=os.getenv("TEST_DATABASE_URL", f"sqlite:///{_db.as_posix()}"), AWS_ENABLED="false", OTP_DEV_MODE="true",
                   OTP_RESEND_SECONDS="0", SECRET_KEY="test-secret-key-that-is-at-least-32-bytes",
                   REQUIRE_VERIFICATION="true", MONGODB_URI="", GUESTS_PER_HOUR="1000",
-                  RECORDINGS_DIR=str(Path(_tmp) / "recordings"))  # the MongoDB test opts in with its own db
+                  RECORDINGS_DIR=str(Path(_tmp) / "recordings"), SEMANTIC_SEARCH="off")  # the MongoDB test opts in with its own db
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402

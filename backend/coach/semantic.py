@@ -2,7 +2,8 @@
 
 Finds "my mind goes blank when I present" under advice on nerves, with no words in common. Optional: without
 sentence-transformers, or with SEMANTIC_SEARCH=off, or if the model can't be loaded, search() returns None and the coach
-uses keyword search alone. The model downloads once (about 90 MB) and is held in memory after the first question.
+uses keyword search alone. The model downloads once (about 90 MB), loads in the background when the API starts, and
+stays in memory; keyword search answers until it's ready.
 """
 import logging
 import os
@@ -37,9 +38,15 @@ def _prepare(docs: list[str]):
                 log.warning("semantic search off (%s): using keyword search", e.__class__.__name__)
 
 
+def warm_up(docs: list[str]):
+    """Prepare in the background, so the first question doesn't wait for the model."""
+    if enabled():
+        threading.Thread(target=_prepare, args=(docs,), name="embedding-model", daemon=True).start()
+
+
 def search(question: str, docs: list[str]) -> list[tuple[int, float]] | None:
     """Every passage's index and similarity (0-1), best first; None when semantic search isn't available."""
-    if not enabled():
+    if not enabled() or (_vectors is None and _lock.locked()):  # still loading: don't make the user wait for it
         return None
     _prepare(docs)
     if _vectors is None:

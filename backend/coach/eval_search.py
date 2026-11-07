@@ -60,7 +60,6 @@ def main():
     show("keywords", score(lambda q: assistant.ranked_keywords(q)))
     if semantic.enabled():
         show("meaning", score(lambda q: [assistant._DOCS[i] for i, _ in semantic.search(q, assistant._DOCS)]))
-        show("hybrid", score(lambda q: assistant.ranked_hybrid(q)))
         print("  off-topic best similarity:", {q[:24]: round(semantic.search(q, assistant._DOCS)[0][1], 2) for q in OFF_TOPIC})
     print("  off-topic answers:", {q[:24]: len(assistant.retrieve(q)) for q in OFF_TOPIC})
 

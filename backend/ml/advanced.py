@@ -3,6 +3,7 @@
 Used by `python -m ml.train --advanced --mlflow`. Nothing here is imported by the API unless a saved model needs it,
 so servers without these packages keep working.
 """
+import os
 from importlib.util import find_spec
 from pathlib import Path
 
@@ -80,6 +81,8 @@ def log_run(card: dict) -> str | None:
     Returns the run id, or None when MLflow isn't installed."""
     if not find_spec("mlflow"):
         return None
+    # MLflow 3 wants a database for tracking, which needs alembic; plain files are enough for one person's training runs
+    os.environ.setdefault("MLFLOW_ALLOW_FILE_STORE", "true")
     import mlflow
 
     mlflow.set_tracking_uri(MLRUNS.as_uri())

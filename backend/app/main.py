@@ -26,6 +26,7 @@ from app.database import describe, engine, init_db, ping
 from app.secret_store import ensure_secret_key
 from app.mcp_server import http_app as mcp_http_app
 from app.mcp_server import mcp
+from coach import assistant
 from app.routers import (ai_routes, analytics_routes, attention_routes, auth_routes, chat_routes, coach_routes,
                     interview_routes, meet_routes, recording_routes, routine_routes, speech_routes)
 
@@ -56,6 +57,7 @@ async def lifespan(_: FastAPI):
     prepare()
     if mongo.enabled():
         mongo.sync_in_background(engine)  # bring the MongoDB mirror up to date with SQL
+    assistant.warm_up()  # the advanced layer's embedding model, when installed
     if mcp_app is None:
         yield
     else:

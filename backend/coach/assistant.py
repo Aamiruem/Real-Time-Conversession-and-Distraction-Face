@@ -64,8 +64,7 @@ def _knowledge() -> list[str]:
 
 _DOCS = _knowledge()
 _INDEX = None
-RRF_K = 60  # the standard reciprocal rank fusion constant
-MIN_SIMILARITY = 0.45  # below this, a question isn't about anything in the guide (see coach/eval_search.py)
+MIN_SIMILARITY = 0.28  # measured: off-topic questions top out at 0.19, right passages start at 0.33 (coach/eval_search.py)
 
 
 # everyday words -> the guide's vocabulary, so "how do I stop saying um" finds the filler-word advice
@@ -105,31 +104,25 @@ def ranked_keywords(question: str) -> list[str]:
     return [_DOCS[i] for i in sims.argsort()[::-1] if sims[i] > 0]
 
 
-def ranked_hybrid(question: str) -> list[str]:
-    """Keyword and meaning rankings merged by reciprocal rank fusion: a passage near the top of either list rises."""
-    sims = _keyword_scores(question)
-    fused: dict[int, float] = {}
-    for rank, i in enumerate(sims.argsort()[::-1]):
-        if sims[i] > 0:
-            fused[int(i)] = 1 / (RRF_K + rank)
-    for rank, (i, _) in enumerate(semantic.search(question, _DOCS) or []):
-        fused[i] = fused.get(i, 0) + 1 / (RRF_K + rank)
-    return [_DOCS[i] for i in sorted(fused, key=fused.get, reverse=True)]
-
-
 def retrieve(question: str, k: int = 3) -> list[str]:
-    """Top-k guide passages for a question: keywords and meaning together when the embeddings are available.
+    """Top-k guide passages for a question: by meaning when the embeddings are available, otherwise by keywords.
 
-    An off-topic question gets nothing, so the coach says it has no guide entry rather than quoting something unrelated.
+    Mixing the two measured worse than meaning alone (coach/eval_search.py). An off-topic question gets nothing, so the
+    coach says it has no guide entry rather than quoting something unrelated.
     """
-    sims = _keyword_scores(question)
     matches = semantic.search(question, _DOCS)
-    if matches and matches[0][1] >= MIN_SIMILARITY:
-        return ranked_hybrid(question)[:k]
+    if matches is not None:
+        return [_DOCS[i] for i, similarity in matches[:k] if similarity >= MIN_SIMILARITY]
+    sims = _keyword_scores(question)
     order = sims.argsort()[::-1][:k]
     best = sims[order[0]] if len(order) else 0
     # passages scoring well below the best match are dropped, so a weak keyword overlap doesn't make it in
     return [_DOCS[i] for i in order if sims[i] > 0.05 and sims[i] >= 0.6 * best]
+
+
+def warm_up():
+    """Load the embedding model ahead of the first question (it can take most of a minute on a cold start)."""
+    semantic.warm_up(_DOCS)
 
 
 def context_text(ctx: dict) -> str:

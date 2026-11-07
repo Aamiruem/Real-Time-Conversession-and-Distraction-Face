@@ -35,12 +35,15 @@ def _atlas() -> dict:
     if not settings.ONLINE_MONGODB_URI:
         return _ok("off", "ONLINE_MONGODB_URI is empty")
     from pymongo import MongoClient
+    from pymongo.errors import OperationFailure
 
     try:
         client = MongoClient(settings.ONLINE_MONGODB_URI, serverSelectionTimeoutMS=4000, connectTimeoutMS=4000)
         client.admin.command("ping")
         client.close()
         return _ok("connected", "copy it with: python -m app.db_cli mongo-sync --online")
+    except OperationFailure:
+        return _ok("error", "login rejected: check the user and password in ONLINE_MONGODB_URI")
     except Exception as e:  # noqa: BLE001
         return _ok("error", e.__class__.__name__)
 

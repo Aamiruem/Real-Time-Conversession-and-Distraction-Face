@@ -271,3 +271,21 @@ Both are switched on by build-time environment variables. Without them, no tag i
 
 Analytics never receives a meeting's address (it's reported as `/meeting`) or query strings. It records page views plus
 the `sign_up` and `login` events.
+
+## Advanced AI layer (optional)
+
+`backend/requirements-advanced.txt` adds PyTorch (CPU), Hugging Face embeddings, XGBoost, LangGraph, MLflow and Parquet
+support: about 1.5 GB, so it's for a local machine or a paid server. Vercel and Render's free plan can't hold it, so
+neither installs it. The app detects each package and works without it.
+
+    cd backend
+    pip install --no-cache-dir -r requirements-advanced.txt
+    python -m app.db_cli doctor                     # what's connected and installed
+    python -m coach.eval_search                     # how well the coach finds the right advice
+    python -m ml.train --with-db --advanced --mlflow   # model contest, recorded in backend/mlruns
+    python -m app.db_cli lake-export                # every table as Parquet, for Hadoop, Spark or AWS Athena
+
+- **RAG:** the coach searches by meaning when embeddings are installed, and by keywords otherwise.
+- **Agent:** with `ANTHROPIC_API_KEY` set, the coach calls tools, through LangGraph when it's installed.
+- **Models:** an advanced model replaces a scikit-learn one only if it wins by at least 0.01 macro F1.
+- **Parquet export:** it holds emails and phone numbers, so keep it private. Passwords and one-time codes are left out.
