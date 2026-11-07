@@ -10,7 +10,7 @@
   --ok: #4ade80; --warn: #facc15; --bad: #f87171; --hover: #ffffff0f; --code-bg: #0f1012; --skeleton: #24262b;
   --glow1: transparent; --glow2: transparent; --shadow: 0 8px 24px #0006;
   --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; /* validated dark-surface chart steps */
-  --msg: #24262b; --msg-me: #16321f;
+  --msg: #24262b; --msg-me: #16321f; --side: #17191c;
 }
 [data-theme="light"] {
   color-scheme: light;
@@ -19,7 +19,7 @@
   --ok: #15803d; --warn: #b45309; --bad: #c5221f; --hover: #1b1f240a; --code-bg: #1b1f24; --skeleton: #e9ecef;
   --glow1: transparent; --glow2: transparent; --shadow: 0 4px 16px #1b1f241f;
   --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; /* validated light-surface chart steps */
-  --msg: #f1f3f5; --msg-me: #e8f5ec;
+  --msg: #f1f3f5; --msg-me: #e8f5ec; --side: #e9edf4;
 }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
@@ -1643,16 +1643,14 @@ input:focus, select:focus, textarea:focus { box-shadow: 0 0 0 3px color-mix(in s
 .pill { font-weight: 600; }
 
 /* app frame: a white sidebar and top bar, content on the neutral page */
-.side { background: var(--surface); scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+.side { background: var(--side); scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
 .side-brand { border-bottom: 0; margin-bottom: 4px; }
 .brand .logo { filter: none; }
 .brand-ai { background: var(--accent); color: var(--on-accent); font-weight: 600; }
 .nav-label { font-size: .8rem; font-weight: 600; }
 .side a.nav-item { border-radius: var(--radius-sm); color: var(--text); opacity: 1; font-size: .92rem; }
 .side a.nav-item:hover { background: var(--hover); }
-.side a.nav-item.on { color: var(--accent); font-weight: 600; box-shadow: none; background: color-mix(in srgb, var(--accent) 11%, transparent); }
-.side .nav-ico { width: 24px; height: 24px; background: none; box-shadow: none; color: var(--muted); }
-.side a.nav-item.on .nav-ico { color: var(--accent); }
+.side a.nav-item.on { color: var(--accent); font-weight: 600; background: var(--surface); box-shadow: 0 0 0 1px var(--line); }
 .topbar { background: var(--surface); backdrop-filter: none; box-shadow: none; justify-content: flex-start; }
 .topbar-title .nav-ico.lg { display: none; }
 .topbar-title b { font-size: 1.05rem; font-weight: 600; letter-spacing: 0; }
@@ -1708,3 +1706,12 @@ input:focus, select:focus, textarea:focus { box-shadow: 0 0 0 3px color-mix(in s
 .status-chip { color: color-mix(in srgb, var(--area, var(--accent)) 55%, var(--text)); font-size: .78rem; font-weight: 600; }
 .rt-now { background: var(--accent); color: var(--on-accent); }
 .auth .pill { background: color-mix(in srgb, var(--accent) 7%, transparent); }
+
+/* navigation icons: the one place colour is decoration on purpose, so each section can be found at a glance.
+   SECTIONS colours are the 600 steps, so a white icon stays readable on them in both themes. */
+.side .nav-ico, .mmenu .nav-ico { width: 30px; height: 30px; border-radius: var(--radius-sm); color: #fff; background: var(--c, var(--accent)); }
+.quick-ico { color: #fff; background: var(--c, var(--accent)); }
+.side .nav-ico svg, .mmenu .nav-ico svg, .quick-ico svg { stroke-width: 2.5; }
+/* the current page looks the same in the phone menu as in the sidebar */
+.mmenu-link.on, .mmenu-link.on:hover { background: color-mix(in srgb, var(--accent) 11%, transparent); }
+.mmenu-link.on b { color: var(--accent); }
