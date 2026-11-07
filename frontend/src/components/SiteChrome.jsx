@@ -53,7 +53,7 @@ export function SiteHeader() {
             <InstallButton className="btn ghost sm compact" />
           </span>
           <button className="icon-btn wide-only" onClick={toggle} aria-label={themeLabel(theme)} title={themeLabel(theme)}>
-            {theme === "dark" ? "☀️" : "🌙"}
+            <Icon name={theme === "dark" ? "sun" : "moon"} size={18} />
           </button>
           <Link href="/login" className="wide-only">Sign in</Link>
           {/* the app signs visitors in as a guest by itself: no form needed to start */}
@@ -295,9 +295,6 @@ export function SiteFooter() {
   );
 }
 
-/** The sections the app footer links to (colours / icons from lib/sections). */
-const APP_LINKS = ["/app", "/app/focus", "/app/presence", "/app/speech", "/app/interview", "/app/meet", "/app/analytics"];
-
 /** "Related to this page": where people usually go next from each section. */
 const RELATED = {
   "/app": ["/app/focus", "/app/speech", "/app/interview"],
@@ -315,7 +312,7 @@ const RELATED = {
   "/app/settings": ["/app", "/app/analytics", "/app/routine"],
 };
 
-/** Footer under every app page: quick links to the main sections, share, the developer's links, back to top. */
+/** Footer under every app page: where to go next, the credit line and back to top. */
 export function AppFooter() {
   const toTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
   const path = usePathname();
@@ -342,29 +339,6 @@ export function AppFooter() {
           })}
         </div>
       </section>
-      <div className="af-main">
-        <Link href="/" className="af-brand" aria-label={`${SITE_NAME} home`}>
-          <Logo size={34} />
-          <span>
-            <b>{SITE_NAME}</b>
-            <small>Focus · Speak · Meet — free on any device</small>
-          </span>
-        </Link>
-        <nav className="af-links" aria-label="Sections">
-          {APP_LINKS.map((href) => {
-            const sec = SECTIONS[href];
-            return (
-              <Link key={href} href={href} className="af-link" style={{ "--c": sec.color }} title={sec.desc}>
-                <Icon name={sec.icon} size={16} /> {href === "/app" ? "Dashboard" : sec.label}
-              </Link>
-            );
-          })}
-        </nav>
-        <div className="af-actions">
-          <ShareButton label="Share app" className="btn sm af-share" align="left" />
-          <SocialLinks />
-        </div>
-      </div>
       <div className="af-bottom">
         <span>
           © {new Date().getFullYear()} {SITE_NAME} · Made with <span className="heart">♥</span> by{" "}

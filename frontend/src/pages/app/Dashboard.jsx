@@ -36,6 +36,8 @@ const TZ = -new Date().getTimezoneOffset();
 const RECS = `/recommendations?tz=${TZ}`;
 const INSIGHT = `/coach/insight?tz=${TZ}`;
 
+const count = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
 const greeting = () => {
   const h = new Date().getHours();
   return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
@@ -144,8 +146,8 @@ export default function Dashboard() {
           )}
           <p className="muted">
             {k.streak_days
-              ? `🔥 ${k.streak_days}-day streak — keep it going today.`
-              : "Start a streak today — one focus session or one practice counts."}
+              ? `${k.streak_days}-day streak. Keep it going today.`
+              : "Start a streak today. One focus session or one practice counts."}
           </p>
           <div className="row" style={{ marginTop: 16, flexWrap: "wrap", flex: "none" }}>
             <Link href="/app/focus" className="btn" style={{ flex: "none" }}>
@@ -185,7 +187,7 @@ export default function Dashboard() {
             ))}
           </div>
           <div className="insight-actions">
-            <button className="btn sm" onClick={() => openCoach()}>
+            <button className="btn ghost sm" onClick={() => openCoach()}>
               Ask a follow-up
             </button>
             <button className="btn ghost sm" onClick={() => openCoach("What should I practise next?")}>
@@ -197,7 +199,7 @@ export default function Dashboard() {
 
       {/* ---------------------------------------------------------------- KPIs */}
       <div className="kpi-grid">
-        <Kpi icon="target" color="#16a34a" value={`${k.avg_focus_pct}%`} label="Average focus" sub={`${k.focus_sessions} sessions`} />
+        <Kpi icon="target" color="#16a34a" value={`${k.avg_focus_pct}%`} label="Average focus" sub={count(k.focus_sessions, "session")} />
         <Kpi
           icon="timer"
           color="#0284c7"
@@ -206,7 +208,7 @@ export default function Dashboard() {
           sub={`${weekDelta >= 0 ? "↑" : "↓"} ${Math.abs(Math.round(weekDelta))} min vs last week`}
           trend={weekDelta >= 0 ? "up" : "down"}
         />
-        <Kpi icon="mic" color="#7c3aed" value={`${k.avg_confidence}%`} label="Speaking confidence" sub={`${k.practice_sessions} practices`} />
+        <Kpi icon="mic" color="#7c3aed" value={`${Math.round(k.avg_confidence)}%`} label="Speaking score" sub={count(k.practice_sessions, "practice")} />
         <Kpi
           icon="briefcase"
           color="#d97706"
@@ -214,12 +216,12 @@ export default function Dashboard() {
           label="Interview readiness"
           sub={k.best_readiness == null ? "no mock interview yet" : `best ${Math.round(k.best_readiness)}% · ${k.interview_answers} answer${k.interview_answers === 1 ? "" : "s"}`}
         />
-        <Kpi icon="flame" color="#ea580c" value={k.streak_days} label="Day streak" sub={`${k.messages_sent} room messages`} />
+        <Kpi icon="flame" color="#ea580c" value={k.streak_days} label="Day streak" sub={k.streak_days === 1 ? "day in a row" : "days in a row"} />
         <Kpi
           icon="trophy"
           color="#ca8a04"
           value={k.rank ? `#${k.rank}` : "—"}
-          label="Focus leaderboard"
+          label="Leaderboard"
           sub={k.rank ? `of ${k.ranked_users} people` : "do a focus session to rank"}
         />
       </div>
@@ -261,7 +263,6 @@ export default function Dashboard() {
                 {recs.map((r) => (
                   <li key={r.id}>
                     <Link href={r.href}>
-                      <span className="rec-ico">{r.icon}</span>
                       <span className="rec-body">
                         <b>{r.title}</b>
                         <span className="small muted">{r.reason}</span>
@@ -278,7 +279,6 @@ export default function Dashboard() {
             <div className="next-steps">
               {d.next_steps.map((s) => (
                 <Link key={s.text} href={s.href}>
-                  <span>{s.icon}</span>
                   <span>{s.text}</span>
                   <span className="muted">→</span>
                 </Link>
@@ -409,7 +409,6 @@ export default function Dashboard() {
               {d.recent.map((r) => (
                 <li key={r.when + r.title}>
                   <Link href={r.href}>
-                    <span className="feed-icon">{r.icon}</span>
                     <span className="feed-text">
                       <b>{r.title}</b>
                       {r.detail && <span className="small muted">{r.detail}</span>}

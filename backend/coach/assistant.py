@@ -100,7 +100,7 @@ def _builtin(question: str, ctx: dict) -> str:
     if PROGRESS_WORDS.search(question):
         if k["focus_sessions"] or k["practice_sessions"]:
             parts.append(f"So far: {k['focus_sessions']} focus sessions at {k['avg_focus_pct']}% average focus and "
-                         f"{k['practice_sessions']} recordings at {k['avg_confidence']}% average confidence"
+                         f"{k['practice_sessions']} recording{'' if k['practice_sessions'] == 1 else 's'} at {k['avg_confidence']}% average confidence"
                          + (f", with a {k['streak_days']}-day streak." if k["streak_days"] else "."))
             if k.get("weakest_skill"):
                 parts.append(f"Your weakest speaking skill right now is {k['weakest_skill']}.")
