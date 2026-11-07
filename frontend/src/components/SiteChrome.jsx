@@ -159,38 +159,6 @@ function SiteMenuSheet({ onClose, theme, onTheme }) {
 /** WhatsApp wants the number as digits only (country code first, no +). */
 const waNumber = (phone) => phone.replace(/\D/g, "");
 
-/** The developer's contact buttons: only those with a detail filled in (OWNER in lib/site.js). */
-function ownerContacts() {
-  return [
-    OWNER.portfolio && { href: OWNER.portfolio, label: "Portfolio", icon: <Icon name="globe" size={17} /> },
-    OWNER.linkedin && { href: OWNER.linkedin, label: "LinkedIn", icon: <BrandIcon name="linkedin" size={16} /> },
-    OWNER.phone && {
-      href: `https://wa.me/${waNumber(OWNER.phone)}?text=${encodeURIComponent(`Hi ${OWNER.name.split(" ")[0]}, I found ${SITE_NAME} and `)}`,
-      label: "WhatsApp",
-      icon: <BrandIcon name="whatsapp" size={16} />,
-    },
-    OWNER.phone && { href: `tel:${OWNER.phone}`, label: "Call", icon: <Icon name="phone" size={16} />, same: true },
-    OWNER.email && { href: `mailto:${OWNER.email}`, label: "Email", icon: <Icon name="mail" size={16} />, same: true },
-  ].filter(Boolean);
-}
-
-function ContactList() {
-  return (
-    <div className="contact-list">
-      {ownerContacts().map((c) => (
-        <a
-          key={c.label}
-          className="contact-chip"
-          href={c.href}
-          {...(c.same ? {} : { target: "_blank", rel: "noopener noreferrer" })}
-        >
-          {c.icon} {c.label}
-        </a>
-      ))}
-    </div>
-  );
-}
-
 const BADGES = ["Free", "No login", "Private", "Any device"];
 
 /** Round social / contact buttons for the footer (each one only when its detail is filled in). */

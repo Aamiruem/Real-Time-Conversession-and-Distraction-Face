@@ -255,3 +255,19 @@ docker compose --env-file backend/.env up --build      # http://localhost
 * **Focus %** = time spent Focused ÷ total session time.
 
 Thresholds: `frontend/src/lib/attention.js → THRESHOLDS` (browser) and `backend/cv/attention_detector.py → Thresholds`.
+
+## Google Search Console and Analytics
+
+Both are switched on by build-time environment variables. Without them, no tag is added.
+
+1. **Search Console:** add your site at <https://search.google.com/search-console>, choose **URL prefix** and the
+   **HTML tag** check, and copy only the `content="..."` value into `GOOGLE_SITE_VERIFICATION`.
+2. **Analytics:** create a GA4 property and web stream at <https://analytics.google.com> and copy the `G-XXXXXXXXXX` id
+   into `GA_MEASUREMENT_ID`. In the stream's **Enhanced measurement** settings, turn off **Page changes based on browser
+   history events**: the app reports pages itself, and that setting would count them twice.
+3. Set both, plus `VITE_SITE_URL` (your real `https://` address), in Vercel under **Settings → Environment Variables**,
+   then **redeploy**: they are read at build time.
+4. Press **Verify** in Search Console, then submit `sitemap.xml` under **Sitemaps**.
+
+Analytics never receives a meeting's address (it's reported as `/meeting`) or query strings. It records page views plus
+the `sign_up` and `login` events.

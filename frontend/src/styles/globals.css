@@ -34,6 +34,8 @@ a { color: var(--accent); text-decoration: none; }
 h1, h2, h3 { line-height: 1.15; letter-spacing: -0.015em; }
 .grad { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .muted { color: var(--muted); }
+/* read by screen readers and search engines, not shown */
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .small { font-size: .85rem; }
 .container { max-width: 1160px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 32px); }
 
@@ -298,6 +300,7 @@ details.faq p { color: var(--muted); margin: 10px 0 0; }
 .auth h1 { font-size: clamp(2rem, 4.4vw, 3rem); margin: 14px 0; font-weight: 800; }
 .auth ul { list-style: none; padding: 0; }
 .auth li { margin: 10px 0; }
+.auth section.card a:not(.btn) { text-decoration: underline; } /* not told apart by colour alone */
 .otp { letter-spacing: .4em; font-size: 1.2rem; text-align: center; font-weight: 700; }
 
 /* app shell */
@@ -1409,11 +1412,13 @@ img, video, canvas, svg { max-width: 100%; }
 
 
 /* ================= phones & small tablets: app-style navigation (MobileNav.jsx) ================= */
-.menu-btn, .mtabs, .mobile-only { display: none; }
+.mtabs, .mobile-only { display: none; }
+.menu-btn { display: grid; flex: none; }
+.shell.side-hidden { grid-template-columns: minmax(0, 1fr); }
+.shell.side-hidden .side { display: none; }
 @media (max-width: 960px) {
   .side { display: none; }
   .desk-only { display: none !important; }
-  .menu-btn { display: grid; flex: none; }
   .topbar { flex-wrap: nowrap; gap: 10px; min-height: 58px; padding-top: 8px; padding-bottom: 8px; }
   .topbar-title { flex: 1 1 auto; min-width: 0; }
   .topbar-actions { flex: none; }
@@ -1538,10 +1543,8 @@ img, video, canvas, svg { max-width: 100%; }
 .ps-pill.ok { color: var(--ok); background: color-mix(in srgb, var(--ok) 12%, transparent); border-color: color-mix(in srgb, var(--ok) 35%, transparent); }
 
 /* ================= website pages: ☰ menu on small screens (SiteChrome.jsx SiteMenu) ================= */
-.site-menu-btn { display: none; }
 @media (max-width: 860px) {
   .nav .wide-only { display: none !important; }
-  .site-menu-btn { display: grid; }
   .nav nav { gap: 10px; }
 }
 .site-menu-cta { display: grid; gap: 8px; }

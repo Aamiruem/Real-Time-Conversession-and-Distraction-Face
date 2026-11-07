@@ -41,12 +41,36 @@ function siteTags(env) {
           { tag: "script", attrs: { async: true, src: `https://www.googletagmanager.com/gtag/js?id=${ga}` }, injectTo: "head" },
           {
             tag: "script",
-            children: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date());gtag("config","${ga}",{send_page_view:false});`,
+            // no query string, and never a meeting's address (its invite): see lib/analytics.js
+            children: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date());gtag("config","${ga}",{send_page_view:false,page_location:location.origin+(/^\\/[a-z]{3}-[a-z]{4}-[a-z]{3}$/.test(location.pathname)?"/meeting":location.pathname)});`,
             injectTo: "head",
           },
         );
       }
       return tags;
+    },
+  };
+}
+
+/**
+ * /app has to open the app. The dev server otherwise answers it with the source of src/app.jsx (a bare path can resolve
+ * to a file), and `vite preview` should route like production (vercel.json, nginx.conf).
+ */
+function appRoute() {
+  const page = (req) => req.headers.accept?.includes("text/html") && req.url.split("?")[0];
+  return {
+    name: "app-route",
+    configureServer(server) {
+      server.middlewares.use((req, _res, next) => {
+        if (page(req) === "/app") req.url = "/index.html";
+        next();
+      });
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use((req, _res, next) => {
+        if (/^\/(app(\/.*)?|[a-z]{3}-[a-z]{4}-[a-z]{3})$/.test(page(req) || "")) req.url = "/app.html";
+        next();
+      });
     },
   };
 }
@@ -91,7 +115,7 @@ export default defineConfig(({ command, mode, isSsrBuild }) => {
     envDir: "..",
     // npm run dev (= dev:lan): a self-signed HTTPS certificate (others accept it once) — browsers only allow
     // camera/mic on HTTPS, so meeting links on your Wi-Fi need it. npm run dev:http serves plain http.
-    plugins: [react(), siteTags({ ...env, ...process.env }), ...(lan ? [basicSsl({ name: "presence-ai-lan" })] : [])],
+    plugins: [react(), appRoute(), siteTags({ ...env, ...process.env }), ...(lan ? [basicSsl({ name: "presence-ai-lan" })] : [])],
     resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
     server,
     preview: server,

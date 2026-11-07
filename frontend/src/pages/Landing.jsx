@@ -144,7 +144,7 @@ export default function Home() {
                   <span className="home-card-go" aria-hidden="true">{c.topic.go ?? "Open"} →</span>
                   {c.more && (
                     <Link className="feature-more" href={c.more}>
-                      Learn more
+                      Learn more<span className="sr-only"> about {c.title}</span>
                     </Link>
                   )}
                 </div>

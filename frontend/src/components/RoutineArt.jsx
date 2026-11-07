@@ -97,14 +97,14 @@ export function FaceScene({ action, t = 0, p = 0, color = "#0284c7" }) {
           <rect x="97" y="18" width="6" height="12" rx="2" fill="#fde68a" stroke="#f59e0b" />
           <ellipse cx="100" cy={34 + t * 18} rx="2.6" ry="3.6" fill="#f59e0b" opacity={1 - t} />
           {[[82, 88], [118, 88], [100, 52]].map(([x, y]) => (
-            <circle key={x + y} cx={x} cy={y} r={2 + p * 2} fill="#f59e0b" opacity=".7" />
+            <circle key={`${x},${y}`} cx={x} cy={y} r={2 + p * 2} fill="#f59e0b" opacity=".7" />
           ))}
         </g>
       )}
       {action === "moisturise" && (
         <g>
           {[[100, 50], [78, 88], [122, 88], [100, 84], [100, 106]].map(([x, y]) => (
-            <ellipse key={x + y} cx={x} cy={y} rx={4 + p * 9} ry={4 + p * 5} fill="#fff" opacity={0.95 - p * 0.65} />
+            <ellipse key={`${x},${y}`} cx={x} cy={y} rx={4 + p * 9} ry={4 + p * 5} fill="#fff" opacity={0.95 - p * 0.65} />
           ))}
           <circle cx={78 - p * 14} cy={86 - p * 8} r="9" {...HAND} />
         </g>
@@ -119,7 +119,7 @@ export function FaceScene({ action, t = 0, p = 0, color = "#0284c7" }) {
           <circle cx="170" cy="26" r="8" fill="#fbbf24" />
           <path d="M60 64a40 46 0 0 1 80 0" fill="none" stroke="#fff" strokeWidth="5" opacity={0.25 + p * 0.5} strokeLinecap="round" />
           {[[80, 88], [120, 88], [100, 52], [100, 108]].map(([x, y]) => (
-            <circle key={x + y} cx={x} cy={y} r={3 + p * 3} fill="#fff" opacity={0.9 - p * 0.5} />
+            <circle key={`${x},${y}`} cx={x} cy={y} r={3 + p * 3} fill="#fff" opacity={0.9 - p * 0.5} />
           ))}
           <rect x="22" y="96" width="16" height="36" rx="4" fill="#fff" stroke="#f59e0b" strokeWidth="2" />
           <text x="30" y="118" textAnchor="middle" fontSize="7" fontWeight="800" fill="#f59e0b">SPF</text>

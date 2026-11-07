@@ -1,6 +1,7 @@
 // Per-page SEO: title, description, canonical URL, robots and social tags.
 // Used twice so they always agree: scripts/prerender.mjs writes them into the static HTML (what crawlers read),
 // and components/Seo.jsx updates <head> on client-side navigation.
+import { SECTIONS } from "./sections";
 import { DESCRIPTION, FEATURES, OWNER, SITE_NAME, SITE_URL, TAGLINE } from "./site";
 
 const KEYWORDS = [
@@ -19,6 +20,9 @@ const KEYWORDS = [
   "communication skills practice",
   "voice modulation",
 ];
+
+/** A meeting's own address, like meet.google.com/abc-defg-hij. */
+export const isMeetingPath = (path) => /^\/[a-z]{3}-[a-z]{4}-[a-z]{3}$/.test(path);
 
 export function pageMeta(pathname) {
   const path = pathname.replace(/\/+$/, "") || "/";
@@ -47,6 +51,7 @@ export function pageMeta(pathname) {
       title: `Sign in | ${SITE_NAME}`,
       description: "Sign in to Presence AI with your password or a one-time code sent to your email or mobile.",
       robots: "noindex, follow",
+      canonical: null, // a noindex page shouldn't name a preferred address
     };
   }
   if (path === "/signup") {
@@ -57,8 +62,12 @@ export function pageMeta(pathname) {
         "Sign up for Presence AI: free webcam focus tracking, mock interviews, an AI speech coach and fatigue prediction.",
     };
   }
-  // the signed-in app is private: keep it out of search results
-  if (path === "/app" || path.startsWith("/app/")) return { ...base, title: `App | ${SITE_NAME}`, robots: "noindex, nofollow" };
+  // the signed-in app is private: out of search results, but each page keeps its own name (browser tabs, Analytics).
+  // Don't block these in robots.txt: Google has to be able to read this noindex.
+  if (path === "/app" || path.startsWith("/app/")) {
+    return { ...base, title: `${SECTIONS[path]?.label ?? "App"} | ${SITE_NAME}`, robots: "noindex, nofollow", canonical: null };
+  }
+  if (isMeetingPath(path)) return { ...base, title: `Join meeting | ${SITE_NAME}`, robots: "noindex, nofollow", canonical: null };
   return { ...base, title: `Page not found | ${SITE_NAME}`, robots: "noindex, follow", canonical: null };
 }
 

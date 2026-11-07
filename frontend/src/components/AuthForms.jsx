@@ -1,6 +1,7 @@
 import Link from "@/components/Link";
 import { useRouter, useSearchParams } from "@/lib/navigation";
 import { useEffect, useState } from "react";
+import { track } from "@/lib/analytics";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
@@ -27,7 +28,8 @@ function useFinish() {
   const { signIn } = useAuth();
   const router = useRouter();
   const next = useSearchParams().get("next");
-  return (t) => {
+  return (t, loginMethod) => {
+    if (loginMethod) track("login", { method: loginMethod });
     signIn(t);
     router.replace(safeNext(next));
   };
@@ -288,7 +290,7 @@ export function LoginForm() {
           onSubmit={(e) => {
             e.preventDefault();
             run(async () =>
-              finish(await api("/auth/login", { method: "POST", json: { identifier: ident.trim(), password } })),
+              finish(await api("/auth/login", { method: "POST", json: { identifier: ident.trim(), password } }), "password"),
             );
           }}
         >
@@ -357,7 +359,7 @@ export function LoginForm() {
             e.preventDefault();
             run(async () => {
               if (tab === "otp")
-                finish(await api("/auth/otp/login", { method: "POST", json: { identifier: sentTo.ident, code } }));
+                finish(await api("/auth/otp/login", { method: "POST", json: { identifier: sentTo.ident, code } }), "one_time_code");
               else {
                 const r = await api("/auth/password/reset", {
                   method: "POST",
@@ -467,6 +469,7 @@ export function SignupForm() {
           password: f.password,
         },
       });
+      track("sign_up", { method: "email" });
       if (r.token) finish(r.token);
       else
         setPending({

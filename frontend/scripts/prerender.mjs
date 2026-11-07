@@ -9,6 +9,9 @@ import { pathToFileURL } from "node:url";
 const ssr = await import(pathToFileURL("dist-ssr/entry-server.js").href);
 const { render, pageMeta, headTags, FEATURES, SITE_URL, SITE_NAME, DESCRIPTION } = ssr;
 const template = await readFile("dist/index.html", "utf8");
+if (/localhost|127\.0\.0\.1/.test(SITE_URL)) {
+  console.warn(`\n⚠ VITE_SITE_URL is ${SITE_URL}: canonical links, the sitemap and share previews will point there. Set your real address before deploying.\n`);
+}
 
 const page = (path, html) =>
   template
@@ -39,7 +42,8 @@ await writeFile(
 );
 await writeFile(
   "dist/robots.txt",
-  `User-agent: *\nAllow: /\nDisallow: /app/\nDisallow: /api/\nDisallow: /verify\n\nHost: ${SITE_URL}\nSitemap: ${SITE_URL}/sitemap.xml\n`,
+  // /app/* stays crawlable on purpose: those pages carry noindex, which Google can only obey if it can fetch them
+  `User-agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: ${SITE_URL}/sitemap.xml\n`,
 );
 await writeFile(
   "dist/manifest.webmanifest",

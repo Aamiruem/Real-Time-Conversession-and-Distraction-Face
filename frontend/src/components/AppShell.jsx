@@ -15,6 +15,8 @@ import { Icon } from "./Icons";
 import { ShareButton } from "./Share";
 import { MenuIcon, MobileMenu, MobileTabs } from "./MobileNav";
 
+const SIDEBAR_KEY = "presence.sidebar";
+
 const STATUS = {
   ok: ["ok", "Live"],
   outdated: ["warn", "Old backend"],
@@ -75,6 +77,23 @@ export function AppShell({ children }) {
   const { theme, toggle } = useTheme();
   const [palette, setPalette] = useState(false);
   const [menu, setMenu] = useState(false); // phones: the ☰ menu sheet
+  const [sideHidden, setSideHidden] = useState(() => {
+    try {
+      return localStorage.getItem(SIDEBAR_KEY) === "hidden";
+    } catch {
+      return false;
+    }
+  }); // desktop: ☰ hides the sidebar for more room
+  const onMenuButton = () => {
+    if (window.matchMedia("(max-width: 960px)").matches) return setMenu(true);
+    const hidden = !sideHidden;
+    setSideHidden(hidden);
+    try {
+      localStorage.setItem(SIDEBAR_KEY, hidden ? "hidden" : "shown");
+    } catch {
+      /* private mode: just for this visit */
+    }
+  };
   const closeMenu = useCallback(() => setMenu(false), []);
   useEffect(() => setMenu(false), [path]);
   const [guestBlocked, setGuestBlocked] = useState(false); // server down / misconfigured: wait instead of /login
@@ -156,7 +175,7 @@ export function AppShell({ children }) {
   const [tone, label] = STATUS[backend.status] ?? STATUS.checking;
 
   return (
-    <div className="shell">
+    <div className={`shell ${sideHidden ? "side-hidden" : ""}`}>
       <aside className="side">
         <Link href="/app" className="brand side-brand" aria-label="Presence AI — dashboard">
           <Logo size={38} />
@@ -197,7 +216,7 @@ export function AppShell({ children }) {
 
       <div className="workspace">
         <header className="topbar" style={{ "--c": page.color }}>
-          <button type="button" className="icon-btn menu-btn" onClick={() => setMenu(true)} aria-label="Open menu" aria-expanded={menu}>
+          <button type="button" className="icon-btn menu-btn" onClick={onMenuButton} aria-label="Menu" aria-expanded={menu || !sideHidden}>
             <MenuIcon size={20} />
           </button>
           <div className="topbar-title">

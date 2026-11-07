@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect } from "react";
 import { Outlet, Route, Routes, useLocation, useParams } from "react-router";
 import { AppShell } from "@/components/AppShell";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { SeoSync } from "@/components/Seo";
 import { AuthProvider } from "@/lib/auth";
 import Feature from "./pages/Feature";
@@ -56,11 +57,15 @@ function usePrefetchPages() {
 
 function AppLayout() {
   usePrefetchPages();
+  const { pathname } = useLocation();
   return (
     <AppShell>
-      <Suspense fallback={<Loading />}>
-        <Outlet />
-      </Suspense>
+      {/* keyed by page: opening another section clears a crash */}
+      <ErrorBoundary key={pathname}>
+        <Suspense fallback={<Loading />}>
+          <Outlet />
+        </Suspense>
+      </ErrorBoundary>
     </AppShell>
   );
 }

@@ -34,7 +34,7 @@ export const FEATURES = [
     tagline: "Know second by second if you're focused, distracted, drowsy or away.",
     icon: "🎥",
     title: "AI focus tracker with webcam distraction & drowsiness detection",
-    metaTitle: "AI Focus Tracker – Webcam Distraction Detection",
+    metaTitle: "AI Focus Tracker – Detect Distraction Live",
     metaDescription:
       "Measure your real focus while studying or working. Webcam AI detects distraction, drowsiness, blinks and yawns live and gives you a focus %.",
     keywords: ["focus tracker", "distraction detection", "drowsiness detection", "study focus app", "webcam attention"],
@@ -145,7 +145,7 @@ export const FEATURES = [
     tagline: "Answer real questions on camera and get a readiness score.",
     icon: "💼",
     title: "AI interview preparation with mock interviews and body-language feedback",
-    metaTitle: "AI Mock Interview Practice – Interview Preparation for Any Job",
+    metaTitle: "AI Mock Interview Practice – Any Job Field",
     metaDescription:
       "Practise mock interviews for 15 job fields. AI scores your answer, delivery, eye contact, smile, posture and gestures, then tells you exactly how to improve.",
     keywords: [
@@ -193,9 +193,9 @@ export const FEATURES = [
     tagline: "Practise ten conversation types and see where to improve.",
     icon: "🗨️",
     title: "Conversation coach for fluency, confidence and voice modulation",
-    metaTitle: "AI Conversation Coach – Fluency, Confidence & Tone Feedback",
+    metaTitle: "AI Conversation Coach – Fluency, Tone Scores",
     metaDescription:
-      "Record any conversation — interview, sales call, presentation, meeting or small talk — and get scores for fluency, word confidence, focus, interaction and voice modulation.",
+      "Record any conversation, from interviews and sales calls to small talk, and get scores for fluency, word confidence, focus and interaction.",
     keywords: [
       "conversation practice",
       "communication skills",
