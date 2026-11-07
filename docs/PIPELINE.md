@@ -149,7 +149,7 @@ Put the printed values in `backend/.env`: `AWS_ENABLED=true`, `DATABASE_URL_OVER
 ## 9. Go live on EC2 with HTTPS
 
 1. Launch Ubuntu EC2 (t3.large recommended for Whisper + MediaPipe). Attach an IAM role with
-   `FocusLinkAIPolicy`. In the security group, open ports 22, 80 and 443.
+   `PresenceAIPolicy`. In the security group, open ports 22, 80 and 443.
 2. `git clone …` then run `bash deploy/aws/deploy_ec2.sh`. This builds the images and starts backend, web and nginx.
 3. Point your domain's A record at the instance, then add HTTPS (browsers only allow camera and mic on HTTPS):
    ```bash

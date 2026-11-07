@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Run this ON an Ubuntu EC2 instance (t3.medium+ recommended) after cloning the project.
 # Security group: open 22 (SSH), 80 + 443 (Nginx). Everything else stays private.
-# Attach an IAM role with FocusLinkAIPolicy so no keys are needed in backend/.env.
+# Attach an IAM role with PresenceAIPolicy so no keys are needed in backend/.env.
 set -euo pipefail
 cd "$(dirname "$0")/../.."   # repo root
 

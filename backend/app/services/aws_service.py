@@ -7,7 +7,7 @@ import logging
 
 from app.config import settings
 
-log = logging.getLogger("focuslink.aws")
+log = logging.getLogger("presence.aws")
 
 _s3 = None
 _comprehend = None

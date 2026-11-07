@@ -240,7 +240,7 @@ docker compose --env-file backend/.env up --build      # http://localhost
    This creates the S3 bucket, RDS PostgreSQL, the SES sender, SNS SMS settings and the IAM policy.
 2. In `backend/.env` set `AWS_ENABLED=true`, `DATABASE_URL_OVERRIDE=<rds url>`, `SES_SENDER` and
    `SITE_URL=https://yourdomain.com`. Request SES/SNS production access (India: DLT registration for SMS).
-3. On an Ubuntu EC2 instance with the `FocusLinkAIPolicy` role, run `bash deploy/aws/deploy_ec2.sh`.
+3. On an Ubuntu EC2 instance with the `PresenceAIPolicy` role, run `bash deploy/aws/deploy_ec2.sh`.
 4. Add HTTPS (browsers only allow camera/mic on HTTPS). See [docs/PIPELINE.md](docs/PIPELINE.md) step 9.
 
 ## 🧠 How the focus score is computed

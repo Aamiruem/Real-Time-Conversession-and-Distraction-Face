@@ -13,6 +13,8 @@ from app.database import get_db
 from app.models import AttentionSession, SpeechSession, User
 from coach import assistant
 from coach.recommend import SKILLS, recommend
+from ml import predict as fatigue_model
+from ml.features import LABELS, from_session
 
 router = APIRouter(tags=["coach"])
 
@@ -92,6 +94,40 @@ def build_context(db: Session, user: User, tz: int = 0) -> dict:
     return {"name": (user.full_name or user.username).split()[0], "stats": stats, "recommendations": recs}
 
 
+def agent_tools(db: Session, user: User) -> dict:
+    """The coach agent's look-ups. Each one filters by this user, so Claude can only ever read their own rows."""
+
+    def focus_rows(limit: int):
+        return db.scalars(select(AttentionSession).where(AttentionSession.user_id == user.id)
+                          .order_by(AttentionSession.started_at.desc()).limit(limit)).all()
+
+    def recent_sessions(kind: str, limit: int = 5) -> list[dict]:
+        limit = min(max(int(limit), 1), 10)
+        if kind == "focus":
+            return [{"date": _aware(s.started_at).date().isoformat(), "minutes": round(s.duration_sec / 60, 1),
+                     "focus_pct": s.focus_pct, "distracted_pct": s.distracted_pct, "drowsy_pct": s.drowsy_pct,
+                     "felt": None if s.self_fatigue is None else LABELS[s.self_fatigue]} for s in focus_rows(limit)]
+        query = select(SpeechSession).where(SpeechSession.user_id == user.id)
+        query = query.where(SpeechSession.mode == "interview" if kind == "interview" else SpeechSession.mode != "interview")
+        rows = db.scalars(query.order_by(SpeechSession.created_at.desc()).limit(limit))
+        return [{"date": _aware(s.created_at).date().isoformat(), "mode": s.mode, "prompt": (s.prompt or "")[:120],
+                 "confidence": s.confidence, **{k: getattr(s, k) for k in SKILLS}} for s in rows]
+
+    def fatigue_forecast() -> dict:
+        rows = focus_rows(1)
+        if not rows:
+            return {"note": "No focus sessions yet: the user needs to finish one first."}
+        s = rows[0]
+        session = {c: getattr(s, c) for c in ("started_at", "duration_sec", "focus_pct", "distracted_pct", "drowsy_pct",
+                                              "no_face_pct", "total_blinks", "total_yawns", "avg_ear")}
+        p = fatigue_model.predict(from_session(session))
+        return {"session_date": _aware(s.started_at).date().isoformat(), "risk": p["risk"], "risk_score": p["risk_score"],
+                "factors": [f["label"] for f in p["factors"]], "advice": p["advice"],
+                "note": "An estimate from a model trained mostly on simulated sessions. Not a medical assessment."}
+
+    return {"recent_sessions": recent_sessions, "fatigue_forecast": fatigue_forecast}
+
+
 @router.get("/recommendations")
 def recommendations(tz: int = TzOffset, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """What to practise next, ranked by expected benefit, each with the data behind it."""
@@ -101,7 +137,8 @@ def recommendations(tz: int = TzOffset, user: User = Depends(get_current_user), 
 @router.post("/coach/ask")
 def ask(data: CoachQuestion, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Ask the AI coach anything about your progress, interviews, speaking or focus."""
-    return assistant.answer(data.question, build_context(db, user, data.tz), [t.model_dump() for t in data.history])
+    return assistant.answer(data.question, build_context(db, user, data.tz), [t.model_dump() for t in data.history],
+                            agent_tools(db, user))
 
 
 @router.get("/coach/insight")

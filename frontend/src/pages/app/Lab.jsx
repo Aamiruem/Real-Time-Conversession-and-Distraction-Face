@@ -277,6 +277,11 @@ function MlLab() {
         <Metric v={card.test.f1_macro.toFixed(2)} l="Test F1 (macro)" />
         <Metric v={card.data.rows.toLocaleString()} l={`Rows (${card.data.user_labelled} user-labelled)`} />
       </div>
+      <p className="small muted">
+        {card.test.baseline_accuracy != null &&
+          `For comparison, always guessing the commonest answer scores ${(card.test.baseline_accuracy * 100).toFixed(0)}%. `}
+        {card.limitations}
+      </p>
       <div className="grid g3">
         <div className="card">
           <h3>Model selection (5-fold CV F1)</h3>

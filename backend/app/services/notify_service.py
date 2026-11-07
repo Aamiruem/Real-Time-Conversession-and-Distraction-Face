@@ -12,7 +12,7 @@ import urllib.request
 from app.config import settings
 from app.services.aws_service import _client
 
-log = logging.getLogger("focuslink.notify")
+log = logging.getLogger("presence.notify")
 
 PURPOSE_TEXT = {
     "verify": "verify your account",

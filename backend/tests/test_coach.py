@@ -124,3 +124,126 @@ def test_time_of_day_advice_uses_the_viewers_time_zone(client, verified_user):
     assert client.get("/recommendations?tz=9999", headers=headers).status_code == 422
     r = client.post("/coach/ask", headers=headers, json={"question": "When do I focus best?", "tz": 330})
     assert r.status_code == 200
+
+
+# ---------- the coach as an agent: Claude can call tools, and every failure lands on the built-in coach ----------
+
+def _tool_call(name, tool_input, block_id="tu_1"):
+    return SimpleNamespace(stop_reason="tool_use", content=[SimpleNamespace(type="tool_use", id=block_id, name=name, input=tool_input)])
+
+
+def _final(text):
+    return SimpleNamespace(stop_reason="end_turn", content=[SimpleNamespace(type="text", text=text)])
+
+
+class _ScriptedMessages:
+    """Answers each create() with the next scripted response, and remembers what was sent (copied: the list grows)."""
+
+    def __init__(self, *responses):
+        self.responses, self.calls = list(responses), []
+
+    def create(self, **kwargs):
+        self.calls.append({**kwargs, "messages": list(kwargs["messages"])})
+        return self.responses.pop(0)
+
+
+def _use(monkeypatch, fake):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+    monkeypatch.setattr(anthropic, "Anthropic", lambda **_: SimpleNamespace(beta=SimpleNamespace(messages=fake)))
+
+
+def test_agent_searches_the_guide_then_answers(monkeypatch):
+    fake = _ScriptedMessages(_tool_call("search_guide", {"query": "filler words"}), _final("Pause instead of saying um."))
+    _use(monkeypatch, fake)
+    out = assistant.answer("How do I stop saying um?", CTX)
+    assert out["engine"] == "claude" and out["answer"] == "Pause instead of saying um."
+    assert out["tools_used"] == ["search_guide"]
+
+    assert [t["name"] for t in fake.calls[0]["tools"]] == ["search_guide"]  # no user data tools without a signed-in user
+    assistant_turn, result_turn = fake.calls[1]["messages"][-2:]
+    assert assistant_turn["role"] == "assistant"
+    assert assistant_turn["content"][0].type == "tool_use"  # the whole response goes back, not just its text
+    assert result_turn["role"] == "user"
+    result = result_turn["content"][0]
+    assert result["type"] == "tool_result" and result["tool_use_id"] == "tu_1" and "is_error" not in result
+    assert "filler" in result["content"].lower() or "silent" in result["content"].lower()
+
+
+def test_parallel_tool_calls_answer_in_one_message(monkeypatch):
+    both = SimpleNamespace(stop_reason="tool_use", content=[
+        SimpleNamespace(type="tool_use", id="a", name="search_guide", input={"query": "eye contact"}),
+        SimpleNamespace(type="tool_use", id="b", name="search_guide", input={"query": "posture"}),
+    ])
+    fake = _ScriptedMessages(both, _final("Done."))
+    _use(monkeypatch, fake)
+    assistant.answer("Tips?", CTX)
+    results = fake.calls[1]["messages"][-1]["content"]
+    assert [r["tool_use_id"] for r in results] == ["a", "b"]
+
+
+@pytest.mark.parametrize("name, tools", [("no_such_tool", None), ("recent_sessions", {"recent_sessions": lambda **_: 1 / 0})])
+def test_a_failing_tool_is_reported_to_claude_not_raised(monkeypatch, name, tools):
+    fake = _ScriptedMessages(_tool_call(name, {}), _final("Sorry, I couldn't look that up."))
+    _use(monkeypatch, fake)
+    out = assistant.answer("Show my sessions", CTX, tools=tools)
+    assert out["engine"] == "claude"
+    assert fake.calls[1]["messages"][-1]["content"][0]["is_error"] is True
+
+
+def test_an_endless_tool_loop_falls_back_to_the_built_in_coach(monkeypatch):
+    fake = _ScriptedMessages(*[_tool_call("search_guide", {"query": "x"}) for _ in range(assistant.MAX_TOOL_ROUNDS)])
+    _use(monkeypatch, fake)
+    out = assistant.answer("How do I stop saying um?", CTX)
+    assert out["engine"] == "built-in" and out["answer"]
+    assert len(fake.calls) == assistant.MAX_TOOL_ROUNDS
+
+
+def test_a_refusal_after_a_tool_call_falls_back_to_the_built_in_coach(monkeypatch):
+    refused = SimpleNamespace(stop_reason="refusal", content=[])
+    fake = _ScriptedMessages(_tool_call("search_guide", {"query": "x"}), refused)
+    _use(monkeypatch, fake)
+    assert assistant.answer("How do I stop saying um?", CTX)["engine"] == "built-in"
+
+
+def test_dashboard_insight_makes_a_single_call_with_no_tools(monkeypatch):
+    fake = _ScriptedMessages(_final("Keep going."))
+    _use(monkeypatch, fake)
+    assert assistant.insight(CTX)["answer"] == "Keep going."
+    assert "tools" not in fake.calls[0]  # it runs on every dashboard load, so it stays one cheap request
+
+
+def _focus_session(client, headers, started="2026-01-01T09:00:00Z", focus=81):
+    return client.post("/attention/sessions", headers=headers, json={
+        "started_at": started, "duration_sec": 1200, "focus_pct": focus, "distracted_pct": 15, "drowsy_pct": 4}).json()
+
+
+def test_agent_tools_only_ever_read_the_signed_in_users_data(client, make_user, monkeypatch):
+    mine, _ = make_user()
+    other, _ = make_user()
+    _focus_session(client, mine, focus=81)
+    _focus_session(client, other, focus=33)
+    fake = _ScriptedMessages(_tool_call("recent_sessions", {"kind": "focus", "limit": 10}), _final("You focused at 81%."))
+    _use(monkeypatch, fake)
+    res = client.post("/coach/ask", headers=mine, json={"question": "Show my last sessions"}).json()
+    assert res["engine"] == "claude" and res["tools_used"] == ["recent_sessions"]
+    assert {t["name"] for t in fake.calls[0]["tools"]} == {"search_guide", "recent_sessions", "fatigue_forecast"}
+    sent = fake.calls[1]["messages"][-1]["content"][0]["content"]
+    assert '"focus_pct": 81' in sent and "33" not in sent
+
+
+def test_agent_forecasts_fatigue_from_the_latest_session(client, make_user, monkeypatch):
+    headers, _ = make_user()
+    _focus_session(client, headers)
+    fake = _ScriptedMessages(_tool_call("fatigue_forecast", {}), _final("Your risk looks low."))
+    _use(monkeypatch, fake)
+    client.post("/coach/ask", headers=headers, json={"question": "Am I tired?"})
+    sent = fake.calls[1]["messages"][-1]["content"][0]
+    assert "is_error" not in sent and '"risk"' in sent["content"] and "simulated" in sent["content"]
+
+
+def test_fatigue_forecast_with_no_sessions_says_so(client, make_user, monkeypatch):
+    headers, _ = make_user()
+    fake = _ScriptedMessages(_tool_call("fatigue_forecast", {}), _final("Do a session first."))
+    _use(monkeypatch, fake)
+    client.post("/coach/ask", headers=headers, json={"question": "Am I tired?"})
+    assert "no focus sessions" in fake.calls[1]["messages"][-1]["content"][0]["content"].lower()

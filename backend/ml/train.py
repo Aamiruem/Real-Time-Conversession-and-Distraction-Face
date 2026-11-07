@@ -26,6 +26,7 @@ import pandas as pd
 from sklearn.ensemble import (ExtraTreesClassifier, GradientBoostingClassifier, HistGradientBoostingClassifier,
                             RandomForestClassifier, VotingClassifier)
 from sklearn.inspection import permutation_importance
+from sklearn.dummy import DummyClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, f1_score
 from sklearn.model_selection import StratifiedKFold, cross_val_score, train_test_split
@@ -87,6 +88,7 @@ def train(with_db: bool = False, quiet: bool = False) -> dict:
     model.fit(X_tr, y_tr, clf__sample_weight=w_tr)
 
     pred = model.predict(X_te)
+    baseline = float(DummyClassifier(strategy="most_frequent").fit(X_tr, y_tr).score(X_te, y_te))
     imp = permutation_importance(model, X_te, y_te, n_repeats=5, random_state=7, scoring="f1_macro")
     card = {
         "name": "Presence AI fatigue-risk classifier",
@@ -95,6 +97,7 @@ def train(with_db: bool = False, quiet: bool = False) -> dict:
         "algorithm": best,
         "cv_f1_macro": {k: round(v, 4) for k, v in scores.items()},
         "test": {
+            "baseline_accuracy": round(baseline, 4),  # always guessing the commonest answer: the score to beat
             "accuracy": round(float(accuracy_score(y_te, pred)), 4),
             "f1_macro": round(float(f1_score(y_te, pred, average="macro")), 4),
             "confusion_matrix": confusion_matrix(y_te, pred).tolist(),
@@ -107,8 +110,9 @@ def train(with_db: bool = False, quiet: bool = False) -> dict:
         "labels": LABELS,
         "data": {"rows": len(df), "synthetic": int((df["source"] == "synthetic").sum()),
             "user_labelled": int((df["source"] == "user").sum())},
-        "limitations": "Bootstrapped on simulated sessions; predictions become personal only as users "
-                    "label real sessions. Not a medical assessment.",
+        "limitations": "Trained mostly on simulated sessions, so its test score measures how well it recovers that "
+                    "simulation, not how well it reads real people. Rating your sessions gives it real examples. "
+                    "Not a medical assessment.",
     }
     ARTIFACTS.mkdir(parents=True, exist_ok=True)
     joblib.dump(model, MODEL_PATH)

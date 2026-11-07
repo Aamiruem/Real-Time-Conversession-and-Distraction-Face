@@ -2,14 +2,18 @@
 
 Two engines, same interface:
   * Claude (when ANTHROPIC_API_KEY / ANTHROPIC_AUTH_TOKEN is set): Claude Opus 5.5 at low effort, grounded in your
-    stats, your recommendations and the most relevant passages of the built-in guide. Server-side fallbacks are on
-    (`fallbacks="default"`), so a declined request is retried on another Claude model inside the same call.
+    stats, your recommendations and the most relevant passages of the built-in guide. For questions it works as an
+    agent: it can call tools to search the guide, read your sessions and forecast fatigue before it answers.
+    Server-side fallbacks are on (`fallbacks="default"`), so a declined request is retried on another Claude model
+    inside the same call.
   * Built-in (always available — no key, API error, or a refusal from every model): retrieves the best-matching
     guide passages with TF-IDF and combines them with your own numbers and top recommendation.
 """
+import json
 import logging
 import os
 import re
+from collections.abc import Callable
 
 from interview.knowledge import FRAMEWORKS, GENERAL_QUESTIONS, GUIDE, WORD_SWAPS
 
@@ -19,9 +23,28 @@ CLAUDE_MODEL = os.getenv("COACH_MODEL", "claude-opus-5-5")
 SYSTEM_PROMPT = (
     "You are the personal coach inside Presence AI, an app for focus, confident speaking and interview practice. "
     "Answer the user's question in under 160 words: warm, direct and practical, with at most 3 concrete steps. "
-    "Use only the user's data and the guide passages provided; never invent numbers. If the data is not enough to "
-    "answer, say what to do in the app to get it. Plain text, no headings."
+    "Use only the user's data, the guide passages and your tools; never invent numbers. When the summary isn't enough, "
+    "look it up with a tool instead of guessing. If the data still isn't enough to answer, say what to do in the app "
+    "to get it. Fatigue forecasts are estimates, not medical advice: say so. Plain text, no headings."
 )
+MAX_TOOL_ROUNDS = 5  # requests in one answer: enough for a few look-ups, and a hard stop on cost and waiting
+TOOLS = [
+    {"name": "search_guide", "strict": True,
+     "description": "Search the built-in coaching guide on interviews, speaking, filler words, body language and focus. "
+                    "Use it for advice on a topic the passages you were given don't cover.",
+     "input_schema": {"type": "object", "additionalProperties": False, "required": ["query"],
+                      "properties": {"query": {"type": "string", "description": "What to look up, in plain words"}}}},
+    {"name": "recent_sessions", "strict": True,
+     "description": "Read this user's own recent sessions, newest first, with dates and scores. Use it for questions "
+                    "about specific sessions or trends the summary doesn't show.",
+     "input_schema": {"type": "object", "additionalProperties": False, "required": ["kind", "limit"],
+                      "properties": {"kind": {"type": "string", "enum": ["focus", "speech", "interview"]},
+                                     "limit": {"type": "integer", "description": "How many sessions, 1 to 10"}}}},
+    {"name": "fatigue_forecast", "strict": True,
+     "description": "Estimate this user's fatigue risk from their latest focus session, with the factors behind it. "
+                    "Use it when they ask if they are tired or should take a break.",
+     "input_schema": {"type": "object", "additionalProperties": False, "required": [], "properties": {}}},
+]
 FOLLOW_UPS = ["How am I doing this week?", "What should I practise next?", "How do I answer “Tell me about yourself”?",
               "How do I stop saying “um”?", "How do I look confident on camera?"]
 PROGRESS_WORDS = re.compile(r"\b(how am i|my progress|doing|this week|stats?|score|improv|summary|overview|insight)",
@@ -120,14 +143,28 @@ def _builtin(question: str, ctx: dict) -> str:
     return "\n".join(parts)
 
 
-def _claude(question: str, ctx: dict, history: list[dict]) -> str | None:
-    """Claude's answer, or None to use the built-in engine (no key, API error, or refused by every model)."""
+def _run_tool(block, tools: dict[str, Callable]) -> dict:
+    """One tool_use block as its tool_result. A failed tool is reported to Claude, which can then work around it."""
+    result = {"type": "tool_result", "tool_use_id": block.id}
+    try:
+        result["content"] = json.dumps(tools[block.name](**block.input), default=str)
+    except Exception as e:  # noqa: BLE001 - a broken look-up must not lose the whole answer
+        log.warning("coach: tool %s failed (%s)", block.name, e.__class__.__name__)
+        result.update(content=f"That look-up failed ({e.__class__.__name__}).", is_error=True)
+    return result
+
+
+def _claude(question: str, ctx: dict, history: list[dict], tools: dict[str, Callable] | None) -> tuple[str | None, list[str]]:
+    """Claude's answer and the tools it used. The answer is None to use the built-in engine: no key, an API error,
+    refused by every model, or still calling tools after MAX_TOOL_ROUNDS.
+
+    `tools` None makes one plain request (the dashboard note, which runs on every page load)."""
     if not (os.getenv("ANTHROPIC_API_KEY") or os.getenv("ANTHROPIC_AUTH_TOKEN")):
-        return None
+        return None, []
     try:
         import anthropic
     except ImportError:
-        return None
+        return None, []
     guide = "\n".join(f"- {t}" for t in retrieve(question, k=4)) or "- (no matching passage)"
     # only user/assistant turns from the browser, starting with a user turn (as the API requires)
     messages = [{"role": m["role"], "content": str(m["content"])[:2000]} for m in history[-6:]
@@ -136,38 +173,58 @@ def _claude(question: str, ctx: dict, history: list[dict]) -> str | None:
         messages.pop(0)
     messages.append({"role": "user", "content": f"My data:\n{context_text(ctx)}\n\nRelevant guide passages:\n{guide}"
                                                 f"\n\nMy question: {question}"})
+    handlers = None if tools is None else {**tools, "search_guide": lambda query: retrieve(query, k=4)}
+    offered = {} if handlers is None else {"tools": [t for t in TOOLS if t["name"] in handlers]}
+    client = anthropic.Anthropic(max_retries=1, timeout=30.0)
+    used: list[str] = []
     try:
-        response = anthropic.Anthropic(max_retries=1, timeout=30.0).beta.messages.create(
-            model=CLAUDE_MODEL,
-            max_tokens=2000,
-            output_config={"effort": "low"},  # short coaching answers: fast and cheap
-            betas=["server-side-fallback-2026-07-01"],
-            fallbacks="default",
-            system=SYSTEM_PROMPT,
-            messages=messages,
-        )
+        for _ in range(MAX_TOOL_ROUNDS):
+            response = client.beta.messages.create(
+                model=CLAUDE_MODEL,
+                max_tokens=2000,
+                output_config={"effort": "low"},  # short coaching answers: fast and cheap
+                betas=["server-side-fallback-2026-07-01"],
+                fallbacks="default",
+                system=SYSTEM_PROMPT,
+                messages=messages,
+                **offered,
+            )
+            if response.stop_reason != "tool_use":
+                break
+            calls = [b for b in response.content if b.type == "tool_use"]
+            used += [c.name for c in calls]
+            # the whole response goes back (thinking blocks included), and all results in one message
+            messages.append({"role": "assistant", "content": response.content})
+            messages.append({"role": "user", "content": [_run_tool(c, handlers or {}) for c in calls]})
+        else:
+            log.warning("coach: still calling tools after %s rounds — using the built-in coach", MAX_TOOL_ROUNDS)
+            return None, used
     except anthropic.APIStatusError as e:
         log.warning("coach: Claude API error %s — using the built-in coach", e.status_code)
-        return None
+        return None, used
     except anthropic.APIConnectionError:
         log.warning("coach: Claude unreachable — using the built-in coach")
-        return None
+        return None, used
     if response.stop_reason == "refusal":
-        return None
+        return None, used
     text = "".join(b.text for b in response.content if b.type == "text").strip()
-    return text or None
+    return text or None, used
 
 
-def answer(question: str, ctx: dict, history: list[dict] | None = None) -> dict:
-    """{answer, engine, follow_ups} for one question."""
-    text = _claude(question, ctx, history or [])
+def answer(question: str, ctx: dict, history: list[dict] | None = None, tools: dict[str, Callable] | None = None) -> dict:
+    """{answer, engine, follow_ups, tools_used} for one question. `tools` are the signed-in user's own look-ups
+    (coach_routes.agent_tools); with none, Claude can still search the guide."""
+    text, used = _claude(question, ctx, history or [], tools or {})
     engine = "claude" if text else "built-in"
     if not text:
         text = _builtin(question, ctx)
     follow = [q for q in FOLLOW_UPS if q.lower() != question.strip().lower()][:3]
-    return {"answer": text, "engine": engine, "follow_ups": follow}
+    return {"answer": text, "engine": engine, "follow_ups": follow, "tools_used": used}
 
 
 def insight(ctx: dict) -> dict:
-    """Today's automated coaching note for the dashboard."""
-    return answer("Give me a short summary of how I'm doing and the single most useful thing to do today.", ctx)
+    """Today's automated coaching note for the dashboard: one plain request, as it runs on every page load."""
+    question = "Give me a short summary of how I'm doing and the single most useful thing to do today."
+    text, _ = _claude(question, ctx, [], None)
+    return {"answer": text or _builtin(question, ctx), "engine": "claude" if text else "built-in",
+            "follow_ups": FOLLOW_UPS[:3], "tools_used": []}

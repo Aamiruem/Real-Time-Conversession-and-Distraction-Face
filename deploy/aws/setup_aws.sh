@@ -34,7 +34,7 @@ echo "   NOTE: SNS SMS also starts in a sandbox — add test numbers in SNS cons
 echo "   or request production access. India requires DLT entity + template registration."
 
 echo ">> Creating IAM policy for the app"
-cat > /tmp/focuslink-policy.json <<EOF
+cat > /tmp/presence-policy.json <<EOF
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -45,7 +45,7 @@ cat > /tmp/focuslink-policy.json <<EOF
   ]
 }
 EOF
-aws iam create-policy --policy-name FocusLinkAIPolicy --policy-document file:///tmp/focuslink-policy.json
+aws iam create-policy --policy-name PresenceAIPolicy --policy-document file:///tmp/presence-policy.json
 
 aws rds wait db-instance-available --db-instance-identifier "$DB_ID" --region "$REGION"
 ENDPOINT=$(aws rds describe-db-instances --db-instance-identifier "$DB_ID" --region "$REGION" \
